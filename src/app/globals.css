@@ -112,6 +112,160 @@ body {
   box-shadow: 0 0 0 rgba(0, 0, 0, 0.5);
 }
 
+/* Pixel Art Button - Primary */
+.btn-pixel {
+  @apply relative px-6 py-3 font-medium text-white;
+  @apply transition-all duration-150 cursor-pointer;
+  background-color: hsl(var(--primary));
+  border: 4px solid;
+  border-color: hsl(var(--primary) / 0.7) hsl(var(--primary) / 0.3) hsl(var(--primary) / 0.3) hsl(var(--primary) / 0.7);
+  box-shadow:
+    4px 4px 0 rgba(0, 0, 0, 0.4),
+    inset 2px 2px 0 rgba(255, 255, 255, 0.2),
+    inset -2px -2px 0 rgba(0, 0, 0, 0.2);
+  border-radius: 0;
+}
+
+.btn-pixel:hover {
+  transform: translate(2px, 2px);
+  box-shadow:
+    2px 2px 0 rgba(0, 0, 0, 0.4),
+    inset 2px 2px 0 rgba(255, 255, 255, 0.2),
+    inset -2px -2px 0 rgba(0, 0, 0, 0.2);
+  background-color: hsl(var(--primary) / 0.9);
+}
+
+.btn-pixel:active {
+  transform: translate(4px, 4px);
+  box-shadow:
+    0 0 0 rgba(0, 0, 0, 0.4),
+    inset 2px 2px 0 rgba(0, 0, 0, 0.2),
+    inset -2px -2px 0 rgba(255, 255, 255, 0.2);
+}
+
+/* Pixel Art Button - Outline */
+.btn-pixel-outline {
+  @apply relative px-6 py-3 font-medium;
+  @apply transition-all duration-150 cursor-pointer;
+  color: hsl(var(--foreground));
+  background-color: transparent;
+  border: 4px solid;
+  border-color: hsl(var(--border) / 0.8) hsl(var(--border) / 0.4) hsl(var(--border) / 0.4) hsl(var(--border) / 0.8);
+  box-shadow:
+    4px 4px 0 rgba(0, 0, 0, 0.3),
+    inset 2px 2px 0 rgba(255, 255, 255, 0.05);
+  border-radius: 0;
+}
+
+.btn-pixel-outline:hover {
+  transform: translate(2px, 2px);
+  box-shadow:
+    2px 2px 0 rgba(0, 0, 0, 0.3),
+    inset 2px 2px 0 rgba(255, 255, 255, 0.1);
+  background-color: hsl(var(--accent) / 0.1);
+  border-color: hsl(var(--primary) / 0.7) hsl(var(--primary) / 0.3) hsl(var(--primary) / 0.3) hsl(var(--primary) / 0.7);
+}
+
+.btn-pixel-outline:active {
+  transform: translate(4px, 4px);
+  box-shadow: 0 0 0 rgba(0, 0, 0, 0.3);
+}
+
+/* Pixel Glitch Effect for Cards */
+.card-glitch {
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.card-glitch:hover {
+  animation: cardGlitch 0.3s ease-in-out;
+}
+
+.card-glitch::before,
+.card-glitch::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.card-glitch::before {
+  background: hsl(var(--primary) / 0.1);
+  transform: translate(-2px, 0);
+}
+
+.card-glitch::after {
+  background: hsl(346 77% 59% / 0.1);
+  transform: translate(2px, 0);
+}
+
+.card-glitch:hover::before,
+.card-glitch:hover::after {
+  opacity: 1;
+}
+
+@keyframes cardGlitch {
+  0% {
+    transform: translate(0);
+  }
+  20% {
+    transform: translate(-2px, 2px);
+  }
+  40% {
+    transform: translate(-2px, -2px);
+  }
+  60% {
+    transform: translate(2px, 2px);
+  }
+  80% {
+    transform: translate(2px, -2px);
+  }
+  100% {
+    transform: translate(0);
+  }
+}
+
+/* Image glitch effect */
+.glitch-image {
+  position: relative;
+  overflow: hidden;
+}
+
+.glitch-image::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    transparent 0%,
+    rgba(233, 69, 96, 0.1) 50%,
+    transparent 100%
+  );
+  transform: translateY(-100%);
+  transition: transform 0.3s ease;
+}
+
+.glitch-image:hover::before {
+  animation: scanGlitch 0.5s ease-in-out;
+}
+
+@keyframes scanGlitch {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100%);
+  }
+}
+
 /* Glowing text effect */
 .text-glow {
   text-shadow: 0 0 10px currentColor, 0 0 20px currentColor, 0 0 30px currentColor;

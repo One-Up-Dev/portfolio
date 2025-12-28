@@ -1,16 +1,46 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowRight, Code2, Cpu, Zap } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export default function HomePage() {
+  const [scrollY, setScrollY] = useState(0);
+
+  // Parallax effect on scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrollY(window.scrollY);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
-      <section className="relative flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center px-4 py-20">
-        {/* Background gradient */}
-        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-background via-background to-retro-dark" />
+      <section className="relative flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center px-4 py-20 overflow-hidden">
+        {/* Miyazaki-style nature GIF background with parallax */}
+        <div
+          className="absolute inset-0 -z-20"
+          style={{ transform: `translateY(${scrollY * 0.3}px)` }}
+        >
+          <div
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+            style={{
+              backgroundImage: `url('/images/miyazaki-nature.gif')`,
+              filter: "brightness(0.6) saturate(0.8)",
+            }}
+          />
+          {/* Fallback gradient for when GIF is not available */}
+          <div className="absolute inset-0 bg-gradient-to-b from-retro-dark/90 via-background/80 to-background" />
+        </div>
+
+        {/* Dark overlay for text readability */}
+        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-background/70 via-background/60 to-background" />
 
         {/* Animated pixels background */}
-        <div className="absolute inset-0 -z-10 opacity-20">
+        <div className="absolute inset-0 -z-10 opacity-30">
           <div className="absolute left-1/4 top-1/4 h-2 w-2 animate-pulse bg-primary" />
           <div className="absolute right-1/3 top-1/3 h-2 w-2 animate-pulse bg-retro-cyan delay-100" />
           <div className="absolute bottom-1/4 left-1/3 h-2 w-2 animate-pulse bg-retro-gold delay-200" />
@@ -36,18 +66,18 @@ export default function HomePage() {
             n8n • claude-code • automatisation • vibe coding
           </p>
 
-          {/* CTA Buttons */}
+          {/* CTA Buttons - Pixel Art Style */}
           <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link
               href="/projets"
-              className="group inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 font-medium text-primary-foreground transition-all hover:bg-primary/90"
+              className="btn-pixel group inline-flex items-center gap-2"
             >
               Voir mes projets
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Link>
             <Link
               href="/contact"
-              className="inline-flex items-center gap-2 rounded-lg border border-border px-6 py-3 font-medium text-foreground transition-colors hover:bg-accent"
+              className="btn-pixel-outline inline-flex items-center gap-2"
             >
               Me contacter
             </Link>

@@ -242,10 +242,10 @@ export default function ProjectsPage() {
             {projects.map((project) => (
               <article
                 key={project.id}
-                className="group flex flex-col rounded-lg border border-border bg-card transition-all hover:border-primary/50"
+                className="card-glitch group flex flex-col rounded-lg border border-border bg-card transition-all hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10"
               >
-                {/* Project Image Placeholder */}
-                <div className="aspect-video w-full bg-gradient-to-br from-retro-dark to-retro-purple p-4">
+                {/* Project Image Placeholder with Glitch Effect */}
+                <div className="glitch-image aspect-video w-full bg-gradient-to-br from-retro-dark to-retro-purple p-4">
                   <div className="flex h-full items-center justify-center text-4xl">
                     🎮
                   </div>
