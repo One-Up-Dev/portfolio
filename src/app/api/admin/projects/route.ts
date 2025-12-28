@@ -65,10 +65,28 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    // Validate required fields
-    if (!body.title) {
+    // Validate required fields - match client-side validation
+    if (!body.title || !body.title.trim()) {
       return NextResponse.json(
         { error: "Bad Request", message: "Title is required" },
+        { status: 400 },
+      );
+    }
+
+    // Validate title length (min 3, max 100) - matches client-side
+    const trimmedTitle = body.title.trim();
+    if (trimmedTitle.length < 3) {
+      return NextResponse.json(
+        {
+          error: "Bad Request",
+          message: "Title must be at least 3 characters",
+        },
+        { status: 400 },
+      );
+    }
+    if (trimmedTitle.length > 100) {
+      return NextResponse.json(
+        { error: "Bad Request", message: "Title cannot exceed 100 characters" },
         { status: 400 },
       );
     }
@@ -76,6 +94,42 @@ export async function POST(request: NextRequest) {
     // Generate slug if not provided
     const slug =
       body.slug || body.title.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+
+    // Validate slug format if provided - matches client-side
+    if (body.slug && !/^[a-z0-9-]+$/.test(body.slug)) {
+      return NextResponse.json(
+        {
+          error: "Bad Request",
+          message:
+            "Slug can only contain lowercase letters, numbers, and hyphens",
+        },
+        { status: 400 },
+      );
+    }
+
+    // Validate URLs if provided - matches client-side
+    const isValidUrl = (url: string): boolean => {
+      try {
+        const parsed = new URL(url);
+        return parsed.protocol === "https:" || parsed.protocol === "http:";
+      } catch {
+        return false;
+      }
+    };
+
+    if (body.githubUrl && !isValidUrl(body.githubUrl)) {
+      return NextResponse.json(
+        { error: "Bad Request", message: "Invalid GitHub URL" },
+        { status: 400 },
+      );
+    }
+
+    if (body.demoUrl && !isValidUrl(body.demoUrl)) {
+      return NextResponse.json(
+        { error: "Bad Request", message: "Invalid demo URL" },
+        { status: 400 },
+      );
+    }
 
     // Check if slug already exists
     const existing = await db

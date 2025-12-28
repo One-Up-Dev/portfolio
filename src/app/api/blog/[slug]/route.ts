@@ -23,6 +23,22 @@ export async function GET(
       );
     }
 
+    // Check if the post is scheduled for a future date
+    if (post.publishedAt) {
+      const publishDate = new Date(post.publishedAt);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      publishDate.setHours(0, 0, 0, 0);
+
+      if (publishDate > today) {
+        // Post is scheduled for a future date, treat as not found
+        return NextResponse.json(
+          { error: "Not Found", message: "Blog post not found" },
+          { status: 404 },
+        );
+      }
+    }
+
     // Increment view count
     await db
       .update(blogPosts)

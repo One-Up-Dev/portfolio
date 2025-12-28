@@ -64,9 +64,28 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    if (!body.title) {
+    // Validate required fields - match client-side validation
+    if (!body.title || !body.title.trim()) {
       return NextResponse.json(
         { error: "Bad Request", message: "Title is required" },
+        { status: 400 },
+      );
+    }
+
+    // Validate title length (min 3, max 200) - matches client-side
+    const trimmedTitle = body.title.trim();
+    if (trimmedTitle.length < 3) {
+      return NextResponse.json(
+        {
+          error: "Bad Request",
+          message: "Title must be at least 3 characters",
+        },
+        { status: 400 },
+      );
+    }
+    if (trimmedTitle.length > 200) {
+      return NextResponse.json(
+        { error: "Bad Request", message: "Title cannot exceed 200 characters" },
         { status: 400 },
       );
     }
@@ -74,6 +93,18 @@ export async function POST(request: NextRequest) {
     // Generate slug if not provided
     const slug =
       body.slug || body.title.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+
+    // Validate slug format if provided - matches client-side
+    if (body.slug && !/^[a-z0-9-]+$/.test(body.slug)) {
+      return NextResponse.json(
+        {
+          error: "Bad Request",
+          message:
+            "Slug can only contain lowercase letters, numbers, and hyphens",
+        },
+        { status: 400 },
+      );
+    }
 
     // Check if slug already exists
     const existing = await db
@@ -95,6 +126,21 @@ export async function POST(request: NextRequest) {
     const contentLength = body.content?.length || 0;
     const readTimeMinutes = Math.max(1, Math.ceil(contentLength / 1000));
 
+    // Determine publishedAt date
+    // If status is published and publishedAt is provided, use it
+    // If status is published and no publishedAt, use current date
+    // If status is draft, set to null
+    let publishedAt: string | null = null;
+    if (body.status === "published") {
+      if (body.publishedAt) {
+        // Use provided date (for scheduled posts)
+        publishedAt = body.publishedAt;
+      } else {
+        // Default to today's date
+        publishedAt = new Date().toISOString().split("T")[0];
+      }
+    }
+
     // Create new blog post in database
     const [newPost] = await db
       .insert(blogPosts)
@@ -106,8 +152,7 @@ export async function POST(request: NextRequest) {
         coverImageUrl: body.coverImageUrl || null,
         tags: body.tags || [],
         status: body.status || "draft",
-        publishedAt:
-          body.status === "published" ? new Date().toISOString() : null,
+        publishedAt,
         metaDescription: body.metaDescription || null,
         metaKeywords: body.metaKeywords || null,
         readTimeMinutes,

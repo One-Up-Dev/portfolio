@@ -58,6 +58,7 @@ interface BlogFormData {
   tags: string[];
   status: string;
   metaDescription: string;
+  publishedAt: string;
 }
 
 export default function NewBlogPostPage() {
@@ -104,6 +105,7 @@ export default function NewBlogPostPage() {
     tags: [],
     status: "draft", // Default to draft
     metaDescription: "",
+    publishedAt: new Date().toISOString().split("T")[0], // Default to today
   });
 
   // Auto-generate slug when title changes (if autoSlug is enabled)
@@ -232,6 +234,8 @@ export default function NewBlogPostPage() {
           tags: formData.tags,
           status: formData.status,
           metaDescription: formData.metaDescription,
+          publishedAt:
+            formData.status === "published" ? formData.publishedAt : null,
         }),
       });
 
@@ -539,6 +543,32 @@ export default function NewBlogPostPage() {
               ))}
             </select>
           </div>
+
+          {/* Published At Date (for scheduling) */}
+          {formData.status === "published" && (
+            <div>
+              <label
+                htmlFor="publishedAt"
+                className="block text-sm font-medium text-foreground mb-2"
+              >
+                Date de publication
+              </label>
+              <input
+                type="date"
+                id="publishedAt"
+                name="publishedAt"
+                value={formData.publishedAt}
+                onChange={handleChange}
+                className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <p className="mt-1 text-xs text-muted-foreground">
+                {new Date(formData.publishedAt) >
+                new Date(new Date().toISOString().split("T")[0])
+                  ? "📅 Cet article sera programmé pour publication à cette date"
+                  : "L'article sera publié immédiatement"}
+              </p>
+            </div>
+          )}
 
           {/* Meta Description (SEO) */}
           <div>
