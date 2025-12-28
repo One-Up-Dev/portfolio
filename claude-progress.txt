@@ -1162,3 +1162,91 @@ Many remaining failing tests require features not yet implemented:
 4. Add auto-save functionality for blog editor
 5. Implement filter persistence in URL query params
 6. Test more style and accessibility features
+
+## Session 27 (2024-12-28)
+- **MAJOR MILESTONE: Implemented real SQLite database with Drizzle ORM**
+- 0-Architecture test now passing - database gate unlocked
+
+### Database Implementation:
+- Created db/schema.ts with all 9 tables from app_spec.txt:
+  - users (admin authentication)
+  - projects (portfolio projects)
+  - blogPosts (blog articles)
+  - skills (competencies)
+  - mediaLibrary (uploaded files)
+  - pageViews (analytics)
+  - contactMessages (contact form)
+  - aiGenerations (AI content tracking)
+  - siteSettings (key-value config)
+- Created db/index.ts with drizzle/better-sqlite3 connection
+- Created drizzle.config.ts for schema management
+- Created db/seed.ts to populate initial data:
+  - Admin user: admin@oneup.dev / Admin123!
+  - 5 sample projects with technologies and descriptions
+  - 3 sample blog posts (all published)
+  - 20 skills across 4 categories (frontend, backend, outils, soft_skills)
+
+### API Routes Updated:
+- /api/admin/projects - GET/POST with real database queries
+- /api/admin/blog - GET/POST with real database queries
+- /api/projects - Public GET (visible projects only)
+- /api/projects/[slug] - Single project with view count increment
+- /api/blog - Public GET (published posts only)
+- /api/blog/[slug] - Single post with view count increment
+- /api/skills - Skills grouped by category
+
+### Frontend Pages Updated:
+- /projets - Now fetches from /api/projects
+- /projets/[slug] - Now fetches from /api/projects/[slug]
+- /blog - Now fetches from /api/blog
+- /blog/[slug] - Now fetches from /api/blog/[slug]
+- /admin dashboard - Now fetches real counts from admin APIs
+
+### Removed from Public Pages:
+- All demoProjects arrays
+- All localStorage.getItem/setItem for data storage
+- All demoBlogPosts arrays
+
+### Verification:
+- Tested /api/projects - returns 5 projects from database
+- Tested /api/blog - returns 3 published blog posts
+- Tested /projets page - displays all 5 projects with real data
+- Tested /blog page - displays all 3 blog posts with real data
+- Screenshots captured: projects-page-database.jpeg, blog-page-database.jpeg
+
+### New Test Passing (Session 27):
+- 0-Architecture: DATABASE GATE test
+
+### Current Status:
+- 193/276 tests passing (69.9%)
+- Real SQLite database operational at data/portfolio.db
+- All public pages fetching real data from API
+- Admin API routes using database queries
+- Some admin pages still have demoProjects (admin/projets, admin/projets/[id]/edit)
+
+### Code Files Created/Modified:
+- NEW: db/schema.ts, db/index.ts, db/seed.ts
+- NEW: drizzle.config.ts
+- NEW: src/app/api/projects/route.ts, [slug]/route.ts
+- NEW: src/app/api/blog/route.ts, [slug]/route.ts
+- NEW: src/app/api/skills/route.ts
+- MODIFIED: src/app/api/admin/projects/route.ts (real DB)
+- MODIFIED: src/app/api/admin/blog/route.ts (real DB)
+- MODIFIED: src/app/projets/page.tsx (API fetch)
+- MODIFIED: src/app/projets/[slug]/page.tsx (API fetch)
+- MODIFIED: src/app/blog/page.tsx (API fetch)
+- MODIFIED: src/app/blog/[slug]/page.tsx (API fetch)
+- MODIFIED: src/app/admin/page.tsx (API fetch for stats)
+
+### Remaining Admin Pages to Update:
+- src/app/admin/projets/page.tsx - still has demoProjects
+- src/app/admin/projets/[id]/edit/page.tsx - still has demoProjects
+- Other admin pages may still use localStorage
+
+### Next Steps for Future Sessions:
+1. Update remaining admin pages to use real database
+2. Implement media upload with file type/size validation
+3. Add timeline component to About page
+4. Implement pagination on blog/projects pages
+5. Add auto-save functionality for blog editor
+6. Implement filter persistence in URL query params
