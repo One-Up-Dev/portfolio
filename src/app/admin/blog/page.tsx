@@ -58,6 +58,18 @@ export default function AdminBlogPage() {
   useEffect(() => {
     const loadPosts = () => {
       try {
+        // Load view counts from localStorage
+        const viewCountsStr = localStorage.getItem("blog_view_counts");
+        const viewCounts: Record<string, number> = viewCountsStr
+          ? JSON.parse(viewCountsStr)
+          : {};
+
+        // Apply real view counts to demo posts
+        const demoWithViews = demoPosts.map((p) => ({
+          ...p,
+          views: viewCounts[p.id] !== undefined ? viewCounts[p.id] : p.views,
+        }));
+
         const savedPosts = localStorage.getItem("demo_blog_posts");
         if (savedPosts) {
           const parsed = JSON.parse(savedPosts);
@@ -82,11 +94,16 @@ export default function AdminBlogPage() {
                 post.publishDate ||
                 post.createdAt?.split("T")[0] ||
                 new Date().toISOString().split("T")[0],
-              views: post.views || 0,
+              views:
+                viewCounts[post.id] !== undefined
+                  ? viewCounts[post.id]
+                  : post.views || 0,
             }),
           );
           // Combine demo posts with saved posts
-          setPosts([...demoPosts, ...formattedPosts]);
+          setPosts([...demoWithViews, ...formattedPosts]);
+        } else {
+          setPosts(demoWithViews);
         }
       } catch (error) {
         console.error("Error loading posts:", error);

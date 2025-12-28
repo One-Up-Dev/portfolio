@@ -73,11 +73,31 @@ export default function AdminProjectsPage() {
   useEffect(() => {
     const loadProjects = () => {
       try {
+        // Load view counts from localStorage
+        const viewCountsStr = localStorage.getItem("project_view_counts");
+        const viewCounts: Record<string, number> = viewCountsStr
+          ? JSON.parse(viewCountsStr)
+          : {};
+
+        // Apply real view counts to demo projects
+        const demoWithViews = demoProjects.map((p) => ({
+          ...p,
+          views: viewCounts[p.id] !== undefined ? viewCounts[p.id] : p.views,
+        }));
+
         const savedProjects = localStorage.getItem("demo_projects");
         if (savedProjects) {
           const parsed = JSON.parse(savedProjects);
+          // Apply real view counts to saved projects too
+          const savedWithViews = parsed.map((p: Project) => ({
+            ...p,
+            views:
+              viewCounts[p.id] !== undefined ? viewCounts[p.id] : p.views || 0,
+          }));
           // Combine demo projects with saved projects
-          setProjects([...demoProjects, ...parsed]);
+          setProjects([...demoWithViews, ...savedWithViews]);
+        } else {
+          setProjects(demoWithViews);
         }
       } catch (error) {
         console.error("Error loading projects:", error);

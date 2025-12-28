@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowLeft, Calendar, Clock, Tag } from "lucide-react";
 import { useParams, notFound } from "next/navigation";
 import { useState, useEffect } from "react";
+import ReactMarkdown from "react-markdown";
 
 // Demo blog posts (fallback data)
 const demoPosts = [
@@ -149,11 +150,44 @@ export default function BlogPostPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [notFoundState, setNotFoundState] = useState(false);
 
+  // Increment view count for a blog post
+  const incrementViewCount = (postId: string, isDemo: boolean) => {
+    try {
+      const viewCountsStr = localStorage.getItem("blog_view_counts");
+      const viewCounts: Record<string, number> = viewCountsStr
+        ? JSON.parse(viewCountsStr)
+        : {};
+
+      // Increment the view count
+      const currentCount = viewCounts[postId] || 0;
+      viewCounts[postId] = currentCount + 1;
+
+      localStorage.setItem("blog_view_counts", JSON.stringify(viewCounts));
+
+      // Also update the post's views in demo_blog_posts if it's a user-created post
+      if (!isDemo) {
+        const savedPosts = localStorage.getItem("demo_blog_posts");
+        if (savedPosts) {
+          const parsed = JSON.parse(savedPosts);
+          const updated = parsed.map((p: Record<string, unknown>) =>
+            p.id === postId
+              ? { ...p, views: ((p.views as number) || 0) + 1 }
+              : p,
+          );
+          localStorage.setItem("demo_blog_posts", JSON.stringify(updated));
+        }
+      }
+    } catch (error) {
+      console.error("Error incrementing view count:", error);
+    }
+  };
+
   useEffect(() => {
     setIsLoading(true);
     try {
       // First check demo posts
       let foundPost = demoPosts.find((p) => p.slug === slug);
+      let isDemo = !!foundPost;
 
       // If not in demo posts, check localStorage
       if (!foundPost) {
@@ -179,6 +213,7 @@ export default function BlogPostPage() {
                 new Date().toISOString().split("T")[0],
               readTimeMinutes: savedPost.readTime || 5,
             };
+            isDemo = false;
           }
         }
       }
@@ -188,6 +223,8 @@ export default function BlogPostPage() {
         // Only show published posts publicly
         if (foundPost.status === "published") {
           setPost(foundPost);
+          // Increment view count after loading
+          incrementViewCount(foundPost.id, isDemo);
         } else {
           // Draft posts should return 404 for public access
           setNotFoundState(true);
@@ -268,10 +305,8 @@ export default function BlogPostPage() {
         </header>
 
         {/* Content */}
-        <article className="prose prose-invert max-w-none">
-          <div className="whitespace-pre-line text-muted-foreground">
-            {post.content}
-          </div>
+        <article className="prose prose-invert max-w-none prose-headings:text-primary prose-headings:font-pixel prose-h2:text-xl prose-h2:mt-8 prose-h2:mb-4 prose-h3:text-lg prose-h3:mt-6 prose-h3:mb-3 prose-p:text-muted-foreground prose-p:leading-relaxed prose-li:text-muted-foreground prose-strong:text-foreground prose-code:bg-secondary prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-pre:bg-secondary prose-pre:border prose-pre:border-border">
+          <ReactMarkdown>{post.content}</ReactMarkdown>
         </article>
 
         {/* Share / Navigation */}

@@ -112,11 +112,44 @@ export default function ProjectDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [notFoundState, setNotFoundState] = useState(false);
 
+  // Increment view count for a project
+  const incrementViewCount = (projectId: string, isDemo: boolean) => {
+    try {
+      const viewCountsStr = localStorage.getItem("project_view_counts");
+      const viewCounts: Record<string, number> = viewCountsStr
+        ? JSON.parse(viewCountsStr)
+        : {};
+
+      // Increment the view count
+      const currentCount = viewCounts[projectId] || 0;
+      viewCounts[projectId] = currentCount + 1;
+
+      localStorage.setItem("project_view_counts", JSON.stringify(viewCounts));
+
+      // Also update the project's views in demo_projects if it's a user-created project
+      if (!isDemo) {
+        const savedProjects = localStorage.getItem("demo_projects");
+        if (savedProjects) {
+          const parsed = JSON.parse(savedProjects);
+          const updated = parsed.map((p: Record<string, unknown>) =>
+            p.id === projectId
+              ? { ...p, views: ((p.views as number) || 0) + 1 }
+              : p,
+          );
+          localStorage.setItem("demo_projects", JSON.stringify(updated));
+        }
+      }
+    } catch (error) {
+      console.error("Error incrementing view count:", error);
+    }
+  };
+
   useEffect(() => {
     const loadProject = () => {
       try {
         // First check demo projects
         let foundProject = demoProjects.find((p) => p.slug === slug);
+        let isDemo = !!foundProject;
 
         // If not found in demo, check localStorage
         if (!foundProject) {
@@ -150,12 +183,15 @@ export default function ProjectDetailPage() {
                 demoUrl: savedProject.demoUrl as string | undefined,
                 visible: savedProject.visible !== false,
               };
+              isDemo = false;
             }
           }
         }
 
         if (foundProject && foundProject.visible !== false) {
           setProject(foundProject);
+          // Increment view count after loading
+          incrementViewCount(foundProject.id, isDemo);
         } else {
           setNotFoundState(true);
         }
