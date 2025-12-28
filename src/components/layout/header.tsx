@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { Menu, X, Volume2, VolumeX, Monitor } from "lucide-react";
+import { Menu, X, Volume2, VolumeX, Monitor, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -18,8 +18,9 @@ export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [crtEnabled, setCrtEnabled] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // Load preferences from localStorage on mount
+  // Check authentication and load preferences from localStorage on mount
   useEffect(() => {
     const savedSound = localStorage.getItem("oneup-sound-enabled");
     const savedCrt = localStorage.getItem("oneup-crt-enabled");
@@ -30,6 +31,38 @@ export function Header() {
     if (savedCrt !== null) {
       setCrtEnabled(savedCrt === "true");
     }
+
+    // Check if user is authenticated
+    const checkAuth = () => {
+      const sessionData = localStorage.getItem("oneup-admin-session");
+      if (sessionData) {
+        try {
+          const session = JSON.parse(sessionData);
+          // Check if session is valid (not expired)
+          if (session.expiresAt && new Date(session.expiresAt) > new Date()) {
+            setIsAuthenticated(true);
+          } else {
+            setIsAuthenticated(false);
+          }
+        } catch {
+          setIsAuthenticated(false);
+        }
+      } else {
+        setIsAuthenticated(false);
+      }
+    };
+
+    checkAuth();
+
+    // Listen for storage changes (in case of logout in another tab)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "oneup-admin-session") {
+        checkAuth();
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
   // Save sound preference to localStorage
@@ -117,6 +150,18 @@ export function Header() {
             <Monitor className="h-5 w-5" />
           </button>
 
+          {/* Admin Button - Only visible when authenticated */}
+          {isAuthenticated && (
+            <Link
+              href="/admin"
+              className="hidden rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 md:inline-flex md:items-center md:gap-1.5"
+              aria-label="Accéder à l'administration"
+            >
+              <Settings className="h-4 w-4" />
+              <span>Admin</span>
+            </Link>
+          )}
+
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -147,6 +192,17 @@ export function Header() {
                 {item.label}
               </Link>
             ))}
+            {/* Admin link in mobile menu - Only visible when authenticated */}
+            {isAuthenticated && (
+              <Link
+                href="/admin"
+                onClick={() => setIsMenuOpen(false)}
+                className="mt-2 flex items-center gap-2 border-t border-border pt-4 text-sm font-medium text-primary transition-colors hover:text-primary/80"
+              >
+                <Settings className="h-4 w-4" />
+                <span>Administration</span>
+              </Link>
+            )}
           </div>
         </nav>
       )}
