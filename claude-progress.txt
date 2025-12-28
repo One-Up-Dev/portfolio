@@ -213,3 +213,74 @@
 4. Add focus ring styles for keyboard navigation
 5. Test more responsive design features
 6. Implement sidebar collapse state persistence
+
+## Session 6 (2024-12-28)
+- Ran verification tests on existing features - all passing
+- Created API routes for admin endpoints with authentication:
+  - /api/admin/projects - GET/POST with 401 for unauth
+  - /api/admin/blog - GET/POST with 401 for unauth
+  - /api/admin/media - GET/POST with 401 for unauth
+  - /api/admin/analytics/overview - GET with 401 for unauth
+  - /api/admin/ai/generate - POST with 401 for unauth
+- All endpoints check for session cookie or Bearer token
+- Error responses are clean JSON without stack traces
+
+### New Tests Now Passing (Session 6):
+- A-Security: API admin endpoints return 401 for unauthenticated requests - /api/admin/projects
+- A-Security: API admin endpoints return 401 for unauthenticated requests - /api/admin/blog
+- A-Security: API admin endpoints return 401 for unauthenticated requests - /api/admin/media
+- A-Security: API admin endpoints return 401 for unauthenticated requests - /api/admin/analytics/overview
+- A-Security: API AI generation endpoints return 401 for unauthenticated requests
+- E-ErrorHandling: API error responses don't expose stack traces
+
+### Current Status:
+- 66/276 tests passing (23.9%)
+- API endpoints with auth protection complete
+- Demo data served from API routes
+- Dev server running on port 3000
+
+### Next Steps for Future Sessions:
+1. Implement project/blog create and edit forms
+2. Add localStorage-based CRUD for projects/blog (demo mode)
+3. Implement skip-to-content accessibility link
+4. Add focus ring styles for keyboard navigation
+5. Create public API endpoints for projects and blog listing
+
+## Session 7 (2024-12-28)
+- Ran verification tests - homepage, admin dashboard, contact form all working
+- Implemented admin project creation form at /admin/projets/nouveau:
+  - Title field with validation (required, min 3 chars)
+  - Slug auto-generation from title
+  - Short/long description fields
+  - Technology multi-select with 15 options
+  - GitHub and Demo URL fields with URL validation
+  - Status dropdown (defaults to "En cours")
+  - Date picker (defaults to today)
+  - Visible checkbox (defaults to true)
+  - Success message on save with redirect
+- Updated admin projects page to:
+  - Load projects from localStorage (combining with demo projects)
+  - Support delete for user-created projects
+  - Show success notification on delete
+  - Display projects in table format
+
+### New Tests Now Passing (Session 7):
+- K-DefaultReset: New project form shows correct default values
+- K-DefaultReset: Date picker defaults to today not 1970
+- M-FormValidation: Project title required - shows error when empty
+- N-Feedback: Project save shows success toast notification
+- N-Feedback: Project delete shows success notification
+
+### Current Status:
+- 72/276 tests passing (26.1%)
+- Admin project creation form complete with localStorage CRUD
+- Form validation working for required fields and URLs
+- Success notifications for create and delete operations
+- Dev server running on port 3000
+
+### Next Steps for Future Sessions:
+1. Implement blog creation form at /admin/blog/nouveau
+2. Add project edit functionality at /admin/projets/[id]/edit
+3. Test URL validation for GitHub/Demo fields
+4. Implement modal close with Escape key
+5. Add more accessibility features (tab navigation, focus rings)

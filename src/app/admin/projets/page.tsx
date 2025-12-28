@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 // Demo projects data
 const demoProjects = [
@@ -47,6 +47,17 @@ const demoProjects = [
   },
 ];
 
+interface Project {
+  id: string;
+  title: string;
+  slug: string;
+  status: string;
+  visible: boolean;
+  technologies: string[];
+  createdAt: string;
+  views: number;
+}
+
 const statusLabels: Record<string, { label: string; color: string }> = {
   en_cours: { label: "En cours", color: "bg-yellow-500/20 text-yellow-500" },
   termine: { label: "Terminé", color: "bg-green-500/20 text-green-500" },
@@ -54,17 +65,69 @@ const statusLabels: Record<string, { label: string; color: string }> = {
 };
 
 export default function AdminProjectsPage() {
-  const [projects] = useState(demoProjects);
+  const [projects, setProjects] = useState<Project[]>(demoProjects);
   const [showDeleteModal, setShowDeleteModal] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState("");
+
+  // Load projects from localStorage on mount
+  useEffect(() => {
+    const loadProjects = () => {
+      try {
+        const savedProjects = localStorage.getItem("demo_projects");
+        if (savedProjects) {
+          const parsed = JSON.parse(savedProjects);
+          // Combine demo projects with saved projects
+          setProjects([...demoProjects, ...parsed]);
+        }
+      } catch (error) {
+        console.error("Error loading projects:", error);
+      }
+    };
+    loadProjects();
+  }, []);
 
   const handleDelete = (id: string) => {
-    // Demo: just close modal
+    // Check if it's a demo project (IDs 1-4 are demo)
+    const isDemoProject = ["1", "2", "3", "4"].includes(id);
+
+    if (isDemoProject) {
+      // For demo projects, just close the modal (don't actually delete)
+      setShowDeleteModal(null);
+      return;
+    }
+
+    // Delete from localStorage
+    try {
+      const savedProjects = localStorage.getItem("demo_projects");
+      if (savedProjects) {
+        const parsed = JSON.parse(savedProjects);
+        const filtered = parsed.filter((p: Project) => p.id !== id);
+        localStorage.setItem("demo_projects", JSON.stringify(filtered));
+
+        // Update state
+        setProjects([...demoProjects, ...filtered]);
+        setSuccessMessage("Projet supprimé avec succès!");
+        setTimeout(() => setSuccessMessage(""), 3000);
+      }
+    } catch (error) {
+      console.error("Error deleting project:", error);
+    }
+
     setShowDeleteModal(null);
-    // In real app, would delete project
   };
 
   return (
     <div className="space-y-6">
+      {/* Success Message */}
+      {successMessage && (
+        <div
+          className="bg-green-500/20 border border-green-500/50 text-green-500 rounded-lg p-4"
+          role="alert"
+        >
+          {successMessage}
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
