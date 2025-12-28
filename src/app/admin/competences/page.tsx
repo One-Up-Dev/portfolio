@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useToast } from "@/components/ui/retro-toast";
 
 interface Skill {
   id: string;
@@ -50,6 +51,7 @@ const iconOptions = [
 ];
 
 export default function AdminSkillsPage() {
+  const { addToast } = useToast();
   const [skills, setSkills] = useState<SkillsData>({
     frontend: [],
     backend: [],
@@ -98,6 +100,7 @@ export default function AdminSkillsPage() {
       }
     } catch (error) {
       console.error("Error fetching skills:", error);
+      addToast("Erreur lors du chargement des compétences", "error");
       setErrorMessage("Erreur lors du chargement des compétences");
       setTimeout(() => setErrorMessage(""), 3000);
     } finally {
@@ -155,11 +158,13 @@ export default function AdminSkillsPage() {
         setErrorMessage("");
 
         // Show success message
+        addToast("Compétence ajoutée avec succès !", "success");
         setSuccessMessage("Compétence ajoutée avec succès !");
         setTimeout(() => setSuccessMessage(""), 3000);
       }
     } catch (error) {
       console.error("Error creating skill:", error);
+      addToast("Erreur lors de la création de la compétence", "error");
       setErrorMessage("Erreur lors de la création de la compétence");
     } finally {
       setSaving(false);
@@ -185,10 +190,12 @@ export default function AdminSkillsPage() {
         [category]: prev[category].filter((s) => s.id !== skillId),
       }));
 
+      addToast("Compétence supprimée avec succès !", "success");
       setSuccessMessage("Compétence supprimée avec succès !");
       setTimeout(() => setSuccessMessage(""), 3000);
     } catch (error) {
       console.error("Error deleting skill:", error);
+      addToast("Erreur lors de la suppression de la compétence", "error");
       setErrorMessage("Erreur lors de la suppression de la compétence");
       setTimeout(() => setErrorMessage(""), 3000);
     }
@@ -303,10 +310,12 @@ export default function AdminSkillsPage() {
         throw new Error("Failed to reorder skills");
       }
 
+      addToast("Ordre des compétences mis à jour !", "success");
       setSuccessMessage("Ordre des compétences mis à jour !");
       setTimeout(() => setSuccessMessage(""), 3000);
     } catch (error) {
       console.error("Error reordering skills:", error);
+      addToast("Erreur lors de la réorganisation", "error");
       setErrorMessage("Erreur lors de la réorganisation");
       setTimeout(() => setErrorMessage(""), 3000);
       // Refetch to reset state

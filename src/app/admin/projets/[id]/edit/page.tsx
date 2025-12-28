@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useToast } from "@/components/ui/retro-toast";
 
 // Technology options for multi-select
 const technologyOptions = [
@@ -52,6 +53,7 @@ export default function EditProjectPage() {
   const router = useRouter();
   const params = useParams();
   const projectId = params.id as string;
+  const { addToast } = useToast();
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -299,22 +301,25 @@ export default function EditProjectPage() {
       });
 
       if (response.ok) {
+        addToast("Projet modifié avec succès!", "success");
         setSuccessMessage("Projet modifié avec succès!");
         setTimeout(() => {
           router.push("/admin/projets");
         }, 1500);
       } else {
         const data = await response.json();
+        const errorMessage =
+          data.message || "Erreur lors de la modification du projet";
+        addToast(errorMessage, "error");
         if (data.message === "Ce slug existe déjà") {
           setErrors({ slug: "Ce slug existe déjà" });
         } else {
-          setErrors({
-            form: data.message || "Erreur lors de la modification du projet",
-          });
+          setErrors({ form: errorMessage });
         }
       }
     } catch (error) {
       console.error("Error updating project:", error);
+      addToast("Erreur lors de la modification du projet", "error");
       setErrors({ form: "Erreur lors de la modification du projet" });
     } finally {
       setIsSubmitting(false);
@@ -719,7 +724,10 @@ export default function EditProjectPage() {
                 <p className="text-muted-foreground">Créé le</p>
                 <p className="text-foreground">
                   {formData.createdAt
-                    ? new Date(formData.createdAt).toLocaleDateString("fr-FR")
+                    ? new Date(formData.createdAt).toLocaleString("fr-FR", {
+                        dateStyle: "short",
+                        timeStyle: "medium",
+                      })
                     : "-"}
                 </p>
               </div>
@@ -727,7 +735,10 @@ export default function EditProjectPage() {
                 <p className="text-muted-foreground">Modifié le</p>
                 <p className="text-foreground">
                   {formData.updatedAt
-                    ? new Date(formData.updatedAt).toLocaleDateString("fr-FR")
+                    ? new Date(formData.updatedAt).toLocaleString("fr-FR", {
+                        dateStyle: "short",
+                        timeStyle: "medium",
+                      })
                     : "-"}
                 </p>
               </div>

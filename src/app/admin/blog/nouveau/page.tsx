@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+import { useToast } from "@/components/ui/retro-toast";
 
 // Default tag options for multi-select (common blog tags)
 const defaultTagOptions = [
@@ -60,6 +61,7 @@ interface BlogFormData {
 
 export default function NewBlogPostPage() {
   const router = useRouter();
+  const { addToast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [autoSlug, setAutoSlug] = useState(true);
@@ -234,15 +236,20 @@ export default function NewBlogPostPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
+        const errorMessage =
+          errorData.message || "Erreur lors de la création de l'article";
+        // Show error toast for user feedback
+        addToast(errorMessage, "error");
         if (errorData.message?.includes("slug already exists")) {
           setErrors({ slug: "Ce slug existe déjà" });
           setIsSubmitting(false);
           return;
         }
-        throw new Error(errorData.message || "Failed to create blog post");
+        throw new Error(errorMessage);
       }
 
-      // Show success message
+      // Show success toast
+      addToast("Article créé avec succès!", "success");
       setSuccessMessage("Article créé avec succès!");
 
       // Redirect after delay
@@ -251,6 +258,7 @@ export default function NewBlogPostPage() {
       }, 1500);
     } catch (error) {
       console.error("Error creating blog post:", error);
+      addToast("Erreur lors de la création de l'article", "error");
       setErrors({ form: "Erreur lors de la création de l'article" });
     } finally {
       setIsSubmitting(false);

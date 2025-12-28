@@ -19,7 +19,10 @@ export default function HomePage() {
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
-      <section className="relative flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center px-4 py-20 overflow-hidden">
+      <section
+        id="hero"
+        className="relative flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center px-4 py-20 overflow-hidden"
+      >
         {/* Miyazaki-style nature GIF background with parallax */}
         <div
           className="absolute inset-0 -z-20"
@@ -84,16 +87,23 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Scroll indicator */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
-          <div className="h-6 w-4 rounded-full border-2 border-muted-foreground p-1">
+        {/* Scroll indicator - clickable anchor link */}
+        <a
+          href="#specialites"
+          className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce cursor-pointer"
+          aria-label="Défiler vers les spécialités"
+        >
+          <div className="h-6 w-4 rounded-full border-2 border-muted-foreground p-1 transition-colors hover:border-primary">
             <div className="h-1.5 w-1 rounded-full bg-muted-foreground" />
           </div>
-        </div>
+        </a>
       </section>
 
       {/* Features Section */}
-      <section className="border-t border-border bg-card py-20">
+      <section
+        id="specialites"
+        className="border-t border-border bg-card py-20"
+      >
         <div className="container mx-auto max-w-6xl px-4">
           <h2 className="mb-12 text-center font-pixel text-xl text-primary">
             Spécialités
@@ -140,7 +150,7 @@ export default function HomePage() {
       </section>
 
       {/* CTA Section */}
-      <section className="border-t border-border py-20">
+      <section id="cta" className="border-t border-border py-20">
         <div className="container mx-auto max-w-4xl px-4 text-center">
           <h2 className="mb-4 text-2xl font-bold">Prêt à collaborer ?</h2>
           <p className="mb-8 text-muted-foreground">

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useToast } from "@/components/ui/retro-toast";
 
 // Tag options for multi-select (common blog tags)
 const tagOptions = [
@@ -56,6 +57,7 @@ export default function EditBlogPostPage() {
   const router = useRouter();
   const params = useParams();
   const postId = params.id as string;
+  const { addToast } = useToast();
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -224,17 +226,17 @@ export default function EditBlogPostPage() {
     }
   }, [formData, hasChangesSinceLastSave, postId]);
 
-  // Auto-save effect - runs every 30 seconds
+  // Auto-save effect - runs every 5 seconds
   useEffect(() => {
     // Clear any existing timer
     if (autoSaveTimerRef.current) {
       clearInterval(autoSaveTimerRef.current);
     }
 
-    // Set up auto-save timer (every 30 seconds)
+    // Set up auto-save timer (every 5 seconds)
     autoSaveTimerRef.current = setInterval(() => {
       performAutoSave();
-    }, 30000);
+    }, 5000);
 
     // Cleanup on unmount
     return () => {
@@ -411,15 +413,19 @@ export default function EditBlogPostPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
+        const errorMessage =
+          errorData.message || "Erreur lors de la modification de l'article";
+        addToast(errorMessage, "error");
         if (errorData.message?.includes("slug already exists")) {
           setErrors({ slug: "Ce slug existe déjà" });
           setIsSubmitting(false);
           return;
         }
-        throw new Error(errorData.message || "Failed to update blog post");
+        throw new Error(errorMessage);
       }
 
-      // Show success message
+      // Show success toast and message
+      addToast("Article modifié avec succès!", "success");
       setSuccessMessage("Article modifié avec succès!");
 
       // Redirect after delay
@@ -428,6 +434,7 @@ export default function EditBlogPostPage() {
       }, 1500);
     } catch (error) {
       console.error("Error updating post:", error);
+      addToast("Erreur lors de la modification de l'article", "error");
       setErrors({ form: "Erreur lors de la modification de l'article" });
     } finally {
       setIsSubmitting(false);

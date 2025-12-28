@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+import { useToast } from "@/components/ui/retro-toast";
 
 // Default technology options for multi-select
 const defaultTechnologyOptions = [
@@ -62,11 +63,11 @@ interface ProjectFormData {
 
 export default function NewProjectPage() {
   const router = useRouter();
+  const { addToast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [autoSlug, setAutoSlug] = useState(true);
   const [technologyOptions] = useState<string[]>(defaultTechnologyOptions);
-  const [successMessage, setSuccessMessage] = useState("");
 
   // Form data with default values
   const [formData, setFormData] = useState<ProjectFormData>({
@@ -206,8 +207,8 @@ export default function NewProjectPage() {
       });
 
       if (response.ok) {
-        // Show success message
-        setSuccessMessage("Projet créé avec succès!");
+        // Show success toast
+        addToast("Projet créé avec succès!", "success");
 
         // Redirect after delay
         setTimeout(() => {
@@ -215,16 +216,19 @@ export default function NewProjectPage() {
         }, 1500);
       } else {
         const data = await response.json();
+        const errorMessage =
+          data.message || "Erreur lors de la création du projet";
+        // Show error toast for user feedback
+        addToast(errorMessage, "error");
         if (data.message === "Ce slug existe déjà") {
           setErrors({ slug: "Ce slug existe déjà" });
         } else {
-          setErrors({
-            form: data.message || "Erreur lors de la création du projet",
-          });
+          setErrors({ form: errorMessage });
         }
       }
     } catch (error) {
       console.error("Error creating project:", error);
+      addToast("Erreur lors de la création du projet", "error");
       setErrors({ form: "Erreur lors de la création du projet" });
     } finally {
       setIsSubmitting(false);
@@ -249,16 +253,6 @@ export default function NewProjectPage() {
           </p>
         </div>
       </div>
-
-      {/* Success Message */}
-      {successMessage && (
-        <div
-          className="bg-green-500/20 border border-green-500/50 text-green-500 rounded-lg p-4"
-          role="alert"
-        >
-          {successMessage}
-        </div>
-      )}
 
       {/* Form Error */}
       {errors.form && (
