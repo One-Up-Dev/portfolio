@@ -2049,3 +2049,36 @@ Many remaining failing tests require features not yet implemented:
 2. Add media upload progress indicator
 3. Implement analytics date range filter
 4. Test remaining concurrency scenarios
+
+### Additional Tests Verified (Session 39 continued):
+
+6. **R-Concurrency: Viewing record while another deletes it - graceful handling**:
+   - Created test project "DELETE_TEST_PROJECT_VIEW"
+   - Navigated to project detail page
+   - Deleted project via API (simulating another tab/user)
+   - Tried navigating back to the deleted project URL
+   - Verified graceful 404 error page with friendly message
+   - Has "Retour à l'accueil" and "Page précédente" options
+
+7. **R-Concurrency: API response after navigation doesn't update wrong page**:
+   - Started navigating to /projets/portfolio-retro
+   - Quickly navigated to /projets/n8n-automation before first load completed
+   - Verified page correctly shows "Automatisation n8n" (not stale data from first request)
+   - No data mixup between navigation requests
+
+### Final Session 39 Status:
+- 258/277 tests passing (93.1%)
+- +7 tests passing this session (from 251 to 258)
+- All concurrency tests now passing except: Session refresh during load, Media upload while browsing
+
+### Remaining Failing Tests (19):
+- F-UIBackend: Project form technologies dropdown from database
+- F-UIBackend: Media library images from Vercel Blob URLs
+- I-Idempotency: Multiple file upload clicks don't duplicate
+- J-DataCleanup: Deleted media removes file, project with images cleanup, bulk delete, analytics cleanup, orphaned tags
+- M-FormValidation: Server-side validation, duplicate email
+- N-Feedback: Media upload progress indicator
+- Q-Temporal: Scheduled posts publish, analytics date range
+- R-Concurrency: Session refresh during load, media upload while browsing
+- S-ExportImport: Analytics CSV export, import restore
+- T-Performance: Load tests with 20+ projects, 50+ articles
