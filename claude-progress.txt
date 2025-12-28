@@ -612,3 +612,45 @@
 3. Implement duplicate slug detection
 4. Add project/blog timestamps tracking
 5. Test responsive design features
+
+## Session 15 (2024-12-28)
+- Ran verification tests - homepage and projects page working correctly
+- Implemented duplicate project workflow:
+  - Added "📋" duplicate button in admin projects table actions column
+  - Clicking duplicate creates a copy with "(Copie)" suffix in title
+  - New slug generated with timestamp to avoid conflicts
+  - Duplicate saves to localStorage immediately
+  - Success message "Projet dupliqué avec succès!" displayed
+  - Can edit the duplicated project immediately
+- Verified submit button disabled during form processing:
+  - Submit button already had isSubmitting state implemented
+  - Button shows disabled state with opacity reduction
+  - Loading indicator (⏳) and "Création..." text during submit
+  - Button re-enabled after successful submission
+  - Both project and blog forms have this feature
+- Implemented toggle project visibility workflow:
+  - Made visibility column (✓ Oui / ✗ Non) clickable buttons
+  - Clicking toggles visibility for user-created projects
+  - Demo projects show message that they can't be modified
+  - Success message shows "Projet masqué avec succès!" or "Projet rendu visible avec succès!"
+  - Hidden projects immediately disappear from public /projets page
+  - Changes persist in localStorage
+
+### New Tests Now Passing (Session 15):
+- D-Workflow: Duplicate project workflow
+- D-Workflow: Toggle project visibility workflow
+- I-Idempotency: Submit button disabled during form processing
+
+### Current Status:
+- 115/276 tests passing (41.7%)
+- Duplicate project feature complete
+- Visibility toggle feature complete
+- Submit button disabled state already implemented
+- Dev server running on port 3000
+
+### Next Steps for Future Sessions:
+1. Add skills creation workflow with localStorage
+2. Test more form validation scenarios
+3. Implement JSON export functionality
+4. Add project/blog timestamps tracking
+5. Test responsive design features
