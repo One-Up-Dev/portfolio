@@ -831,3 +831,39 @@
 3. Test media upload functionality
 4. Implement remaining style tests
 5. Test blog sorting and pagination
+
+## Session 20 (2024-12-28)
+- Ran verification tests - homepage, admin login, and dashboard working correctly
+- Started dev server (npm run dev) - running on port 3000
+- Verified existing functionality still working:
+  - Admin login with demo credentials
+  - Dashboard displays with correct project count (5)
+  - Navigation between admin pages
+- Tested and verified several features:
+  - Blog filter by tag works correctly (clicking "n8n" shows only n8n article)
+  - Skip to main content link works (Tab → click → focus moves to main)
+  - Date picker defaults to today (2025-12-28), not 1970
+  - Filter with no results shows proper message and "Réinitialiser les filtres" button
+- Tested complete delete-dashboard workflow:
+  - Created "TEST_DELETE_PROJECT_12345" project
+  - Dashboard count increased from 5 to 6
+  - Deleted the project via admin
+  - Navigated to dashboard - count decreased back to 5
+  - Verified deleted project returns 404 when accessed by direct URL
+
+### New Tests Now Passing (Session 20):
+- J-DataCleanup: Deleted project updates dashboard statistics
+- J-DataCleanup: Deleted items cannot be accessed by cached URLs
+
+### Current Status:
+- 161/276 tests passing (58.3%)
+- Dashboard statistics properly sync with localStorage changes
+- Deleted items correctly return 404
+- Dev server running on port 3000
+
+### Next Steps for Future Sessions:
+1. Test more accessibility features (images alt text, color contrast)
+2. Test form validation scenarios (URL validation, password requirements)
+3. Test media upload functionality
+4. Implement remaining style tests
+5. Test blog sorting and pagination
