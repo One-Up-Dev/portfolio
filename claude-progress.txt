@@ -1117,3 +1117,10 @@ Many remaining failing tests require features not yet implemented:
 3. Implement pagination on blog/projects pages
 4. Add auto-save functionality for blog editor
 5. Implement filter persistence in URL query params
+
+### Additional Verifications Done (Session 25):
+- CRT effect toggle works (button toggles between "Activer" and "Désactiver")
+- CRT effect CSS implemented with scanlines and vignette overlay
+- Footer displays correctly with social links and "Made with Next.js" text
+- Analytics page loads with demo statistics
+- Admin dashboard and all navigation working correctly
