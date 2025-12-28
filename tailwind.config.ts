@@ -57,8 +57,10 @@ const config: Config = {
       },
       fontFamily: {
         pixel: ["'Press Start 2P'", "monospace"],
-        mono: ["'JetBrains Mono'", "monospace"],
-        sans: ["'Inter'", "system-ui", "sans-serif"],
+        mono: ["'IBM Plex Mono'", "monospace"],
+        sans: ["'Libre Baskerville'", "Georgia", "serif"],
+        heading: ["'Poppins'", "system-ui", "sans-serif"],
+        body: ["'Libre Baskerville'", "Georgia", "serif"],
       },
       animation: {
         "pixel-fade": "pixelFade 0.3s ease-in-out",

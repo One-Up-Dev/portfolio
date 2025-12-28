@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { ArrowLeft, Calendar, Clock, Tag } from "lucide-react";
 import { useParams, notFound } from "next/navigation";
-import { useState, useEffect } from "react";
-import ReactMarkdown from "react-markdown";
+import { useState, useEffect, useMemo } from "react";
+import DOMPurify from "dompurify";
 
 interface BlogPost {
   id: string;
@@ -137,9 +137,36 @@ export default function BlogPostPage() {
         </header>
 
         {/* Content */}
-        <article className="prose prose-invert max-w-none prose-headings:text-primary prose-headings:font-pixel prose-h2:text-xl prose-h2:mt-8 prose-h2:mb-4 prose-h3:text-lg prose-h3:mt-6 prose-h3:mb-3 prose-p:text-muted-foreground prose-p:leading-relaxed prose-li:text-muted-foreground prose-strong:text-foreground prose-code:bg-secondary prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-pre:bg-secondary prose-pre:border prose-pre:border-border">
-          <ReactMarkdown>{post.content || ""}</ReactMarkdown>
-        </article>
+        <article
+          className="prose prose-invert max-w-none prose-headings:text-primary prose-headings:font-heading prose-h2:text-xl prose-h2:mt-8 prose-h2:mb-4 prose-h3:text-lg prose-h3:mt-6 prose-h3:mb-3 prose-p:text-muted-foreground prose-p:leading-relaxed prose-p:font-body prose-li:text-muted-foreground prose-strong:text-foreground prose-code:bg-secondary prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:font-mono prose-pre:bg-secondary prose-pre:border prose-pre:border-border prose-pre:font-mono"
+          dangerouslySetInnerHTML={{
+            __html: DOMPurify.sanitize(post.content || "", {
+              ALLOWED_TAGS: [
+                "h1",
+                "h2",
+                "h3",
+                "h4",
+                "h5",
+                "h6",
+                "p",
+                "br",
+                "strong",
+                "em",
+                "ul",
+                "ol",
+                "li",
+                "a",
+                "code",
+                "pre",
+                "blockquote",
+                "img",
+                "span",
+                "div",
+              ],
+              ALLOWED_ATTR: ["href", "src", "alt", "class", "target", "rel"],
+            }),
+          }}
+        />
 
         {/* Share / Navigation */}
         <footer className="mt-12 border-t border-border pt-8">
