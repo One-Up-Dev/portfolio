@@ -23,28 +23,6 @@ const defaultTagOptions = [
   "freelance",
 ];
 
-// Function to get all unique tags from existing blog posts
-function getExistingTags(): string[] {
-  if (typeof window === "undefined") return [];
-
-  try {
-    const existingPosts = JSON.parse(
-      localStorage.getItem("demo_blog_posts") || "[]",
-    );
-
-    const allTags = new Set<string>();
-    existingPosts.forEach((post: { tags?: string[] }) => {
-      if (post.tags && Array.isArray(post.tags)) {
-        post.tags.forEach((tag: string) => allTags.add(tag));
-      }
-    });
-
-    return Array.from(allTags);
-  } catch {
-    return [];
-  }
-}
-
 // Status options
 const statusOptions = [
   { value: "draft", label: "Brouillon" },
@@ -63,11 +41,6 @@ function generateSlug(title: string): string {
     .trim();
 }
 
-// Get today's date in YYYY-MM-DD format
-function getTodayDate(): string {
-  return new Date().toISOString().split("T")[0];
-}
-
 // Calculate read time based on word count
 function calculateReadTime(content: string): number {
   const wordsPerMinute = 200;
@@ -82,7 +55,6 @@ interface BlogFormData {
   content: string;
   tags: string[];
   status: string;
-  publishDate: string;
   metaDescription: string;
 }
 
@@ -95,12 +67,29 @@ export default function NewBlogPostPage() {
   const [customTag, setCustomTag] = useState("");
   const [tagOptions, setTagOptions] = useState<string[]>(defaultTagOptions);
 
-  // Load existing tags from localStorage on mount
+  // Load existing tags from API on mount
   useEffect(() => {
-    const existingTags = getExistingTags();
-    // Merge default tags with existing tags (removing duplicates)
-    const allTags = [...new Set([...defaultTagOptions, ...existingTags])];
-    setTagOptions(allTags);
+    const loadExistingTags = async () => {
+      try {
+        const response = await fetch("/api/admin/blog", {
+          credentials: "include",
+        });
+        if (response.ok) {
+          const data = await response.json();
+          const posts = data.data || [];
+          const allTags = new Set<string>(defaultTagOptions);
+          posts.forEach((post: { tags?: string[] }) => {
+            if (post.tags && Array.isArray(post.tags)) {
+              post.tags.forEach((tag: string) => allTags.add(tag));
+            }
+          });
+          setTagOptions(Array.from(allTags));
+        }
+      } catch (error) {
+        console.error("Error loading existing tags:", error);
+      }
+    };
+    loadExistingTags();
   }, []);
 
   // Form data with default values
@@ -111,7 +100,6 @@ export default function NewBlogPostPage() {
     content: "",
     tags: [],
     status: "draft", // Default to draft
-    publishDate: getTodayDate(), // Default to today
     metaDescription: "",
   });
 
@@ -229,40 +217,30 @@ export default function NewBlogPostPage() {
     setIsSubmitting(true);
 
     try {
-      // Get existing posts from localStorage
-      const existingPosts = JSON.parse(
-        localStorage.getItem("demo_blog_posts") || "[]",
-      );
+      const response = await fetch("/api/admin/blog", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          title: formData.title,
+          slug: formData.slug,
+          excerpt: formData.excerpt,
+          content: formData.content,
+          tags: formData.tags,
+          status: formData.status,
+          metaDescription: formData.metaDescription,
+        }),
+      });
 
-      // Check for duplicate slug
-      if (
-        existingPosts.some((p: { slug: string }) => p.slug === formData.slug)
-      ) {
-        setErrors({ slug: "Ce slug existe déjà" });
-        setIsSubmitting(false);
-        return;
+      if (!response.ok) {
+        const errorData = await response.json();
+        if (errorData.message?.includes("slug already exists")) {
+          setErrors({ slug: "Ce slug existe déjà" });
+          setIsSubmitting(false);
+          return;
+        }
+        throw new Error(errorData.message || "Failed to create blog post");
       }
-
-      // Calculate read time
-      const readTime = calculateReadTime(formData.content);
-
-      // Create new post object
-      const newPost = {
-        id: `demo_${Date.now()}`,
-        ...formData,
-        readTime,
-        views: 0,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        publishedAt:
-          formData.status === "published" ? new Date().toISOString() : null,
-      };
-
-      // Save to localStorage
-      localStorage.setItem(
-        "demo_blog_posts",
-        JSON.stringify([...existingPosts, newPost]),
-      );
 
       // Show success message
       setSuccessMessage("Article créé avec succès!");
@@ -542,45 +520,27 @@ Vous pouvez utiliser du Markdown pour formater le texte:
             )}
           </div>
 
-          {/* Status and Date */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label
-                htmlFor="status"
-                className="block text-sm font-medium text-foreground mb-2"
-              >
-                Statut
-              </label>
-              <select
-                id="status"
-                name="status"
-                value={formData.status}
-                onChange={handleChange}
-                className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-              >
-                {statusOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label
-                htmlFor="publishDate"
-                className="block text-sm font-medium text-foreground mb-2"
-              >
-                Date de publication
-              </label>
-              <input
-                type="date"
-                id="publishDate"
-                name="publishDate"
-                value={formData.publishDate}
-                onChange={handleChange}
-                className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
+          {/* Status */}
+          <div>
+            <label
+              htmlFor="status"
+              className="block text-sm font-medium text-foreground mb-2"
+            >
+              Statut
+            </label>
+            <select
+              id="status"
+              name="status"
+              value={formData.status}
+              onChange={handleChange}
+              className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              {statusOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Meta Description (SEO) */}
@@ -644,15 +604,6 @@ Vous pouvez utiliser du Markdown pour formater le texte:
           </button>
         </div>
       </form>
-
-      {/* Demo Notice */}
-      <div className="bg-accent/20 border border-accent/50 rounded-lg p-4">
-        <p className="text-sm text-muted-foreground text-center">
-          <strong className="text-foreground">Mode démo:</strong> L&apos;article
-          sera sauvegardé dans le localStorage du navigateur. Les données seront
-          perdues si vous effacez les données du navigateur.
-        </p>
-      </div>
     </div>
   );
 }

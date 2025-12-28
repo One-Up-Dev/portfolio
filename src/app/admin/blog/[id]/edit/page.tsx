@@ -4,67 +4,6 @@ import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { useState, useEffect } from "react";
 
-// Demo blog posts data (same as in blog page for reference)
-const demoPosts = [
-  {
-    id: "1",
-    title: "Guide n8n pour débutants",
-    slug: "guide-n8n-debutants",
-    excerpt:
-      "Découvrez comment automatiser vos tâches avec n8n, la plateforme open-source d'automatisation.",
-    content:
-      "n8n est une plateforme d'automatisation open-source qui permet de connecter différentes applications et services. Dans ce guide, nous allons explorer les bases de n8n et comment créer vos premiers workflows d'automatisation...",
-    status: "published",
-    tags: ["n8n", "automatisation"],
-    publishDate: "2024-12-18",
-    metaDescription:
-      "Guide complet pour débuter avec n8n, la plateforme d'automatisation open-source.",
-    views: 567,
-    createdAt: "2024-12-18T10:00:00Z",
-    updatedAt: "2024-12-18T10:00:00Z",
-    publishedAt: "2024-12-18T10:00:00Z",
-    readTime: 5,
-  },
-  {
-    id: "2",
-    title: "Automatisation avec Claude",
-    slug: "automatisation-claude",
-    excerpt:
-      "Comment utiliser Claude pour automatiser vos tâches de développement et gagner en productivité.",
-    content:
-      "Claude est un assistant IA développé par Anthropic qui peut vous aider dans de nombreuses tâches de développement. Découvrez comment l'intégrer dans votre workflow quotidien...",
-    status: "published",
-    tags: ["IA", "Claude", "productivité"],
-    publishDate: "2024-12-15",
-    metaDescription:
-      "Automatisez vos tâches de développement avec Claude, l'assistant IA d'Anthropic.",
-    views: 423,
-    createdAt: "2024-12-15T10:00:00Z",
-    updatedAt: "2024-12-15T10:00:00Z",
-    publishedAt: "2024-12-15T10:00:00Z",
-    readTime: 7,
-  },
-  {
-    id: "3",
-    title: "Vibe Coding expliqué",
-    slug: "vibe-coding-explique",
-    excerpt:
-      "Le vibe coding, une approche créative du développement qui allie passion et bonnes pratiques.",
-    content:
-      "Le vibe coding est une philosophie de développement qui met l'accent sur le plaisir et la créativité dans le code. Plutôt que de suivre des règles rigides, il s'agit de trouver son propre rythme...",
-    status: "draft",
-    tags: ["développement", "philosophie"],
-    publishDate: "2024-12-12",
-    metaDescription:
-      "Découvrez le vibe coding, une approche créative du développement.",
-    views: 0,
-    createdAt: "2024-12-12T10:00:00Z",
-    updatedAt: "2024-12-12T10:00:00Z",
-    publishedAt: null,
-    readTime: 4,
-  },
-];
-
 // Tag options for multi-select (common blog tags)
 const tagOptions = [
   "JavaScript",
@@ -105,13 +44,12 @@ interface BlogFormData {
   content: string;
   tags: string[];
   status: string;
-  publishDate: string;
+  publishedAt: string | null;
   metaDescription: string;
-  views: number;
-  readTime: number;
+  viewCount: number;
+  readTimeMinutes: number;
   createdAt: string;
   updatedAt: string;
-  publishedAt: string | null;
 }
 
 export default function EditBlogPostPage() {
@@ -124,53 +62,48 @@ export default function EditBlogPostPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [successMessage, setSuccessMessage] = useState("");
   const [notFound, setNotFound] = useState(false);
-  const [isDemoPost, setIsDemoPost] = useState(false);
   const [customTag, setCustomTag] = useState("");
 
   // Form data
   const [formData, setFormData] = useState<BlogFormData | null>(null);
 
-  // Load post data on mount
+  // Load post data from API on mount
   useEffect(() => {
-    const loadPost = () => {
+    const loadPost = async () => {
       try {
-        // First check demo posts
-        const demoPost = demoPosts.find((p) => p.id === postId);
-        if (demoPost) {
-          setFormData({
-            ...demoPost,
-            excerpt: demoPost.excerpt || "",
-            content: demoPost.content || "",
-            metaDescription: demoPost.metaDescription || "",
-            tags: demoPost.tags || [],
-          });
-          setIsDemoPost(true);
+        setIsLoading(true);
+        const response = await fetch(`/api/admin/blog/${postId}`, {
+          credentials: "include",
+        });
+
+        if (response.status === 404) {
+          setNotFound(true);
           setIsLoading(false);
           return;
         }
 
-        // Then check localStorage
-        const savedPosts = localStorage.getItem("demo_blog_posts");
-        if (savedPosts) {
-          const parsed = JSON.parse(savedPosts);
-          const post = parsed.find((p: BlogFormData) => p.id === postId);
-          if (post) {
-            setFormData({
-              ...post,
-              excerpt: post.excerpt || "",
-              content: post.content || "",
-              metaDescription: post.metaDescription || "",
-              tags: post.tags || [],
-              readTime: post.readTime || calculateReadTime(post.content || ""),
-            });
-            setIsDemoPost(false);
-            setIsLoading(false);
-            return;
-          }
+        if (!response.ok) {
+          throw new Error("Failed to fetch blog post");
         }
 
-        // Post not found
-        setNotFound(true);
+        const data = await response.json();
+        const post = data.data;
+
+        setFormData({
+          id: post.id,
+          title: post.title || "",
+          slug: post.slug || "",
+          excerpt: post.excerpt || "",
+          content: post.content || "",
+          tags: post.tags || [],
+          status: post.status || "draft",
+          publishedAt: post.publishedAt,
+          metaDescription: post.metaDescription || "",
+          viewCount: post.viewCount || 0,
+          readTimeMinutes: post.readTimeMinutes || 1,
+          createdAt: post.createdAt,
+          updatedAt: post.updatedAt,
+        });
         setIsLoading(false);
       } catch (error) {
         console.error("Error loading post:", error);
@@ -292,45 +225,30 @@ export default function EditBlogPostPage() {
     setIsSubmitting(true);
 
     try {
-      if (isDemoPost) {
-        // Demo posts can't be edited in demo mode - just show success
-        setSuccessMessage(
-          "Modifications enregistrées! (Mode démo: les changements ne sont pas persistés pour les articles de démonstration)",
-        );
-        setTimeout(() => {
-          router.push("/admin/blog");
-        }, 2000);
-        return;
-      }
-
-      // Get existing posts from localStorage
-      const existingPosts = JSON.parse(
-        localStorage.getItem("demo_blog_posts") || "[]",
-      );
-
-      // Calculate read time
-      const readTime = calculateReadTime(formData.content);
-
-      // Update the post
-      const updatedPosts = existingPosts.map((p: BlogFormData) => {
-        if (p.id === postId) {
-          return {
-            ...formData,
-            readTime,
-            updatedAt: new Date().toISOString(),
-            publishedAt:
-              formData.status === "published" && !formData.publishedAt
-                ? new Date().toISOString()
-                : formData.status === "draft"
-                  ? null
-                  : formData.publishedAt,
-          };
-        }
-        return p;
+      const response = await fetch(`/api/admin/blog/${postId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          title: formData.title,
+          slug: formData.slug,
+          excerpt: formData.excerpt,
+          content: formData.content,
+          tags: formData.tags,
+          status: formData.status,
+          metaDescription: formData.metaDescription,
+        }),
       });
 
-      // Save to localStorage
-      localStorage.setItem("demo_blog_posts", JSON.stringify(updatedPosts));
+      if (!response.ok) {
+        const errorData = await response.json();
+        if (errorData.message?.includes("slug already exists")) {
+          setErrors({ slug: "Ce slug existe déjà" });
+          setIsSubmitting(false);
+          return;
+        }
+        throw new Error(errorData.message || "Failed to update blog post");
+      }
 
       // Show success message
       setSuccessMessage("Article modifié avec succès!");
@@ -349,6 +267,15 @@ export default function EditBlogPostPage() {
 
   // Calculate read time for preview
   const previewReadTime = formData ? calculateReadTime(formData.content) : 0;
+
+  // Format date for display
+  const formatDate = (dateStr: string) => {
+    try {
+      return new Date(dateStr).toLocaleDateString("fr-FR");
+    } catch {
+      return dateStr;
+    }
+  };
 
   // Loading state
   if (isLoading) {
@@ -406,17 +333,6 @@ export default function EditBlogPostPage() {
           </p>
         </div>
       </div>
-
-      {/* Demo Post Notice */}
-      {isDemoPost && (
-        <div className="bg-yellow-500/20 border border-yellow-500/50 text-yellow-500 rounded-lg p-4">
-          <p className="text-sm">
-            <strong>Article de démonstration:</strong> Les modifications
-            apportées à cet article ne seront pas persistées. Créez un nouvel
-            article pour tester les fonctionnalités d&apos;édition.
-          </p>
-        </div>
-      )}
 
       {/* Success Message */}
       {successMessage && (
@@ -647,7 +563,7 @@ export default function EditBlogPostPage() {
             )}
           </div>
 
-          {/* Status and Date */}
+          {/* Status */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label
@@ -671,20 +587,14 @@ export default function EditBlogPostPage() {
               </select>
             </div>
             <div>
-              <label
-                htmlFor="publishDate"
-                className="block text-sm font-medium text-foreground mb-2"
-              >
+              <label className="block text-sm font-medium text-foreground mb-2">
                 Date de publication
               </label>
-              <input
-                type="date"
-                id="publishDate"
-                name="publishDate"
-                value={formData.publishDate}
-                onChange={handleChange}
-                className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-              />
+              <p className="px-4 py-2 bg-accent/50 text-muted-foreground rounded-lg">
+                {formData.publishedAt
+                  ? formatDate(formData.publishedAt)
+                  : "Non publié"}
+              </p>
             </div>
           </div>
 
@@ -725,22 +635,24 @@ export default function EditBlogPostPage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
               <div>
                 <p className="text-muted-foreground">ID</p>
-                <p className="text-foreground font-mono">{formData.id}</p>
+                <p className="text-foreground font-mono text-xs truncate">
+                  {formData.id}
+                </p>
               </div>
               <div>
                 <p className="text-muted-foreground">Vues</p>
-                <p className="text-foreground">{formData.views}</p>
+                <p className="text-foreground">{formData.viewCount}</p>
               </div>
               <div>
                 <p className="text-muted-foreground">Créé le</p>
                 <p className="text-foreground">
-                  {new Date(formData.createdAt).toLocaleDateString("fr-FR")}
+                  {formatDate(formData.createdAt)}
                 </p>
               </div>
               <div>
                 <p className="text-muted-foreground">Modifié le</p>
                 <p className="text-foreground">
-                  {new Date(formData.updatedAt).toLocaleDateString("fr-FR")}
+                  {formatDate(formData.updatedAt)}
                 </p>
               </div>
             </div>
@@ -774,14 +686,6 @@ export default function EditBlogPostPage() {
           </button>
         </div>
       </form>
-
-      {/* Demo Notice */}
-      <div className="bg-accent/20 border border-accent/50 rounded-lg p-4">
-        <p className="text-sm text-muted-foreground text-center">
-          <strong className="text-foreground">Mode démo:</strong> Les
-          modifications seront sauvegardées dans le localStorage du navigateur.
-        </p>
-      </div>
     </div>
   );
 }
