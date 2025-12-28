@@ -1561,3 +1561,62 @@ Many remaining failing tests require features not yet implemented:
 3. Add Hero section Miyazaki GIF background
 4. Implement pixel art button styling
 5. Add project card hover glitch effect
+
+## Session 33 (2024-12-28)
+- **Completed: Unsaved changes warning for project and blog edit forms**
+- Started dev server (pnpm dev) - running on port 3000
+- Verified existing features working correctly
+
+### Changes Made:
+
+1. **Updated /admin/projets/[id]/edit/page.tsx**:
+   - Added `useRef` for storing initial form data
+   - Added `hasUnsavedChanges` callback to detect modifications
+   - Added `beforeunload` event listener for browser close/refresh warning
+   - Added `handleNavigate` function for in-app navigation with warning
+   - Changed breadcrumb link and cancel button from `<Link>` to `<button>` with `handleNavigate`
+   - Added unsaved changes warning modal with:
+     - ⚠️ icon
+     - "Modifications non enregistrées" heading
+     - Warning message in French
+     - "Rester sur la page" button (stays on page)
+     - "Quitter sans enregistrer" button (navigates away, discards changes)
+
+2. **Updated /admin/blog/[id]/edit/page.tsx**:
+   - Same implementation as project edit page
+   - Added `useRef`, `useCallback` imports
+   - Added state for modal and pending navigation
+   - Added `hasUnsavedChanges` to compare current vs initial form data
+   - Added `beforeunload` event listener
+   - Added navigation handlers and modal
+
+### Verification Tests Performed:
+- Login as admin
+- Navigate to project edit page (/admin/projets/[id]/edit)
+- Modify project title
+- Click "Annuler" button → Modal appears with warning
+- Click "Rester sur la page" → Modal closes, stays on edit page
+- Click "Annuler" again → Modal appears again
+- Click "Quitter sans enregistrer" → Navigates to projects list, changes discarded
+- Same workflow tested on blog edit page - works correctly
+
+### New Test Now Passing (Session 33):
+- G-StatePersistence: Unsaved changes warning when leaving form with edits
+
+### Current Status:
+- 210/277 tests passing (75.8%)
+- Unsaved changes warning implemented for both project and blog edit forms
+- Browser close/refresh warning via beforeunload event
+- In-app navigation warning via custom modal
+- Dev server running on port 3000
+
+### Code Files Modified:
+- MODIFIED: src/app/admin/projets/[id]/edit/page.tsx (added unsaved changes warning)
+- MODIFIED: src/app/admin/blog/[id]/edit/page.tsx (added unsaved changes warning)
+
+### Next Steps for Future Sessions:
+1. Implement pagination for blog/projects pages
+2. Add auto-save functionality for blog editor
+3. Add Hero section Miyazaki GIF background
+4. Implement pixel art button styling
+5. Add project card hover glitch effect
