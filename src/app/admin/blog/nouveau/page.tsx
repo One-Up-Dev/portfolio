@@ -31,6 +31,15 @@ const statusOptions = [
   { value: "published", label: "Publié" },
 ];
 
+// AI generation type options
+const aiGenerationTypes = [
+  { value: "article", label: "Article complet" },
+  { value: "title", label: "Titre accrocheur" },
+  { value: "outline", label: "Plan d'article" },
+  { value: "section", label: "Section spécifique" },
+  { value: "improve", label: "Améliorer le texte" },
+];
+
 // Helper function to generate slug from title
 function generateSlug(title: string): string {
   return title
@@ -70,6 +79,14 @@ export default function NewBlogPostPage() {
   const [successMessage, setSuccessMessage] = useState("");
   const [customTag, setCustomTag] = useState("");
   const [tagOptions, setTagOptions] = useState<string[]>(defaultTagOptions);
+
+  // AI Generation state
+  const [showAiModal, setShowAiModal] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiGenerationType, setAiGenerationType] = useState("article");
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiGeneratedContent, setAiGeneratedContent] = useState("");
+  const [aiError, setAiError] = useState<string | null>(null);
 
   // Load existing tags from API on mount
   useEffect(() => {
@@ -174,6 +191,72 @@ export default function NewBlogPostPage() {
       e.preventDefault();
       handleAddCustomTag();
     }
+  };
+
+  // Handle AI content generation
+  const handleAiGenerate = async () => {
+    if (!aiPrompt.trim()) {
+      setAiError("Veuillez entrer un sujet ou une description");
+      return;
+    }
+
+    setAiGenerating(true);
+    setAiError(null);
+    setAiGeneratedContent("");
+
+    try {
+      const response = await fetch("/api/admin/ai/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          prompt: aiPrompt,
+          type: aiGenerationType,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Erreur lors de la génération");
+      }
+
+      const data = await response.json();
+      setAiGeneratedContent(data.data?.content || data.content || "");
+    } catch (error) {
+      console.error("AI generation error:", error);
+      setAiError(
+        error instanceof Error ? error.message : "Erreur lors de la génération",
+      );
+    } finally {
+      setAiGenerating(false);
+    }
+  };
+
+  // Insert AI generated content into the form
+  const handleInsertAiContent = () => {
+    if (!aiGeneratedContent) return;
+
+    if (aiGenerationType === "title") {
+      // Insert as title
+      setFormData((prev) => ({
+        ...prev,
+        title: aiGeneratedContent.replace(/^#\s*/, "").trim(),
+      }));
+    } else {
+      // Append to content
+      setFormData((prev) => ({
+        ...prev,
+        content: prev.content
+          ? prev.content + "\n\n" + aiGeneratedContent
+          : aiGeneratedContent,
+      }));
+    }
+
+    // Close modal and reset
+    setShowAiModal(false);
+    setAiPrompt("");
+    setAiGeneratedContent("");
+    addToast("Contenu IA inséré avec succès!", "success");
   };
 
   // Validate form
@@ -290,6 +373,16 @@ export default function NewBlogPostPage() {
             Rédigez et publiez un nouvel article de blog
           </p>
         </div>
+
+        {/* AI Generate Button */}
+        <button
+          type="button"
+          onClick={() => setShowAiModal(true)}
+          className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all flex items-center gap-2 shadow-lg"
+        >
+          <span className="text-lg">🤖</span>
+          <span>Générer avec IA</span>
+        </button>
       </div>
 
       {/* Success Message */}
@@ -631,6 +724,160 @@ export default function NewBlogPostPage() {
           </button>
         </div>
       </form>
+
+      {/* AI Generation Modal */}
+      {showAiModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowAiModal(false)}
+          />
+
+          {/* Modal Content */}
+          <div className="relative bg-card border border-border rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-border bg-gradient-to-r from-purple-600/10 to-blue-600/10">
+              <div className="flex items-center gap-3">
+                <span className="text-3xl">🤖</span>
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">
+                    Générer avec IA
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Utilisez Claude pour générer du contenu
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowAiModal(false)}
+                className="p-2 hover:bg-accent rounded-lg transition-colors"
+                aria-label="Fermer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-6 space-y-4 overflow-y-auto max-h-[60vh]">
+              {/* Error message */}
+              {aiError && (
+                <div
+                  className="bg-red-500/20 border border-red-500/50 text-red-500 rounded-lg p-4"
+                  role="alert"
+                >
+                  {aiError}
+                </div>
+              )}
+
+              {/* Generation Type */}
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Type de génération
+                </label>
+                <select
+                  value={aiGenerationType}
+                  onChange={(e) => setAiGenerationType(e.target.value)}
+                  className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  {aiGenerationTypes.map((type) => (
+                    <option key={type.value} value={type.value}>
+                      {type.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Prompt */}
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Sujet ou description
+                </label>
+                <textarea
+                  value={aiPrompt}
+                  onChange={(e) => setAiPrompt(e.target.value)}
+                  placeholder={
+                    aiGenerationType === "title"
+                      ? "Décrivez le sujet pour lequel vous voulez un titre accrocheur..."
+                      : aiGenerationType === "improve"
+                        ? "Collez le texte à améliorer..."
+                        : "Décrivez le sujet de l'article que vous voulez générer..."
+                  }
+                  rows={4}
+                  className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-y"
+                />
+              </div>
+
+              {/* Generate Button */}
+              <button
+                type="button"
+                onClick={handleAiGenerate}
+                disabled={aiGenerating || !aiPrompt.trim()}
+                className="w-full px-4 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {aiGenerating ? (
+                  <>
+                    <span className="animate-spin">⏳</span>
+                    <span>Génération en cours...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>✨</span>
+                    <span>Générer</span>
+                  </>
+                )}
+              </button>
+
+              {/* Generated Content */}
+              {aiGeneratedContent && (
+                <div className="mt-4 space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      Contenu généré
+                    </label>
+                    <div className="bg-background border border-border rounded-lg p-4 max-h-60 overflow-y-auto">
+                      <pre className="whitespace-pre-wrap text-sm text-foreground font-mono">
+                        {aiGeneratedContent}
+                      </pre>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-end gap-4 p-6 border-t border-border bg-accent/20">
+              <button
+                type="button"
+                onClick={() => {
+                  setAiPrompt("");
+                  setAiGeneratedContent("");
+                  setAiError(null);
+                }}
+                className="px-4 py-2 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Régénérer
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowAiModal(false)}
+                className="px-4 py-2 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={handleInsertAiContent}
+                disabled={!aiGeneratedContent}
+                className="px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                <span>📝</span>
+                <span>Insérer dans l&apos;article</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

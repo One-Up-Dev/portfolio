@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import Image from "next/image";
 
 // Password validation function
 function validatePassword(password: string): {
@@ -42,6 +43,167 @@ export default function AdminSettingsPage() {
     valid: boolean;
     errors: string[];
   }>({ valid: true, errors: [] });
+
+  // Appearance settings state
+  const [heroGifUrl, setHeroGifUrl] = useState("/images/miyazaki-nature.gif");
+  const [logoUrl, setLogoUrl] = useState("/logo-oneup.png");
+  const [appearanceSaving, setAppearanceSaving] = useState(false);
+  const [appearanceSuccess, setAppearanceSuccess] = useState(false);
+  const [appearanceError, setAppearanceError] = useState<string | null>(null);
+  const heroGifInputRef = useRef<HTMLInputElement>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+
+  // Load appearance settings on mount
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const response = await fetch("/api/admin/settings", {
+          credentials: "include",
+        });
+        if (response.ok) {
+          const data = await response.json();
+          if (data.data?.heroGifUrl) {
+            setHeroGifUrl(data.data.heroGifUrl);
+          }
+          if (data.data?.logoUrl) {
+            setLogoUrl(data.data.logoUrl);
+          }
+        }
+      } catch (error) {
+        console.error("Error loading settings:", error);
+      }
+    };
+    loadSettings();
+  }, []);
+
+  // Handle hero GIF upload
+  const handleHeroGifUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      setAppearanceError("Veuillez sélectionner un fichier image");
+      return;
+    }
+
+    // Validate file size (max 10MB for GIFs)
+    if (file.size > 10 * 1024 * 1024) {
+      setAppearanceError("Le fichier ne doit pas dépasser 10MB");
+      return;
+    }
+
+    setAppearanceError(null);
+
+    try {
+      // Upload file to media library
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const uploadResponse = await fetch("/api/admin/media/upload", {
+        method: "POST",
+        credentials: "include",
+        body: formData,
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error("Erreur lors de l'upload");
+      }
+
+      const uploadData = await uploadResponse.json();
+      const newUrl = uploadData.data?.url || uploadData.url;
+
+      if (newUrl) {
+        setHeroGifUrl(newUrl);
+      }
+    } catch (error) {
+      console.error("Error uploading hero GIF:", error);
+      setAppearanceError("Erreur lors de l'upload du GIF");
+    }
+  };
+
+  // Handle logo upload
+  const handleLogoUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      setAppearanceError("Veuillez sélectionner un fichier image");
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setAppearanceError("Le fichier ne doit pas dépasser 5MB");
+      return;
+    }
+
+    setAppearanceError(null);
+
+    try {
+      // Upload file to media library
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const uploadResponse = await fetch("/api/admin/media/upload", {
+        method: "POST",
+        credentials: "include",
+        body: formData,
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error("Erreur lors de l'upload");
+      }
+
+      const uploadData = await uploadResponse.json();
+      const newUrl = uploadData.data?.url || uploadData.url;
+
+      if (newUrl) {
+        setLogoUrl(newUrl);
+      }
+    } catch (error) {
+      console.error("Error uploading logo:", error);
+      setAppearanceError("Erreur lors de l'upload du logo");
+    }
+  };
+
+  // Save appearance settings
+  const handleSaveAppearance = async () => {
+    setAppearanceSaving(true);
+    setAppearanceError(null);
+    setAppearanceSuccess(false);
+
+    try {
+      // Save hero GIF URL
+      await fetch("/api/admin/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ key: "heroGifUrl", value: heroGifUrl }),
+      });
+
+      // Save logo URL
+      await fetch("/api/admin/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ key: "logoUrl", value: logoUrl }),
+      });
+
+      setAppearanceSuccess(true);
+      setTimeout(() => setAppearanceSuccess(false), 3000);
+    } catch (error) {
+      console.error("Error saving appearance settings:", error);
+      setAppearanceError("Erreur lors de la sauvegarde");
+    } finally {
+      setAppearanceSaving(false);
+    }
+  };
 
   // Handle password change
   const handlePasswordChange = () => {
@@ -242,6 +404,7 @@ export default function AdminSettingsPage() {
 
   const tabs = [
     { id: "general", label: "Général", icon: "⚙️" },
+    { id: "apparence", label: "Apparence", icon: "🎨" },
     { id: "compte", label: "Compte", icon: "👤" },
     { id: "integrations", label: "Intégrations", icon: "🔌" },
     { id: "sauvegardes", label: "Sauvegardes", icon: "💾" },
@@ -256,13 +419,13 @@ export default function AdminSettingsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-border">
+      <div className="border-b border-border overflow-x-auto">
         <nav className="flex gap-4">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+              className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                 activeTab === tab.id
                   ? "border-primary text-primary"
                   : "border-transparent text-muted-foreground hover:text-foreground"
@@ -315,6 +478,185 @@ export default function AdminSettingsPage() {
               </div>
               <button className="w-fit px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors">
                 Sauvegarder
+              </button>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "apparence" && (
+          <div className="space-y-6">
+            <h3 className="text-lg font-semibold text-foreground">
+              Personnalisation de l&apos;apparence
+            </h3>
+
+            {/* Success message */}
+            {appearanceSuccess && (
+              <div
+                className="bg-green-500/20 border border-green-500/50 text-green-500 rounded-lg p-4"
+                role="alert"
+              >
+                Paramètres d&apos;apparence sauvegardés avec succès!
+              </div>
+            )}
+
+            {/* Error message */}
+            {appearanceError && (
+              <div
+                className="bg-red-500/20 border border-red-500/50 text-red-500 rounded-lg p-4"
+                role="alert"
+              >
+                {appearanceError}
+              </div>
+            )}
+
+            <div className="grid gap-8">
+              {/* Hero GIF Section */}
+              <div className="p-4 border border-border rounded-lg">
+                <h4 className="font-medium text-foreground mb-2">
+                  GIF d&apos;arrière-plan (Hero)
+                </h4>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Le GIF animé affiché en arrière-plan de la section héro sur la
+                  page d&apos;accueil.
+                </p>
+
+                <div className="flex flex-col md:flex-row gap-6">
+                  {/* Preview */}
+                  <div className="relative w-full md:w-64 h-40 rounded-lg overflow-hidden border border-border bg-background">
+                    {heroGifUrl ? (
+                      <Image
+                        src={heroGifUrl}
+                        alt="Hero GIF Preview"
+                        fill
+                        className="object-cover"
+                        unoptimized
+                      />
+                    ) : (
+                      <div className="flex items-center justify-center h-full text-muted-foreground">
+                        Aucun GIF
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Upload controls */}
+                  <div className="flex-1 space-y-4">
+                    <div>
+                      <label className="block text-sm text-muted-foreground mb-2">
+                        URL du GIF
+                      </label>
+                      <input
+                        type="text"
+                        value={heroGifUrl}
+                        onChange={(e) => setHeroGifUrl(e.target.value)}
+                        placeholder="/images/miyazaki-nature.gif"
+                        className="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground"
+                      />
+                    </div>
+                    <div>
+                      <input
+                        ref={heroGifInputRef}
+                        type="file"
+                        accept="image/gif,image/*"
+                        onChange={handleHeroGifUpload}
+                        className="hidden"
+                        id="hero-gif-upload"
+                      />
+                      <label
+                        htmlFor="hero-gif-upload"
+                        className="inline-block px-4 py-2 bg-accent text-foreground rounded-lg hover:bg-accent/80 transition-colors cursor-pointer"
+                      >
+                        📤 Uploader un nouveau GIF
+                      </label>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Format recommandé: GIF, max 10MB
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Logo Section */}
+              <div className="p-4 border border-border rounded-lg">
+                <h4 className="font-medium text-foreground mb-2">
+                  Logo / Avatar
+                </h4>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Le logo ONEUP affiché dans le header et sur la page
+                  d&apos;accueil.
+                </p>
+
+                <div className="flex flex-col md:flex-row gap-6">
+                  {/* Preview */}
+                  <div className="relative w-32 h-32 rounded-lg overflow-hidden border border-border bg-background flex items-center justify-center">
+                    {logoUrl ? (
+                      <Image
+                        src={logoUrl}
+                        alt="Logo Preview"
+                        width={120}
+                        height={120}
+                        className="object-contain"
+                      />
+                    ) : (
+                      <div className="text-muted-foreground text-center text-sm">
+                        Aucun logo
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Upload controls */}
+                  <div className="flex-1 space-y-4">
+                    <div>
+                      <label className="block text-sm text-muted-foreground mb-2">
+                        URL du logo
+                      </label>
+                      <input
+                        type="text"
+                        value={logoUrl}
+                        onChange={(e) => setLogoUrl(e.target.value)}
+                        placeholder="/logo-oneup.png"
+                        className="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground"
+                      />
+                    </div>
+                    <div>
+                      <input
+                        ref={logoInputRef}
+                        type="file"
+                        accept="image/png,image/svg+xml,image/*"
+                        onChange={handleLogoUpload}
+                        className="hidden"
+                        id="logo-upload"
+                      />
+                      <label
+                        htmlFor="logo-upload"
+                        className="inline-block px-4 py-2 bg-accent text-foreground rounded-lg hover:bg-accent/80 transition-colors cursor-pointer"
+                      >
+                        📤 Uploader un nouveau logo
+                      </label>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Format recommandé: PNG ou SVG, max 5MB
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Save button */}
+              <button
+                onClick={handleSaveAppearance}
+                disabled={appearanceSaving}
+                className="w-fit px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {appearanceSaving ? (
+                  <>
+                    <span className="animate-spin">⏳</span>
+                    <span>Sauvegarde...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>💾</span>
+                    <span>Sauvegarder les modifications</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
