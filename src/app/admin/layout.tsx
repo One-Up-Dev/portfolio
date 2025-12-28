@@ -36,6 +36,21 @@ export default function AdminLayout({
   const [isLoading, setIsLoading] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
+  // Load sidebar collapsed state from localStorage on mount
+  useEffect(() => {
+    const savedState = localStorage.getItem("admin-sidebar-collapsed");
+    if (savedState !== null) {
+      setSidebarCollapsed(savedState === "true");
+    }
+  }, []);
+
+  // Save sidebar collapsed state to localStorage when it changes
+  const toggleSidebar = () => {
+    const newState = !sidebarCollapsed;
+    setSidebarCollapsed(newState);
+    localStorage.setItem("admin-sidebar-collapsed", String(newState));
+  };
+
   // Check authentication on mount
   useEffect(() => {
     const checkAuth = () => {
@@ -114,7 +129,7 @@ export default function AdminLayout({
             {!sidebarCollapsed && <span>ONEUP Admin</span>}
           </Link>
           <button
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            onClick={toggleSidebar}
             className="p-1 hover:bg-accent rounded transition-colors"
             aria-label={
               sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
