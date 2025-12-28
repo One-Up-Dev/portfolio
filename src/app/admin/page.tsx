@@ -3,112 +3,73 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-// Demo projects for counting
-const demoProjects = [
-  { id: "1", title: "Portfolio ONEUP" },
-  { id: "2", title: "App de gestion" },
-  { id: "3", title: "Bot Discord" },
-  { id: "4", title: "API REST" },
-  { id: "5", title: "Dashboard Analytics" },
-];
+interface Project {
+  id: string;
+  title: string;
+  viewCount: number;
+}
 
-// Demo blog posts for counting
-const demoBlogPosts = [
-  { id: "1", title: "Guide n8n pour débutants", status: "published" },
-  { id: "2", title: "Automatisation avec Claude", status: "published" },
-  { id: "3", title: "Vibe Coding expliqué", status: "published" },
-];
-
-// Demo recent activity
-const recentActivity = [
-  {
-    id: 1,
-    action: "Projet créé",
-    item: "Portfolio ONEUP",
-    time: "Il y a 2 heures",
-    icon: "🚀",
-  },
-  {
-    id: 2,
-    action: "Article publié",
-    item: "Guide n8n pour débutants",
-    time: "Il y a 5 heures",
-    icon: "📝",
-  },
-  {
-    id: 3,
-    action: "Compétence ajoutée",
-    item: "Claude Code",
-    time: "Hier",
-    icon: "⚡",
-  },
-  {
-    id: 4,
-    action: "Projet modifié",
-    item: "App de gestion",
-    time: "Il y a 2 jours",
-    icon: "✏️",
-  },
-];
-
-// Demo top content
-const topProjects = [
-  { name: "Portfolio ONEUP", views: 342 },
-  { name: "App de gestion", views: 256 },
-  { name: "Bot Discord", views: 189 },
-];
-
-const topArticles = [
-  { name: "Guide n8n pour débutants", views: 567 },
-  { name: "Automatisation avec Claude", views: 423 },
-  { name: "Vibe Coding expliqué", views: 312 },
-];
+interface BlogPost {
+  id: string;
+  title: string;
+  viewCount: number;
+}
 
 export default function AdminDashboardPage() {
-  const [projectCount, setProjectCount] = useState(5);
-  const [articleCount, setArticleCount] = useState(3);
+  const [projectCount, setProjectCount] = useState(0);
+  const [articleCount, setArticleCount] = useState(0);
+  const [topProjects, setTopProjects] = useState<
+    { name: string; views: number }[]
+  >([]);
+  const [topArticles, setTopArticles] = useState<
+    { name: string; views: number }[]
+  >([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Load real counts from localStorage
-    const loadCounts = () => {
+    const loadData = async () => {
       try {
-        // Get user-created projects from localStorage
-        const storedProjects = localStorage.getItem("demo_projects");
-        const userProjects = storedProjects ? JSON.parse(storedProjects) : [];
-        const totalProjects = demoProjects.length + userProjects.length;
-        setProjectCount(totalProjects);
+        // Fetch projects from API
+        const projectsRes = await fetch("/api/admin/projects", {
+          credentials: "include",
+        });
+        if (projectsRes.ok) {
+          const projectsData = await projectsRes.json();
+          if (projectsData.data) {
+            setProjectCount(projectsData.data.length);
+            // Sort by viewCount and get top 3
+            const sorted = [...projectsData.data]
+              .sort((a: Project, b: Project) => b.viewCount - a.viewCount)
+              .slice(0, 3)
+              .map((p: Project) => ({ name: p.title, views: p.viewCount }));
+            setTopProjects(sorted);
+          }
+        }
 
-        // Get user-created blog posts from localStorage
-        const storedPosts = localStorage.getItem("demo_blog_posts");
-        const userPosts = storedPosts ? JSON.parse(storedPosts) : [];
-        // Count all posts (demo + user), but for consistency with public view, count published only
-        const publishedDemoPosts = demoBlogPosts.filter(
-          (p) => p.status === "published",
-        ).length;
-        const publishedUserPosts = userPosts.filter(
-          (p: { status?: string }) =>
-            p.status === "published" || p.status === "Publié",
-        ).length;
-        // For admin dashboard, show total (including drafts)
-        const totalPosts = demoBlogPosts.length + userPosts.length;
-        setArticleCount(totalPosts);
+        // Fetch blog posts from API
+        const blogRes = await fetch("/api/admin/blog", {
+          credentials: "include",
+        });
+        if (blogRes.ok) {
+          const blogData = await blogRes.json();
+          if (blogData.data) {
+            setArticleCount(blogData.data.length);
+            // Sort by viewCount and get top 3
+            const sorted = [...blogData.data]
+              .sort((a: BlogPost, b: BlogPost) => b.viewCount - a.viewCount)
+              .slice(0, 3)
+              .map((p: BlogPost) => ({ name: p.title, views: p.viewCount }));
+            setTopArticles(sorted);
+          }
+        }
       } catch (error) {
-        console.error("Error loading counts:", error);
+        console.error("Error loading dashboard data:", error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadCounts();
-
-    // Listen for storage events to update counts in real-time
-    const handleStorageChange = () => {
-      loadCounts();
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
+    loadData();
   }, []);
 
   const stats = [
@@ -117,14 +78,14 @@ export default function AdminDashboardPage() {
       value: projectCount,
       icon: "🚀",
       href: "/admin/projets",
-      change: "+2 ce mois",
+      change: "Total",
     },
     {
       name: "Articles",
       value: articleCount,
       icon: "📝",
       href: "/admin/blog",
-      change: "+1 ce mois",
+      change: "Total",
     },
     {
       name: "Visiteurs",
@@ -139,6 +100,37 @@ export default function AdminDashboardPage() {
       icon: "⚡",
       href: "/admin/competences",
       change: "4 catégories",
+    },
+  ];
+
+  const recentActivity = [
+    {
+      id: 1,
+      action: "Projet créé",
+      item: "Portfolio ONEUP",
+      time: "Il y a 2 heures",
+      icon: "🚀",
+    },
+    {
+      id: 2,
+      action: "Article publié",
+      item: "Guide n8n pour débutants",
+      time: "Il y a 5 heures",
+      icon: "📝",
+    },
+    {
+      id: 3,
+      action: "Compétence ajoutée",
+      item: "Claude Code",
+      time: "Hier",
+      icon: "⚡",
+    },
+    {
+      id: 4,
+      action: "Projet modifié",
+      item: "App de gestion",
+      time: "Il y a 2 jours",
+      icon: "✏️",
     },
   ];
 
@@ -255,24 +247,28 @@ export default function AdminDashboardPage() {
               🚀 Projets les plus vus
             </h4>
             <div className="space-y-2">
-              {topProjects.map((project, index) => (
-                <div
-                  key={project.name}
-                  className="flex items-center justify-between p-2 rounded hover:bg-accent/50 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-muted-foreground text-sm">
-                      {index + 1}.
-                    </span>
-                    <span className="text-sm text-foreground">
-                      {project.name}
+              {topProjects.length > 0 ? (
+                topProjects.map((project, index) => (
+                  <div
+                    key={project.name}
+                    className="flex items-center justify-between p-2 rounded hover:bg-accent/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-muted-foreground text-sm">
+                        {index + 1}.
+                      </span>
+                      <span className="text-sm text-foreground">
+                        {project.name}
+                      </span>
+                    </div>
+                    <span className="text-sm text-muted-foreground">
+                      {project.views} vues
                     </span>
                   </div>
-                  <span className="text-sm text-muted-foreground">
-                    {project.views} vues
-                  </span>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground">Aucun projet</p>
+              )}
             </div>
           </div>
 
@@ -282,36 +278,31 @@ export default function AdminDashboardPage() {
               📝 Articles les plus lus
             </h4>
             <div className="space-y-2">
-              {topArticles.map((article, index) => (
-                <div
-                  key={article.name}
-                  className="flex items-center justify-between p-2 rounded hover:bg-accent/50 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-muted-foreground text-sm">
-                      {index + 1}.
-                    </span>
-                    <span className="text-sm text-foreground">
-                      {article.name}
+              {topArticles.length > 0 ? (
+                topArticles.map((article, index) => (
+                  <div
+                    key={article.name}
+                    className="flex items-center justify-between p-2 rounded hover:bg-accent/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-muted-foreground text-sm">
+                        {index + 1}.
+                      </span>
+                      <span className="text-sm text-foreground">
+                        {article.name}
+                      </span>
+                    </div>
+                    <span className="text-sm text-muted-foreground">
+                      {article.views} vues
                     </span>
                   </div>
-                  <span className="text-sm text-muted-foreground">
-                    {article.views} vues
-                  </span>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground">Aucun article</p>
+              )}
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Demo Mode Notice */}
-      <div className="bg-accent/20 border border-accent/50 rounded-lg p-4">
-        <p className="text-sm text-muted-foreground text-center">
-          <strong className="text-foreground">Mode démo:</strong> Les données
-          affichées sont des exemples. Connectez une base de données pour voir
-          les vraies statistiques.
-        </p>
       </div>
     </div>
   );

@@ -1,59 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-
-// Demo blog posts data
-const demoBlogPosts = [
-  {
-    id: "1",
-    slug: "guide-n8n-debutants",
-    title: "Guide n8n pour débutants",
-    excerpt: "Découvrez comment automatiser vos workflows avec n8n.",
-    content: "<p>Contenu complet du guide n8n...</p>",
-    coverImageUrl: null,
-    tags: ["n8n", "automatisation", "tutoriel"],
-    status: "published",
-    publishedAt: "2024-12-15T10:00:00Z",
-    metaDescription: "Guide complet pour débuter avec n8n",
-    metaKeywords: "n8n, automatisation, workflow",
-    readTimeMinutes: 8,
-    viewCount: 567,
-    createdAt: "2024-12-10T09:00:00Z",
-    updatedAt: "2024-12-15T10:00:00Z",
-  },
-  {
-    id: "2",
-    slug: "automatisation-claude",
-    title: "Automatisation avec Claude",
-    excerpt: "Comment utiliser Claude pour automatiser votre développement.",
-    content: "<p>Contenu sur l'automatisation avec Claude...</p>",
-    coverImageUrl: null,
-    tags: ["claude", "ia", "productivité"],
-    status: "published",
-    publishedAt: "2024-12-10T14:00:00Z",
-    metaDescription: "Automatisez votre développement avec Claude",
-    metaKeywords: "claude, ia, automatisation",
-    readTimeMinutes: 6,
-    viewCount: 423,
-    createdAt: "2024-12-08T11:00:00Z",
-    updatedAt: "2024-12-10T14:00:00Z",
-  },
-  {
-    id: "3",
-    slug: "vibe-coding-explique",
-    title: "Vibe Coding expliqué",
-    excerpt: "Qu'est-ce que le vibe coding et pourquoi l'adopter ?",
-    content: "<p>Explication du vibe coding...</p>",
-    coverImageUrl: null,
-    tags: ["vibe-coding", "philosophie", "développement"],
-    status: "published",
-    publishedAt: "2024-12-05T16:00:00Z",
-    metaDescription: "Comprendre le vibe coding",
-    metaKeywords: "vibe coding, développement, philosophie",
-    readTimeMinutes: 5,
-    viewCount: 312,
-    createdAt: "2024-12-03T10:00:00Z",
-    updatedAt: "2024-12-05T16:00:00Z",
-  },
-];
+import { db } from "../../../../../db";
+import { blogPosts } from "../../../../../db/schema";
+import { eq, desc } from "drizzle-orm";
 
 function isAuthenticated(request: NextRequest): boolean {
   const authHeader = request.headers.get("authorization");
@@ -85,11 +33,24 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  return NextResponse.json({
-    success: true,
-    data: demoBlogPosts,
-    total: demoBlogPosts.length,
-  });
+  try {
+    const allPosts = await db
+      .select()
+      .from(blogPosts)
+      .orderBy(desc(blogPosts.createdAt));
+
+    return NextResponse.json({
+      success: true,
+      data: allPosts,
+      total: allPosts.length,
+    });
+  } catch (error) {
+    console.error("Error fetching blog posts:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error", message: "Failed to fetch blog posts" },
+      { status: 500 },
+    );
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -110,37 +71,63 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const newPost = {
-      id: String(Date.now()),
-      slug: body.slug || body.title.toLowerCase().replace(/\s+/g, "-"),
-      title: body.title,
-      excerpt: body.excerpt || "",
-      content: body.content || "",
-      coverImageUrl: body.coverImageUrl || null,
-      tags: body.tags || [],
-      status: body.status || "draft",
-      publishedAt:
-        body.status === "published" ? new Date().toISOString() : null,
-      metaDescription: body.metaDescription || "",
-      metaKeywords: body.metaKeywords || "",
-      readTimeMinutes: Math.ceil((body.content?.length || 0) / 1000),
-      viewCount: 0,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+    // Generate slug if not provided
+    const slug =
+      body.slug || body.title.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+
+    // Check if slug already exists
+    const existing = await db
+      .select()
+      .from(blogPosts)
+      .where(eq(blogPosts.slug, slug));
+
+    if (existing.length > 0) {
+      return NextResponse.json(
+        {
+          error: "Bad Request",
+          message: "A blog post with this slug already exists",
+        },
+        { status: 400 },
+      );
+    }
+
+    // Calculate read time (approx 200 words per minute, 5 chars per word)
+    const contentLength = body.content?.length || 0;
+    const readTimeMinutes = Math.max(1, Math.ceil(contentLength / 1000));
+
+    // Create new blog post in database
+    const [newPost] = await db
+      .insert(blogPosts)
+      .values({
+        slug,
+        title: body.title,
+        excerpt: body.excerpt || null,
+        content: body.content || null,
+        coverImageUrl: body.coverImageUrl || null,
+        tags: body.tags || [],
+        status: body.status || "draft",
+        publishedAt:
+          body.status === "published" ? new Date().toISOString() : null,
+        metaDescription: body.metaDescription || null,
+        metaKeywords: body.metaKeywords || null,
+        readTimeMinutes,
+        viewCount: 0,
+      })
+      .returning();
 
     return NextResponse.json(
       {
         success: true,
         data: newPost,
-        message: "Blog post created successfully (demo mode)",
+        message: "Blog post created successfully",
       },
       { status: 201 },
     );
-  } catch {
+  } catch (error) {
+    console.error("Error creating blog post:", error);
     return NextResponse.json(
-      { error: "Bad Request", message: "Invalid request body" },
-      { status: 400 },
+      { error: "Internal Server Error", message: "Failed to create blog post" },
+      { status: 500 },
     );
   }
 }

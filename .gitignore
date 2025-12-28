@@ -42,6 +42,9 @@ coverage/
 # Drizzle
 drizzle/meta/
 
+# SQLite database
+data/
+
 # Misc
 *.pem
 .turbo

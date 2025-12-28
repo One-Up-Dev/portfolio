@@ -6,128 +6,6 @@ import { useParams, notFound } from "next/navigation";
 import { useState, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 
-// Demo blog posts (fallback data)
-const demoPosts = [
-  {
-    id: "1",
-    slug: "reconversion-developpeur-46-ans",
-    title: "Se reconvertir développeur à 46 ans : mon parcours",
-    excerpt:
-      "Retour sur mon parcours de reconversion professionnelle, de la restauration au développement web.",
-    content: `
-## Le déclic
-
-Après plus de 20 ans dans la restauration, j'ai ressenti le besoin de changer de vie professionnelle. La technologie m'a toujours passionné, et l'arrivée de l'IA a été le déclic final.
-
-## Les premiers pas
-
-J'ai commencé par apprendre les bases : HTML, CSS, JavaScript. Puis j'ai découvert React et Next.js. Chaque jour apportait son lot de découvertes et de défis.
-
-## Les outils qui m'ont aidé
-
-- **Claude Code** : Un assistant IA indispensable pour apprendre et coder
-- **n8n** : Pour automatiser et comprendre les workflows
-- **YouTube et les docs** : Des ressources infinies pour apprendre
-
-## Mes conseils
-
-1. Ne vous découragez pas face aux erreurs
-2. Pratiquez chaque jour, même 30 minutes
-3. Rejoignez une communauté de développeurs
-4. Construisez des projets personnels
-
-## Conclusion
-
-À 46 ans, je prouve qu'il n'est jamais trop tard pour se réinventer. Si vous hésitez, lancez-vous !
-    `,
-    tags: ["Reconversion", "Parcours", "Motivation"],
-    status: "published",
-    publishedAt: "2024-12-15",
-    readTimeMinutes: 8,
-  },
-  {
-    id: "2",
-    slug: "automatisation-n8n-guide-debutant",
-    title: "Automatisation avec n8n : guide du débutant",
-    excerpt: "Découvrez comment automatiser vos tâches répétitives avec n8n.",
-    content: `
-## Qu'est-ce que n8n ?
-
-n8n est un outil d'automatisation open-source qui permet de connecter différentes applications et services entre eux.
-
-## Installation
-
-Vous pouvez utiliser n8n en cloud ou l'installer localement :
-
-\`\`\`bash
-npm install n8n -g
-n8n start
-\`\`\`
-
-## Votre premier workflow
-
-1. Créez un trigger (déclencheur)
-2. Ajoutez des nodes (actions)
-3. Connectez-les entre eux
-4. Testez et activez
-
-## Exemples d'automatisation
-
-- Envoyer un email quand un formulaire est soumis
-- Sauvegarder automatiquement des fichiers
-- Synchroniser des données entre applications
-
-## Conclusion
-
-n8n est un outil puissant pour gagner du temps au quotidien.
-    `,
-    tags: ["n8n", "Automatisation", "Tutorial"],
-    status: "published",
-    publishedAt: "2024-12-10",
-    readTimeMinutes: 12,
-  },
-  {
-    id: "3",
-    slug: "claude-code-productivite-developpeur",
-    title: "Claude Code : booster sa productivité de développeur",
-    excerpt:
-      "Comment j'utilise Claude Code au quotidien pour coder plus vite et mieux.",
-    content: `
-## Introduction à Claude Code
-
-Claude Code est un assistant IA développé par Anthropic qui peut vous aider dans vos tâches de développement.
-
-## Comment je l'utilise
-
-### 1. Génération de code
-
-Je décris ce que je veux, Claude génère le code. Simple et efficace.
-
-### 2. Debugging
-
-Quand j'ai une erreur, je la montre à Claude qui m'explique le problème et propose une solution.
-
-### 3. Refactoring
-
-Claude peut améliorer mon code existant pour le rendre plus propre et performant.
-
-## Bonnes pratiques
-
-- Soyez précis dans vos demandes
-- Vérifiez toujours le code généré
-- Apprenez des suggestions de Claude
-
-## Conclusion
-
-Claude Code est devenu un outil indispensable dans mon workflow quotidien.
-    `,
-    tags: ["IA", "Claude", "Productivité"],
-    status: "published",
-    publishedAt: "2024-12-05",
-    readTimeMinutes: 10,
-  },
-];
-
 interface BlogPost {
   id: string;
   slug: string;
@@ -137,10 +15,7 @@ interface BlogPost {
   tags: string[];
   status: string;
   publishedAt: string;
-  publishDate?: string;
-  createdAt?: string;
   readTimeMinutes?: number;
-  readTime?: number;
 }
 
 export default function BlogPostPage() {
@@ -150,93 +25,36 @@ export default function BlogPostPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [notFoundState, setNotFoundState] = useState(false);
 
-  // Increment view count for a blog post
-  const incrementViewCount = (postId: string, isDemo: boolean) => {
-    try {
-      const viewCountsStr = localStorage.getItem("blog_view_counts");
-      const viewCounts: Record<string, number> = viewCountsStr
-        ? JSON.parse(viewCountsStr)
-        : {};
-
-      // Increment the view count
-      const currentCount = viewCounts[postId] || 0;
-      viewCounts[postId] = currentCount + 1;
-
-      localStorage.setItem("blog_view_counts", JSON.stringify(viewCounts));
-
-      // Also update the post's views in demo_blog_posts if it's a user-created post
-      if (!isDemo) {
-        const savedPosts = localStorage.getItem("demo_blog_posts");
-        if (savedPosts) {
-          const parsed = JSON.parse(savedPosts);
-          const updated = parsed.map((p: Record<string, unknown>) =>
-            p.id === postId
-              ? { ...p, views: ((p.views as number) || 0) + 1 }
-              : p,
-          );
-          localStorage.setItem("demo_blog_posts", JSON.stringify(updated));
-        }
-      }
-    } catch (error) {
-      console.error("Error incrementing view count:", error);
-    }
-  };
-
   useEffect(() => {
-    setIsLoading(true);
-    try {
-      // First check demo posts
-      let foundPost = demoPosts.find((p) => p.slug === slug);
-      let isDemo = !!foundPost;
+    const loadPost = async () => {
+      setIsLoading(true);
+      try {
+        const response = await fetch(`/api/blog/${slug}`);
 
-      // If not in demo posts, check localStorage
-      if (!foundPost) {
-        const savedPosts = localStorage.getItem("demo_blog_posts");
-        if (savedPosts) {
-          const parsed = JSON.parse(savedPosts);
-          const savedPost = parsed.find(
-            (p: { slug: string }) => p.slug === slug,
-          );
-          if (savedPost) {
-            foundPost = {
-              id: savedPost.id,
-              slug: savedPost.slug,
-              title: savedPost.title,
-              excerpt: savedPost.excerpt || "",
-              content: savedPost.content || "",
-              tags: savedPost.tags || [],
-              status: savedPost.status,
-              publishedAt:
-                savedPost.publishDate ||
-                savedPost.publishedAt ||
-                savedPost.createdAt?.split("T")[0] ||
-                new Date().toISOString().split("T")[0],
-              readTimeMinutes: savedPost.readTime || 5,
-            };
-            isDemo = false;
+        if (!response.ok) {
+          if (response.status === 404) {
+            setNotFoundState(true);
+            return;
           }
+          throw new Error("Failed to fetch blog post");
         }
-      }
 
-      // Check if post exists and is published (or if it's a draft being viewed by admin)
-      if (foundPost) {
-        // Only show published posts publicly
-        if (foundPost.status === "published") {
-          setPost(foundPost);
-          // Increment view count after loading
-          incrementViewCount(foundPost.id, isDemo);
+        const result = await response.json();
+
+        if (result.success && result.data) {
+          setPost(result.data);
         } else {
-          // Draft posts should return 404 for public access
           setNotFoundState(true);
         }
-      } else {
+      } catch (error) {
+        console.error("Error loading post:", error);
         setNotFoundState(true);
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error("Error loading post:", error);
-      setNotFoundState(true);
-    }
-    setIsLoading(false);
+    };
+
+    loadPost();
   }, [slug]);
 
   if (isLoading) {
@@ -244,7 +62,8 @@ export default function BlogPostPage() {
       <div className="py-20">
         <div className="container mx-auto max-w-3xl px-4">
           <div className="flex items-center justify-center py-20">
-            <div className="animate-spin text-4xl">⏳</div>
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+            <span className="ml-3 text-muted-foreground">Chargement...</span>
           </div>
         </div>
       </div>
@@ -271,7 +90,7 @@ export default function BlogPostPage() {
         <header className="mb-12">
           {/* Tags */}
           <div className="mb-4 flex flex-wrap gap-2">
-            {post.tags.map((tag) => (
+            {(post.tags || []).map((tag) => (
               <span
                 key={tag}
                 className="inline-flex items-center gap-1 rounded-full bg-secondary px-3 py-1 text-sm text-secondary-foreground"
@@ -291,22 +110,24 @@ export default function BlogPostPage() {
           <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
             <span className="inline-flex items-center gap-1">
               <Calendar className="h-4 w-4" />
-              {new Date(post.publishedAt).toLocaleDateString("fr-FR", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
+              {post.publishedAt
+                ? new Date(post.publishedAt).toLocaleDateString("fr-FR", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })
+                : "Date inconnue"}
             </span>
             <span className="inline-flex items-center gap-1">
               <Clock className="h-4 w-4" />
-              {post.readTimeMinutes || post.readTime || 5} min de lecture
+              {post.readTimeMinutes || 5} min de lecture
             </span>
           </div>
         </header>
 
         {/* Content */}
         <article className="prose prose-invert max-w-none prose-headings:text-primary prose-headings:font-pixel prose-h2:text-xl prose-h2:mt-8 prose-h2:mb-4 prose-h3:text-lg prose-h3:mt-6 prose-h3:mb-3 prose-p:text-muted-foreground prose-p:leading-relaxed prose-li:text-muted-foreground prose-strong:text-foreground prose-code:bg-secondary prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-pre:bg-secondary prose-pre:border prose-pre:border-border">
-          <ReactMarkdown>{post.content}</ReactMarkdown>
+          <ReactMarkdown>{post.content || ""}</ReactMarkdown>
         </article>
 
         {/* Share / Navigation */}

@@ -13,8 +13,6 @@ interface BlogPost {
   status: string;
   publishedAt: string;
   readTimeMinutes?: number;
-  readTime?: number;
-  publishDate?: string;
 }
 
 export default function BlogPage() {
@@ -24,61 +22,34 @@ export default function BlogPage() {
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load posts from localStorage on mount
+  // Load posts from API on mount
   useEffect(() => {
-    setIsLoading(true);
-    try {
-      const savedPosts = localStorage.getItem("demo_blog_posts");
-      let allPosts: BlogPost[] = [];
+    const loadPosts = async () => {
+      setIsLoading(true);
+      try {
+        const response = await fetch("/api/blog");
+        const result = await response.json();
 
-      if (savedPosts) {
-        const parsed = JSON.parse(savedPosts);
-        // Transform saved posts to match display format
-        allPosts = parsed.map(
-          (post: {
-            id: string;
-            slug: string;
-            title: string;
-            excerpt?: string;
-            content?: string;
-            tags: string[];
-            status: string;
-            publishDate?: string;
-            createdAt?: string;
-            publishedAt?: string;
-            readTime?: number;
-          }) => ({
-            id: post.id,
-            slug: post.slug,
-            title: post.title,
-            excerpt:
-              post.excerpt || post.content?.substring(0, 150) + "..." || "",
-            tags: post.tags || [],
-            status: post.status,
-            publishedAt:
-              post.publishDate ||
-              post.publishedAt ||
-              post.createdAt?.split("T")[0] ||
-              new Date().toISOString().split("T")[0],
-            readTimeMinutes: post.readTime || 5,
-          }),
-        );
+        if (result.success && result.data) {
+          setPosts(result.data);
+          setFilteredPosts(result.data);
+        } else {
+          setPosts([]);
+          setFilteredPosts([]);
+        }
+      } catch (error) {
+        console.error("Error loading posts:", error);
+        setPosts([]);
+        setFilteredPosts([]);
       }
+      setIsLoading(false);
+    };
 
-      // Only show published posts
-      const publishedPosts = allPosts.filter((p) => p.status === "published");
-      setPosts(publishedPosts);
-      setFilteredPosts(publishedPosts);
-    } catch (error) {
-      console.error("Error loading posts:", error);
-      setPosts([]);
-      setFilteredPosts([]);
-    }
-    setIsLoading(false);
+    loadPosts();
   }, []);
 
   // Get all unique tags from posts
-  const allTags = Array.from(new Set(posts.flatMap((post) => post.tags)));
+  const allTags = Array.from(new Set(posts.flatMap((post) => post.tags || [])));
 
   // Handle search and filter
   useEffect(() => {
@@ -90,13 +61,13 @@ export default function BlogPage() {
       result = result.filter(
         (post) =>
           post.title.toLowerCase().includes(query) ||
-          post.excerpt.toLowerCase().includes(query),
+          (post.excerpt || "").toLowerCase().includes(query),
       );
     }
 
     // Filter by tag
     if (selectedTag) {
-      result = result.filter((post) => post.tags.includes(selectedTag));
+      result = result.filter((post) => (post.tags || []).includes(selectedTag));
     }
 
     setFilteredPosts(result);
@@ -112,7 +83,8 @@ export default function BlogPage() {
       <div className="py-20">
         <div className="container mx-auto max-w-4xl px-4">
           <div className="flex items-center justify-center py-20">
-            <div className="animate-spin text-4xl">⏳</div>
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+            <span className="ml-3 text-muted-foreground">Chargement...</span>
           </div>
         </div>
       </div>
@@ -185,7 +157,7 @@ export default function BlogPage() {
               <Link href={`/blog/${post.slug}`} className="block">
                 {/* Tags */}
                 <div className="mb-3 flex flex-wrap gap-2">
-                  {post.tags.map((tag) => (
+                  {(post.tags || []).map((tag) => (
                     <span
                       key={tag}
                       className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-1 text-xs text-secondary-foreground"
@@ -208,15 +180,17 @@ export default function BlogPage() {
                 <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                   <span className="inline-flex items-center gap-1">
                     <Calendar className="h-4 w-4" />
-                    {new Date(post.publishedAt).toLocaleDateString("fr-FR", {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })}
+                    {post.publishedAt
+                      ? new Date(post.publishedAt).toLocaleDateString("fr-FR", {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        })
+                      : "Date inconnue"}
                   </span>
                   <span className="inline-flex items-center gap-1">
                     <Clock className="h-4 w-4" />
-                    {post.readTimeMinutes || post.readTime || 5} min de lecture
+                    {post.readTimeMinutes || 5} min de lecture
                   </span>
                 </div>
               </Link>

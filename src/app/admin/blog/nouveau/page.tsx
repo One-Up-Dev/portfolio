@@ -4,8 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 
-// Tag options for multi-select (common blog tags)
-const tagOptions = [
+// Default tag options for multi-select (common blog tags)
+const defaultTagOptions = [
   "JavaScript",
   "TypeScript",
   "React",
@@ -22,6 +22,28 @@ const tagOptions = [
   "portfolio",
   "freelance",
 ];
+
+// Function to get all unique tags from existing blog posts
+function getExistingTags(): string[] {
+  if (typeof window === "undefined") return [];
+
+  try {
+    const existingPosts = JSON.parse(
+      localStorage.getItem("demo_blog_posts") || "[]",
+    );
+
+    const allTags = new Set<string>();
+    existingPosts.forEach((post: { tags?: string[] }) => {
+      if (post.tags && Array.isArray(post.tags)) {
+        post.tags.forEach((tag: string) => allTags.add(tag));
+      }
+    });
+
+    return Array.from(allTags);
+  } catch {
+    return [];
+  }
+}
 
 // Status options
 const statusOptions = [
@@ -71,6 +93,15 @@ export default function NewBlogPostPage() {
   const [autoSlug, setAutoSlug] = useState(true);
   const [successMessage, setSuccessMessage] = useState("");
   const [customTag, setCustomTag] = useState("");
+  const [tagOptions, setTagOptions] = useState<string[]>(defaultTagOptions);
+
+  // Load existing tags from localStorage on mount
+  useEffect(() => {
+    const existingTags = getExistingTags();
+    // Merge default tags with existing tags (removing duplicates)
+    const allTags = [...new Set([...defaultTagOptions, ...existingTags])];
+    setTagOptions(allTags);
+  }, []);
 
   // Form data with default values
   const [formData, setFormData] = useState<BlogFormData>({

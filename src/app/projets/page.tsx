@@ -31,32 +31,18 @@ export default function ProjectsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTech, setSelectedTech] = useState<string | null>(null);
 
-  // Load projects from localStorage on mount
+  // Load projects from API on mount
   useEffect(() => {
-    const loadProjects = () => {
+    const loadProjects = async () => {
       try {
-        const savedProjects = localStorage.getItem("demo_projects");
-        let allProjects: Project[] = [];
+        const response = await fetch("/api/projects");
+        const result = await response.json();
 
-        if (savedProjects) {
-          const parsed = JSON.parse(savedProjects);
-          // Transform localStorage projects to match public format
-          allProjects = parsed.map((p: Record<string, unknown>) => ({
-            id: p.id,
-            slug: p.slug,
-            title: p.title,
-            shortDescription: p.shortDescription || p.description || "",
-            technologies: p.technologies || [],
-            status: p.status || "en_cours",
-            githubUrl: p.githubUrl,
-            demoUrl: p.demoUrl,
-            visible: p.visible !== false, // Default to true
-          }));
+        if (result.success && result.data) {
+          setProjects(result.data);
+        } else {
+          setProjects([]);
         }
-
-        // Filter to only visible projects
-        const visibleProjects = allProjects.filter((p) => p.visible !== false);
-        setProjects(visibleProjects);
       } catch (error) {
         console.error("Error loading projects:", error);
         setProjects([]);
@@ -70,7 +56,7 @@ export default function ProjectsPage() {
 
   // Get all unique technologies for filtering
   const allTechnologies = Array.from(
-    new Set(projects.flatMap((p) => p.technologies)),
+    new Set(projects.flatMap((p) => p.technologies || [])),
   ).sort();
 
   // Filter projects based on search and technology filter
@@ -78,12 +64,12 @@ export default function ProjectsPage() {
     const matchesSearch =
       !searchQuery ||
       project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      project.shortDescription
+      (project.shortDescription || "")
         .toLowerCase()
         .includes(searchQuery.toLowerCase());
 
     const matchesTech =
-      !selectedTech || project.technologies.includes(selectedTech);
+      !selectedTech || (project.technologies || []).includes(selectedTech);
 
     return matchesSearch && matchesTech;
   });
@@ -197,7 +183,7 @@ export default function ProjectsPage() {
 
                   {/* Technologies */}
                   <div className="mb-4 flex flex-wrap gap-2">
-                    {project.technologies.map((tech) => (
+                    {(project.technologies || []).map((tech) => (
                       <span
                         key={tech}
                         className="rounded-md bg-secondary px-2 py-1 text-xs text-secondary-foreground"

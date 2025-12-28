@@ -1,74 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
+import { db } from "../../../../../db";
+import { projects } from "../../../../../db/schema";
+import { eq, desc } from "drizzle-orm";
 
-// Demo projects data
-const demoProjects = [
-  {
-    id: "1",
-    slug: "portfolio-oneup",
-    title: "Portfolio ONEUP",
-    shortDescription: "Portfolio personnel avec thème rétro gaming",
-    longDescription:
-      "Un portfolio moderne avec une esthétique rétro gaming, développé avec Next.js 14 et Tailwind CSS.",
-    technologies: ["Next.js", "TypeScript", "Tailwind"],
-    githubUrl: "https://github.com/oneup/portfolio",
-    demoUrl: "https://oneup.dev",
-    status: "termine",
-    projectDate: "2024-12-01",
-    mainImageUrl: null,
-    galleryImages: [],
-    visible: true,
-    viewCount: 342,
-    createdAt: "2024-12-01T10:00:00Z",
-    updatedAt: "2024-12-28T14:00:00Z",
-  },
-  {
-    id: "2",
-    slug: "app-gestion",
-    title: "App de gestion",
-    shortDescription: "Application de gestion de projets",
-    longDescription:
-      "Une application complète de gestion de projets avec React et Node.js.",
-    technologies: ["React", "Node.js", "PostgreSQL"],
-    githubUrl: "https://github.com/oneup/gestion-app",
-    demoUrl: null,
-    status: "en_cours",
-    projectDate: "2024-11-15",
-    mainImageUrl: null,
-    galleryImages: [],
-    visible: true,
-    viewCount: 256,
-    createdAt: "2024-11-15T09:00:00Z",
-    updatedAt: "2024-12-20T16:30:00Z",
-  },
-  {
-    id: "3",
-    slug: "bot-discord",
-    title: "Bot Discord",
-    shortDescription: "Bot Discord multifonctions",
-    longDescription:
-      "Un bot Discord avec commandes personnalisées pour la modération et le divertissement.",
-    technologies: ["Python", "Discord.py"],
-    githubUrl: "https://github.com/oneup/discord-bot",
-    demoUrl: null,
-    status: "termine",
-    projectDate: "2024-10-01",
-    mainImageUrl: null,
-    galleryImages: [],
-    visible: true,
-    viewCount: 189,
-    createdAt: "2024-10-01T08:00:00Z",
-    updatedAt: "2024-10-15T12:00:00Z",
-  },
-];
-
-// Check if the request has a valid admin session (demo mode uses cookies)
+// Check if the request has a valid admin session
 function isAuthenticated(request: NextRequest): boolean {
-  // In demo mode, we check for a session cookie or auth header
   const authHeader = request.headers.get("authorization");
   const sessionCookie = request.cookies.get("admin_session");
 
-  // For demo purposes, accept any Bearer token or session cookie
   if (authHeader?.startsWith("Bearer ") && authHeader.length > 10) {
     return true;
   }
@@ -95,11 +34,24 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  return NextResponse.json({
-    success: true,
-    data: demoProjects,
-    total: demoProjects.length,
-  });
+  try {
+    const allProjects = await db
+      .select()
+      .from(projects)
+      .orderBy(desc(projects.createdAt));
+
+    return NextResponse.json({
+      success: true,
+      data: allProjects,
+      total: allProjects.length,
+    });
+  } catch (error) {
+    console.error("Error fetching projects:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error", message: "Failed to fetch projects" },
+      { status: 500 },
+    );
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -121,38 +73,60 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create new project (demo mode - not persisted)
-    const newProject = {
-      id: String(Date.now()),
-      slug: body.slug || body.title.toLowerCase().replace(/\s+/g, "-"),
-      title: body.title,
-      shortDescription: body.shortDescription || "",
-      longDescription: body.longDescription || "",
-      technologies: body.technologies || [],
-      githubUrl: body.githubUrl || null,
-      demoUrl: body.demoUrl || null,
-      status: body.status || "en_cours",
-      projectDate: body.projectDate || new Date().toISOString().split("T")[0],
-      mainImageUrl: body.mainImageUrl || null,
-      galleryImages: body.galleryImages || [],
-      visible: body.visible ?? true,
-      viewCount: 0,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+    // Generate slug if not provided
+    const slug =
+      body.slug || body.title.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+
+    // Check if slug already exists
+    const existing = await db
+      .select()
+      .from(projects)
+      .where(eq(projects.slug, slug));
+
+    if (existing.length > 0) {
+      return NextResponse.json(
+        {
+          error: "Bad Request",
+          message: "A project with this slug already exists",
+        },
+        { status: 400 },
+      );
+    }
+
+    // Create new project in database
+    const [newProject] = await db
+      .insert(projects)
+      .values({
+        slug,
+        title: body.title,
+        shortDescription: body.shortDescription || null,
+        longDescription: body.longDescription || null,
+        technologies: body.technologies || [],
+        githubUrl: body.githubUrl || null,
+        demoUrl: body.demoUrl || null,
+        status: body.status || "en_cours",
+        projectDate: body.projectDate || new Date().toISOString().split("T")[0],
+        mainImageUrl: body.mainImageUrl || null,
+        galleryImages: body.galleryImages || [],
+        visible: body.visible ?? true,
+        viewCount: 0,
+        orderIndex: body.orderIndex || 0,
+      })
+      .returning();
 
     return NextResponse.json(
       {
         success: true,
         data: newProject,
-        message: "Project created successfully (demo mode)",
+        message: "Project created successfully",
       },
       { status: 201 },
     );
   } catch (error) {
+    console.error("Error creating project:", error);
     return NextResponse.json(
-      { error: "Bad Request", message: "Invalid request body" },
-      { status: 400 },
+      { error: "Internal Server Error", message: "Failed to create project" },
+      { status: 500 },
     );
   }
 }

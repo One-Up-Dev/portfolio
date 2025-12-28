@@ -4,8 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 
-// Technology options for multi-select
-const technologyOptions = [
+// Default technology options for multi-select
+const defaultTechnologyOptions = [
   "React",
   "Next.js",
   "TypeScript",
@@ -22,6 +22,28 @@ const technologyOptions = [
   "Git",
   "Vercel",
 ];
+
+// Function to get all unique technologies from existing projects
+function getExistingTechnologies(): string[] {
+  if (typeof window === "undefined") return [];
+
+  try {
+    const existingProjects = JSON.parse(
+      localStorage.getItem("demo_projects") || "[]",
+    );
+
+    const allTechs = new Set<string>();
+    existingProjects.forEach((project: { technologies?: string[] }) => {
+      if (project.technologies && Array.isArray(project.technologies)) {
+        project.technologies.forEach((tech: string) => allTechs.add(tech));
+      }
+    });
+
+    return Array.from(allTechs);
+  } catch {
+    return [];
+  }
+}
 
 // Status options
 const statusOptions = [
@@ -65,6 +87,19 @@ export default function NewProjectPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [autoSlug, setAutoSlug] = useState(true);
+  const [technologyOptions, setTechnologyOptions] = useState<string[]>(
+    defaultTechnologyOptions,
+  );
+
+  // Load existing technologies from localStorage on mount
+  useEffect(() => {
+    const existingTechs = getExistingTechnologies();
+    // Merge default technologies with existing technologies (removing duplicates)
+    const allTechs = [
+      ...new Set([...defaultTechnologyOptions, ...existingTechs]),
+    ];
+    setTechnologyOptions(allTechs);
+  }, []);
   const [successMessage, setSuccessMessage] = useState("");
 
   // Form data with default values
