@@ -2,9 +2,99 @@
 
 import { useState } from "react";
 
+// Password validation function
+function validatePassword(password: string): {
+  valid: boolean;
+  errors: string[];
+} {
+  const errors: string[] = [];
+
+  if (password.length < 8) {
+    errors.push("Au moins 8 caractères");
+  }
+  if (!/[A-Z]/.test(password)) {
+    errors.push("Au moins une majuscule");
+  }
+  if (!/[a-z]/.test(password)) {
+    errors.push("Au moins une minuscule");
+  }
+  if (!/[0-9]/.test(password)) {
+    errors.push("Au moins un chiffre");
+  }
+
+  return { valid: errors.length === 0, errors };
+}
+
 export default function AdminSettingsPage() {
   const [activeTab, setActiveTab] = useState("general");
   const [exportSuccess, setExportSuccess] = useState(false);
+
+  // Password change state
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
+  const [passwordValidation, setPasswordValidation] = useState<{
+    valid: boolean;
+    errors: string[];
+  }>({ valid: true, errors: [] });
+
+  // Handle password change
+  const handlePasswordChange = () => {
+    setPasswordError(null);
+    setPasswordSuccess(false);
+
+    // Validate current password (check localStorage for changed password)
+    const storedPassword = localStorage.getItem("demo_password") || "Admin123!";
+    if (currentPassword !== storedPassword) {
+      setPasswordError("Mot de passe actuel incorrect");
+      return;
+    }
+
+    // Validate new password
+    const validation = validatePassword(newPassword);
+    if (!validation.valid) {
+      setPasswordError(
+        "Le mot de passe ne respecte pas les exigences: " +
+          validation.errors.join(", "),
+      );
+      return;
+    }
+
+    // Check confirmation matches
+    if (newPassword !== confirmPassword) {
+      setPasswordError("Les mots de passe ne correspondent pas");
+      return;
+    }
+
+    // In demo mode, just simulate success and update localStorage
+    try {
+      const session = JSON.parse(localStorage.getItem("admin_session") || "{}");
+      session.passwordHash = btoa(newPassword); // Simple encoding for demo
+      localStorage.setItem("admin_session", JSON.stringify(session));
+      localStorage.setItem("demo_password", newPassword); // Store new password for login
+
+      setPasswordSuccess(true);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setTimeout(() => setPasswordSuccess(false), 3000);
+    } catch (error) {
+      setPasswordError("Erreur lors du changement de mot de passe");
+      console.error(error);
+    }
+  };
+
+  // Validate new password as user types
+  const handleNewPasswordChange = (value: string) => {
+    setNewPassword(value);
+    if (value.length > 0) {
+      setPasswordValidation(validatePassword(value));
+    } else {
+      setPasswordValidation({ valid: true, errors: [] });
+    }
+  };
 
   // Export all content to JSON
   const handleExport = () => {
@@ -134,6 +224,27 @@ export default function AdminSettingsPage() {
             <h3 className="text-lg font-semibold text-foreground">
               Compte administrateur
             </h3>
+
+            {/* Success message */}
+            {passwordSuccess && (
+              <div
+                className="bg-green-500/20 border border-green-500/50 text-green-500 rounded-lg p-4"
+                role="alert"
+              >
+                Mot de passe modifié avec succès!
+              </div>
+            )}
+
+            {/* Error message */}
+            {passwordError && (
+              <div
+                className="bg-red-500/20 border border-red-500/50 text-red-500 rounded-lg p-4"
+                role="alert"
+              >
+                {passwordError}
+              </div>
+            )}
+
             <div className="grid gap-6 max-w-xl">
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
@@ -156,6 +267,8 @@ export default function AdminSettingsPage() {
                     </label>
                     <input
                       type="password"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
                       className="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground"
                     />
                   </div>
@@ -165,11 +278,61 @@ export default function AdminSettingsPage() {
                     </label>
                     <input
                       type="password"
-                      className="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground"
+                      value={newPassword}
+                      onChange={(e) => handleNewPasswordChange(e.target.value)}
+                      className={`w-full px-4 py-2 bg-background border rounded-lg text-foreground ${
+                        newPassword.length > 0 && !passwordValidation.valid
+                          ? "border-red-500"
+                          : "border-input"
+                      }`}
                     />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Min. 8 caractères, 1 majuscule, 1 minuscule, 1 chiffre
-                    </p>
+                    <div className="mt-2 space-y-1">
+                      <p className="text-xs text-muted-foreground font-medium">
+                        Exigences du mot de passe:
+                      </p>
+                      <ul className="text-xs space-y-1">
+                        <li
+                          className={
+                            newPassword.length >= 8
+                              ? "text-green-500"
+                              : "text-muted-foreground"
+                          }
+                        >
+                          {newPassword.length >= 8 ? "✓" : "○"} Au moins 8
+                          caractères
+                        </li>
+                        <li
+                          className={
+                            /[A-Z]/.test(newPassword)
+                              ? "text-green-500"
+                              : "text-muted-foreground"
+                          }
+                        >
+                          {/[A-Z]/.test(newPassword) ? "✓" : "○"} Au moins une
+                          majuscule
+                        </li>
+                        <li
+                          className={
+                            /[a-z]/.test(newPassword)
+                              ? "text-green-500"
+                              : "text-muted-foreground"
+                          }
+                        >
+                          {/[a-z]/.test(newPassword) ? "✓" : "○"} Au moins une
+                          minuscule
+                        </li>
+                        <li
+                          className={
+                            /[0-9]/.test(newPassword)
+                              ? "text-green-500"
+                              : "text-muted-foreground"
+                          }
+                        >
+                          {/[0-9]/.test(newPassword) ? "✓" : "○"} Au moins un
+                          chiffre
+                        </li>
+                      </ul>
+                    </div>
                   </div>
                   <div>
                     <label className="block text-sm text-muted-foreground mb-2">
@@ -177,12 +340,28 @@ export default function AdminSettingsPage() {
                     </label>
                     <input
                       type="password"
-                      className="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className={`w-full px-4 py-2 bg-background border rounded-lg text-foreground ${
+                        confirmPassword.length > 0 &&
+                        confirmPassword !== newPassword
+                          ? "border-red-500"
+                          : "border-input"
+                      }`}
                     />
+                    {confirmPassword.length > 0 &&
+                      confirmPassword !== newPassword && (
+                        <p className="text-xs text-red-500 mt-1">
+                          Les mots de passe ne correspondent pas
+                        </p>
+                      )}
                   </div>
                 </div>
               </div>
-              <button className="w-fit px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors">
+              <button
+                onClick={handlePasswordChange}
+                className="w-fit px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+              >
                 Mettre à jour
               </button>
             </div>

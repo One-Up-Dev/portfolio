@@ -21,7 +21,9 @@ export default function AdminLoginPage() {
 
     // Demo authentication - in production this would call a real API
     // Demo credentials: admin@oneup.dev / Admin123!
-    if (email === "admin@oneup.dev" && password === "Admin123!") {
+    // Also check for changed password in localStorage
+    const storedPassword = localStorage.getItem("demo_password") || "Admin123!";
+    if (email === "admin@oneup.dev" && password === storedPassword) {
       // Store session in localStorage for demo purposes
       const session = {
         user: {
