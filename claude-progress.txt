@@ -639,18 +639,25 @@
 ### New Tests Now Passing (Session 15):
 - D-Workflow: Duplicate project workflow
 - D-Workflow: Toggle project visibility workflow
+- D-Workflow: Export all content as JSON
 - I-Idempotency: Submit button disabled during form processing
 
 ### Current Status:
-- 115/276 tests passing (41.7%)
+- 116/276 tests passing (42.0%)
 - Duplicate project feature complete
 - Visibility toggle feature complete
 - Submit button disabled state already implemented
+- JSON export functionality implemented
 - Dev server running on port 3000
+
+### Features Implemented This Session:
+1. **Duplicate Project**: Added 📋 button to admin projects table that creates a copy with "(Copie)" suffix
+2. **Visibility Toggle**: Made visibility column clickable to toggle project visibility
+3. **JSON Export**: Added export button in Settings > Sauvegardes tab that downloads all projects, blog posts, and skills
 
 ### Next Steps for Future Sessions:
 1. Add skills creation workflow with localStorage
 2. Test more form validation scenarios
-3. Implement JSON export functionality
-4. Add project/blog timestamps tracking
-5. Test responsive design features
+3. Add project/blog timestamps tracking
+4. Test responsive design features
+5. Implement double-click prevention for forms
