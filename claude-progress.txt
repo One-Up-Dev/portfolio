@@ -856,14 +856,19 @@
 - J-DataCleanup: Deleted items cannot be accessed by cached URLs
 
 ### Current Status:
-- 161/276 tests passing (58.3%)
+- 162/276 tests passing (58.7%)
 - Dashboard statistics properly sync with localStorage changes
 - Deleted items correctly return 404
+- Blog articles correctly sorted by published date (newest first)
+- Sidebar collapse state persists across pages
 - Dev server running on port 3000
+
+### Additional Tests Verified (Session 20 continued):
+- F-UIBackend: Blog articles sorted by published_at date
 
 ### Next Steps for Future Sessions:
 1. Test more accessibility features (images alt text, color contrast)
 2. Test form validation scenarios (URL validation, password requirements)
 3. Test media upload functionality
 4. Implement remaining style tests
-5. Test blog sorting and pagination
+5. Test pagination functionality
