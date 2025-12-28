@@ -19,11 +19,15 @@ export default function AdminAnalyticsPage() {
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [dateRange, setDateRange] = useState("30"); // days
 
   useEffect(() => {
     async function fetchAnalytics() {
       try {
-        const response = await fetch("/api/admin/analytics/overview");
+        setLoading(true);
+        const response = await fetch(
+          `/api/admin/analytics/overview?days=${dateRange}`,
+        );
         if (!response.ok) {
           throw new Error("Failed to fetch analytics");
         }
@@ -41,7 +45,73 @@ export default function AdminAnalyticsPage() {
     }
 
     fetchAnalytics();
-  }, []);
+  }, [dateRange]);
+
+  // Export analytics data to CSV
+  const handleExportCSV = () => {
+    if (!analytics) return;
+
+    // Create CSV content
+    const csvRows: string[] = [];
+
+    // Header section
+    csvRows.push("ONEUP Portfolio Analytics Report");
+    csvRows.push(`Date Range: Last ${dateRange} days`);
+    csvRows.push(`Export Date: ${new Date().toLocaleDateString("fr-FR")}`);
+    csvRows.push("");
+
+    // Overview section
+    csvRows.push("=== Overview ===");
+    csvRows.push(`Total Visitors,${analytics.totalVisitors}`);
+    csvRows.push(`Visitors This Month,${analytics.visitorsThisMonth}`);
+    csvRows.push(`Visitors Change (%),${analytics.visitorsChange}`);
+    csvRows.push(`Total Page Views,${analytics.totalPageViews}`);
+    csvRows.push(`Page Views This Month,${analytics.pageViewsThisMonth}`);
+    csvRows.push("");
+
+    // Top Pages section
+    csvRows.push("=== Top Pages ===");
+    csvRows.push("Page,Views");
+    analytics.topPages.forEach((page) => {
+      csvRows.push(`"${page.path}",${page.views}`);
+    });
+    csvRows.push("");
+
+    // Top Projects section
+    csvRows.push("=== Top Projects ===");
+    csvRows.push("Project,Views");
+    analytics.topProjects.forEach((project) => {
+      csvRows.push(`"${project.title}",${project.views}`);
+    });
+    csvRows.push("");
+
+    // Top Articles section
+    csvRows.push("=== Top Articles ===");
+    csvRows.push("Article,Views");
+    analytics.topArticles.forEach((article) => {
+      csvRows.push(`"${article.title}",${article.views}`);
+    });
+    csvRows.push("");
+
+    // Traffic Sources section
+    csvRows.push("=== Traffic Sources ===");
+    csvRows.push("Source,Visits,Percentage");
+    analytics.trafficSources.forEach((source) => {
+      csvRows.push(`"${source.source}",${source.visits},${source.percentage}%`);
+    });
+
+    // Create and download file
+    const csvContent = csvRows.join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `oneup-analytics-${new Date().toISOString().split("T")[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
 
   if (loading) {
     return (
@@ -81,17 +151,42 @@ export default function AdminAnalyticsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h2 className="text-2xl font-bold text-foreground">Analytics</h2>
           <p className="text-muted-foreground">
             Statistiques de votre portfolio
           </p>
         </div>
-        <button className="inline-flex items-center gap-2 px-4 py-2 border border-border text-foreground rounded-lg hover:bg-accent transition-colors">
-          <span>📥</span>
-          <span>Exporter CSV</span>
-        </button>
+        <div className="flex items-center gap-3">
+          {/* Date Range Filter */}
+          <div className="flex items-center gap-2">
+            <label
+              htmlFor="date-range"
+              className="text-sm text-muted-foreground"
+            >
+              Période:
+            </label>
+            <select
+              id="date-range"
+              value={dateRange}
+              onChange={(e) => setDateRange(e.target.value)}
+              className="px-3 py-2 bg-background border border-border rounded-lg text-foreground text-sm focus:ring-2 focus:ring-primary focus:outline-none"
+            >
+              <option value="7">7 derniers jours</option>
+              <option value="30">30 derniers jours</option>
+              <option value="90">90 derniers jours</option>
+              <option value="365">Cette année</option>
+            </select>
+          </div>
+          <button
+            onClick={handleExportCSV}
+            className="inline-flex items-center gap-2 px-4 py-2 border border-border text-foreground rounded-lg hover:bg-accent transition-colors"
+          >
+            <span>📥</span>
+            <span>Exporter CSV</span>
+          </button>
+        </div>
       </div>
 
       {/* Stats Overview */}

@@ -70,6 +70,7 @@ export default function AdminMediaPage() {
   const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -143,23 +144,51 @@ export default function AdminMediaPage() {
     }
 
     setIsUploading(true);
+    setUploadProgress(0);
 
     try {
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await fetch("/api/admin/media", {
-        method: "POST",
-        credentials: "include",
-        body: formData,
+      // Use XMLHttpRequest for progress tracking
+      const xhr = new XMLHttpRequest();
+
+      const uploadPromise = new Promise<{
+        ok: boolean;
+        data: Record<string, unknown>;
+      }>((resolve, reject) => {
+        xhr.upload.addEventListener("progress", (event) => {
+          if (event.lengthComputable) {
+            const progress = Math.round((event.loaded / event.total) * 100);
+            setUploadProgress(progress);
+          }
+        });
+
+        xhr.addEventListener("load", () => {
+          try {
+            const data = JSON.parse(xhr.responseText);
+            resolve({ ok: xhr.status >= 200 && xhr.status < 300, data });
+          } catch {
+            reject(new Error("Invalid response"));
+          }
+        });
+
+        xhr.addEventListener("error", () => {
+          reject(new Error("Network error"));
+        });
+
+        xhr.open("POST", "/api/admin/media");
+        xhr.withCredentials = true;
+        xhr.send(formData);
       });
 
-      const data = await response.json();
+      const { ok, data } = await uploadPromise;
 
-      if (!response.ok) {
-        throw new Error(data.error || "Upload failed");
+      if (!ok) {
+        throw new Error((data.error as string) || "Upload failed");
       }
 
+      setUploadProgress(100);
       setSuccessMessage("Fichier uploadé avec succès!");
       await fetchMedia();
     } catch (err) {
@@ -168,6 +197,7 @@ export default function AdminMediaPage() {
       setUploadError(message);
     } finally {
       setIsUploading(false);
+      setUploadProgress(0);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
@@ -253,6 +283,36 @@ export default function AdminMediaPage() {
           </label>
         </div>
       </div>
+
+      {/* Upload Progress Bar */}
+      {isUploading && (
+        <div
+          className="bg-card border border-border rounded-lg p-4"
+          role="progressbar"
+          aria-valuenow={uploadProgress}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label="Upload progress"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-foreground">
+              Upload en cours...
+            </span>
+            <span className="text-sm font-medium text-primary">
+              {uploadProgress}%
+            </span>
+          </div>
+          <div className="w-full bg-accent/30 rounded-full h-3 overflow-hidden">
+            <div
+              className="bg-primary h-full rounded-full transition-all duration-300 ease-out"
+              style={{ width: `${uploadProgress}%` }}
+            />
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            {uploadProgress < 100 ? "Transfert du fichier..." : "Traitement..."}
+          </p>
+        </div>
+      )}
 
       {/* Error/Success Messages */}
       {error && (

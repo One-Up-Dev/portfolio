@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 // Password validation function
 function validatePassword(password: string): {
@@ -28,6 +28,9 @@ function validatePassword(password: string): {
 export default function AdminSettingsPage() {
   const [activeTab, setActiveTab] = useState("general");
   const [exportSuccess, setExportSuccess] = useState(false);
+  const [importSuccess, setImportSuccess] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
+  const importFileRef = useRef<HTMLInputElement>(null);
 
   // Password change state
   const [currentPassword, setCurrentPassword] = useState("");
@@ -136,6 +139,104 @@ export default function AdminSettingsPage() {
       setTimeout(() => setExportSuccess(false), 3000);
     } catch (error) {
       console.error("Error exporting data:", error);
+    }
+  };
+
+  // Import content from JSON file
+  const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setImportError(null);
+    setImportSuccess(false);
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const content = e.target?.result as string;
+        const importData = JSON.parse(content);
+
+        // Validate structure
+        if (!importData.data) {
+          throw new Error("Format de fichier invalide: données manquantes");
+        }
+
+        // Import projects
+        if (
+          importData.data.projects &&
+          Array.isArray(importData.data.projects)
+        ) {
+          const existingProjects = JSON.parse(
+            localStorage.getItem("demo_projects") || "[]",
+          );
+          const importedIds = new Set(
+            existingProjects.map((p: { id: string }) => p.id),
+          );
+
+          // Add new projects that don't exist
+          const newProjects = importData.data.projects.filter(
+            (p: { id: string }) => !importedIds.has(p.id),
+          );
+          const mergedProjects = [...existingProjects, ...newProjects];
+          localStorage.setItem("demo_projects", JSON.stringify(mergedProjects));
+        }
+
+        // Import blog posts
+        if (
+          importData.data.blogPosts &&
+          Array.isArray(importData.data.blogPosts)
+        ) {
+          const existingPosts = JSON.parse(
+            localStorage.getItem("demo_blog_posts") || "[]",
+          );
+          const importedIds = new Set(
+            existingPosts.map((p: { id: string }) => p.id),
+          );
+
+          // Add new posts that don't exist
+          const newPosts = importData.data.blogPosts.filter(
+            (p: { id: string }) => !importedIds.has(p.id),
+          );
+          const mergedPosts = [...existingPosts, ...newPosts];
+          localStorage.setItem("demo_blog_posts", JSON.stringify(mergedPosts));
+        }
+
+        // Import skills
+        if (importData.data.skills && Array.isArray(importData.data.skills)) {
+          const existingSkills = JSON.parse(
+            localStorage.getItem("demo_skills") || "[]",
+          );
+          const importedIds = new Set(
+            existingSkills.map((s: { id: string }) => s.id),
+          );
+
+          // Add new skills that don't exist
+          const newSkills = importData.data.skills.filter(
+            (s: { id: string }) => !importedIds.has(s.id),
+          );
+          const mergedSkills = [...existingSkills, ...newSkills];
+          localStorage.setItem("demo_skills", JSON.stringify(mergedSkills));
+        }
+
+        setImportSuccess(true);
+        setTimeout(() => setImportSuccess(false), 5000);
+      } catch (error) {
+        console.error("Import error:", error);
+        setImportError(
+          error instanceof Error ? error.message : "Erreur lors de l'import",
+        );
+      }
+    };
+
+    reader.onerror = () => {
+      setImportError("Erreur lors de la lecture du fichier");
+    };
+
+    reader.readAsText(file);
+
+    // Reset file input
+    if (importFileRef.current) {
+      importFileRef.current.value = "";
     }
   };
 
@@ -420,6 +521,23 @@ export default function AdminSettingsPage() {
                 Export réussi! Le fichier JSON a été téléchargé.
               </div>
             )}
+            {importSuccess && (
+              <div
+                className="bg-green-500/20 border border-green-500/50 text-green-500 rounded-lg p-4"
+                role="alert"
+              >
+                Import réussi! Le contenu a été restauré. Actualisez la page
+                pour voir les changements.
+              </div>
+            )}
+            {importError && (
+              <div
+                className="bg-red-500/20 border border-red-500/50 text-red-500 rounded-lg p-4"
+                role="alert"
+              >
+                Erreur d&apos;import: {importError}
+              </div>
+            )}
             <div className="grid gap-6 max-w-xl">
               <div className="p-4 border border-border rounded-lg">
                 <h4 className="font-medium text-foreground mb-2">
@@ -443,9 +561,20 @@ export default function AdminSettingsPage() {
                 <p className="text-sm text-muted-foreground mb-4">
                   Restaurez votre contenu depuis un fichier JSON exporté.
                 </p>
-                <button className="px-4 py-2 border border-border text-foreground rounded-lg hover:bg-accent transition-colors">
+                <input
+                  ref={importFileRef}
+                  type="file"
+                  accept=".json,application/json"
+                  onChange={handleImport}
+                  className="hidden"
+                  id="import-file"
+                />
+                <label
+                  htmlFor="import-file"
+                  className="inline-block px-4 py-2 border border-border text-foreground rounded-lg hover:bg-accent transition-colors cursor-pointer"
+                >
                   📤 Importer JSON
-                </button>
+                </label>
               </div>
             </div>
           </div>
