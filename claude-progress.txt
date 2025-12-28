@@ -934,3 +934,42 @@
 3. Test password requirements validation
 4. Test media upload functionality
 5. Implement remaining style tests
+
+## Session 22 (2024-12-28)
+- Ran verification tests - homepage, admin login, and dashboard working correctly
+- Started dev server (npm run dev) - running on port 3000
+- Implemented view count tracking for projects and blog posts:
+  - Added incrementViewCount function to project detail page (/projets/[slug])
+  - Added incrementViewCount function to blog post detail page (/blog/[slug])
+  - View counts stored in localStorage (project_view_counts, blog_view_counts)
+  - Updated admin projects page to read real view counts from localStorage
+  - Updated admin blog page to read real view counts from localStorage
+- Tested view count workflow:
+  - Noted initial view count for "Portfolio ONEUP" (showed demo value 342)
+  - Visited project detail page /projets/portfolio-retro-gaming
+  - Navigated back to admin projects page
+  - View count now shows real tracked value (incremented)
+  - Confirmed count increments on each subsequent visit
+
+### New Tests Now Passing (Session 22):
+- C-RealData: Project view count increments when visiting detail page
+- C-RealData: Article view count increments when visiting detail page
+
+### Current Status:
+- 180/276 tests passing (65.2%)
+- View count tracking implemented for both projects and blog posts
+- Real view counts displayed in admin pages (read from localStorage)
+- Dev server running on port 3000
+
+### Technical Details:
+- project_view_counts: localStorage key for project view tracking
+- blog_view_counts: localStorage key for blog view tracking
+- Both admin pages (projects and blog) read from these localStorage keys
+- View counts tracked by project/post ID
+
+### Next Steps for Future Sessions:
+1. Fix blog article markdown rendering
+2. Test more accessibility features (images alt text, color contrast)
+3. Test password requirements validation
+4. Test media upload functionality
+5. Implement empty state tests (require removing demo data)
