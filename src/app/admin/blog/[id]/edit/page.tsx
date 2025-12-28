@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useToast } from "@/components/ui/retro-toast";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 
 // Tag options for multi-select (common blog tags)
 const tagOptions = [
@@ -685,32 +686,30 @@ export default function EditBlogPostPage() {
             >
               Contenu <span className="text-destructive">*</span>
             </label>
-            <textarea
+            <RichTextEditor
               id="content"
               name="content"
               value={formData.content}
-              onChange={handleChange}
+              onChange={(value) => {
+                setFormData((prev) => {
+                  if (!prev) return prev;
+                  return { ...prev, content: value };
+                });
+                if (errors.content) {
+                  setErrors((prev) => {
+                    const newErrors = { ...prev };
+                    delete newErrors.content;
+                    return newErrors;
+                  });
+                }
+              }}
               placeholder="Écrivez le contenu de votre article ici..."
-              rows={12}
-              className={`w-full px-4 py-2 bg-background border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-y font-mono text-sm ${
-                errors.content ? "border-destructive" : "border-border"
-              }`}
-              aria-invalid={!!errors.content}
-              aria-describedby={errors.content ? "content-error" : undefined}
+              error={errors.content}
             />
             <div className="mt-1 flex justify-between text-xs text-muted-foreground">
               <span>{formData.content.length} caractères</span>
               <span>Temps de lecture estimé: {previewReadTime} min</span>
             </div>
-            {errors.content && (
-              <p
-                id="content-error"
-                className="mt-1 text-sm text-destructive"
-                role="alert"
-              >
-                {errors.content}
-              </p>
-            )}
           </div>
 
           {/* Tags */}

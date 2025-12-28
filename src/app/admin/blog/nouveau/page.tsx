@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/retro-toast";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 
 // Default tag options for multi-select (common blog tags)
 const defaultTagOptions = [
@@ -428,39 +429,27 @@ export default function NewBlogPostPage() {
             >
               Contenu <span className="text-destructive">*</span>
             </label>
-            <textarea
+            <RichTextEditor
               id="content"
               name="content"
               value={formData.content}
-              onChange={handleChange}
-              placeholder="Écrivez le contenu de votre article ici...
-
-Vous pouvez utiliser du Markdown pour formater le texte:
-- **Gras** pour mettre en valeur
-- *Italique* pour emphase
-- # Titre pour les sections
-- - Liste pour les listes
-- `code` pour le code inline"
-              rows={12}
-              className={`w-full px-4 py-2 bg-background border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-y font-mono text-sm ${
-                errors.content ? "border-destructive" : "border-border"
-              }`}
-              aria-invalid={!!errors.content}
-              aria-describedby={errors.content ? "content-error" : undefined}
+              onChange={(value) => {
+                setFormData((prev) => ({ ...prev, content: value }));
+                if (errors.content) {
+                  setErrors((prev) => {
+                    const newErrors = { ...prev };
+                    delete newErrors.content;
+                    return newErrors;
+                  });
+                }
+              }}
+              placeholder="Écrivez le contenu de votre article ici..."
+              error={errors.content}
             />
             <div className="mt-1 flex justify-between text-xs text-muted-foreground">
               <span>{formData.content.length} caractères</span>
               <span>Temps de lecture estimé: {previewReadTime} min</span>
             </div>
-            {errors.content && (
-              <p
-                id="content-error"
-                className="mt-1 text-sm text-destructive"
-                role="alert"
-              >
-                {errors.content}
-              </p>
-            )}
           </div>
 
           {/* Tags */}
