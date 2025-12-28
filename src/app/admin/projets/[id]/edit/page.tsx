@@ -43,6 +43,7 @@ interface ProjectFormData {
   status: string;
   projectDate: string;
   mainImageUrl: string;
+  galleryImages: string[];
   visible: boolean;
   viewCount: number;
   createdAt: string;
@@ -87,6 +88,8 @@ export default function EditProjectPage() {
       formData.status !== initial.status ||
       formData.projectDate !== initial.projectDate ||
       formData.mainImageUrl !== initial.mainImageUrl ||
+      JSON.stringify(formData.galleryImages) !==
+        JSON.stringify(initial.galleryImages) ||
       formData.visible !== initial.visible
     );
   }, [formData]);
@@ -115,6 +118,7 @@ export default function EditProjectPage() {
             status: project.status || "en_cours",
             projectDate: project.projectDate || "",
             mainImageUrl: project.mainImageUrl || "",
+            galleryImages: project.galleryImages || [],
             visible: project.visible ?? true,
             viewCount: project.viewCount || 0,
             createdAt: project.createdAt || "",
@@ -125,6 +129,7 @@ export default function EditProjectPage() {
           initialFormDataRef.current = {
             ...loadedData,
             technologies: [...loadedData.technologies],
+            galleryImages: [...loadedData.galleryImages],
           };
         } else if (response.status === 404) {
           setNotFound(true);
@@ -296,6 +301,7 @@ export default function EditProjectPage() {
           status: formData.status,
           projectDate: formData.projectDate,
           mainImageUrl: formData.mainImageUrl || null,
+          galleryImages: formData.galleryImages,
           visible: formData.visible,
         }),
       });
@@ -645,6 +651,76 @@ export default function EditProjectPage() {
                     (e.target as HTMLImageElement).style.display = "none";
                   }}
                 />
+              </div>
+            )}
+          </div>
+
+          {/* Gallery Images */}
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">
+              Galerie d&apos;images
+            </label>
+            <div className="space-y-2">
+              {formData.galleryImages.map((url, index) => (
+                <div key={index} className="flex gap-2 items-center">
+                  <input
+                    type="url"
+                    value={url}
+                    onChange={(e) => {
+                      const newGallery = [...formData.galleryImages];
+                      newGallery[index] = e.target.value;
+                      setFormData({ ...formData, galleryImages: newGallery });
+                    }}
+                    placeholder="https://example.com/image.jpg"
+                    className="flex-1 px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newGallery = formData.galleryImages.filter(
+                        (_, i) => i !== index,
+                      );
+                      setFormData({ ...formData, galleryImages: newGallery });
+                    }}
+                    className="px-3 py-2 text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+                    title="Supprimer"
+                  >
+                    🗑️
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => {
+                  setFormData({
+                    ...formData,
+                    galleryImages: [...formData.galleryImages, ""],
+                  });
+                }}
+                className="w-full px-4 py-2 border border-dashed border-border rounded-lg text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+              >
+                + Ajouter une image à la galerie
+              </button>
+            </div>
+            {formData.galleryImages.length > 0 && (
+              <div className="mt-4 grid grid-cols-3 gap-2">
+                {formData.galleryImages
+                  .filter((url) => url)
+                  .map((url, index) => (
+                    <div
+                      key={index}
+                      className="aspect-video rounded-lg overflow-hidden bg-accent/20 border border-border"
+                    >
+                      <img
+                        src={url}
+                        alt={`Galerie ${index + 1}`}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = "none";
+                        }}
+                      />
+                    </div>
+                  ))}
               </div>
             )}
           </div>

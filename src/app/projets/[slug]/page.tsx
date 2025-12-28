@@ -17,6 +17,7 @@ interface Project {
   githubUrl?: string;
   demoUrl?: string;
   mainImageUrl?: string;
+  galleryImages?: string[];
   visible: boolean;
 }
 
@@ -212,6 +213,39 @@ export default function ProjectDetailPage() {
             </h2>
             <div className="whitespace-pre-line text-muted-foreground">
               {project.longDescription}
+            </div>
+          </div>
+        )}
+
+        {/* Gallery */}
+        {project.galleryImages && project.galleryImages.length > 0 && (
+          <div className="mt-12">
+            <h2 className="mb-6 text-xl font-semibold text-foreground">
+              Galerie
+            </h2>
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+              {project.galleryImages.map((imageUrl, index) => (
+                <div
+                  key={index}
+                  className="group relative aspect-video overflow-hidden rounded-lg bg-gradient-to-br from-retro-dark to-retro-purple"
+                >
+                  <img
+                    src={imageUrl}
+                    alt={`${project.title} - Image ${index + 1}`}
+                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
+                    onError={(e) => {
+                      // Fallback to emoji if image fails to load
+                      const parent = (e.target as HTMLImageElement)
+                        .parentElement;
+                      if (parent) {
+                        parent.innerHTML =
+                          '<div class="flex h-full items-center justify-center text-4xl">🖼️</div>';
+                      }
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-black/0 transition-colors duration-300 group-hover:bg-black/20" />
+                </div>
+              ))}
             </div>
           </div>
         )}
