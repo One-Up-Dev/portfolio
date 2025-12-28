@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
   Calendar,
@@ -37,6 +37,9 @@ interface PaginationInfo {
 export default function BlogPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
+
+  // Track if this is initial mount to prevent page reset
+  const isInitialMount = useRef(true);
 
   // Initialize state from URL params
   const [posts, setPosts] = useState<BlogPost[]>([]);
@@ -80,8 +83,12 @@ export default function BlogPage() {
     }
   }, [selectedTag, debouncedSearch, currentPage, router]);
 
-  // Reset to page 1 when filters change
+  // Reset to page 1 when filters change (but not on initial mount)
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
     setCurrentPage(1);
   }, [selectedTag, debouncedSearch]);
 

@@ -428,9 +428,9 @@ export default function EditBlogPostPage() {
       addToast("Article modifié avec succès!", "success");
       setSuccessMessage("Article modifié avec succès!");
 
-      // Redirect after delay
+      // Redirect after delay using replace to prevent back button resubmit
       setTimeout(() => {
-        router.push("/admin/blog");
+        router.replace("/admin/blog");
       }, 1500);
     } catch (error) {
       console.error("Error updating post:", error);
@@ -524,7 +524,7 @@ export default function EditBlogPostPage() {
           {autoSaveStatus === "saved" && (
             <div className="flex items-center gap-2 text-sm text-green-500">
               <span>✓</span>
-              <span>Sauvegardé automatiquement</span>
+              <span>Sauvegardé</span>
               {lastAutoSave && (
                 <span className="text-muted-foreground">
                   ({lastAutoSave.toLocaleTimeString("fr-FR")})
@@ -536,6 +536,14 @@ export default function EditBlogPostPage() {
             <div className="flex items-center gap-2 text-sm text-destructive">
               <span>⚠</span>
               <span>Erreur de sauvegarde auto</span>
+            </div>
+          )}
+          {autoSaveStatus === "idle" && lastAutoSave && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span>💾</span>
+              <span>
+                Dernière sauvegarde: {lastAutoSave.toLocaleTimeString("fr-FR")}
+              </span>
             </div>
           )}
         </div>

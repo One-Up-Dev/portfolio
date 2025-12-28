@@ -210,9 +210,9 @@ export default function NewProjectPage() {
         // Show success toast
         addToast("Projet créé avec succès!", "success");
 
-        // Redirect after delay
+        // Redirect after delay using replace to prevent back button resubmit
         setTimeout(() => {
-          router.push("/admin/projets");
+          router.replace("/admin/projets");
         }, 1500);
       } else {
         const data = await response.json();

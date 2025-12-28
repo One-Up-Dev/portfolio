@@ -252,9 +252,9 @@ export default function NewBlogPostPage() {
       addToast("Article créé avec succès!", "success");
       setSuccessMessage("Article créé avec succès!");
 
-      // Redirect after delay
+      // Redirect after delay using replace to prevent back button resubmit
       setTimeout(() => {
-        router.push("/admin/blog");
+        router.replace("/admin/blog");
       }, 1500);
     } catch (error) {
       console.error("Error creating blog post:", error);

@@ -303,8 +303,9 @@ export default function EditProjectPage() {
       if (response.ok) {
         addToast("Projet modifié avec succès!", "success");
         setSuccessMessage("Projet modifié avec succès!");
+        // Use replace to prevent back button resubmit
         setTimeout(() => {
-          router.push("/admin/projets");
+          router.replace("/admin/projets");
         }, 1500);
       } else {
         const data = await response.json();

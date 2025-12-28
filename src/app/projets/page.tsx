@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ExternalLink, Github, ChevronLeft, ChevronRight } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { RetroLoader } from "@/components/ui/retro-spinner";
 
@@ -42,6 +42,9 @@ type SortOption = "newest" | "oldest" | "projectDate";
 export default function ProjectsPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
+
+  // Track if this is initial mount to prevent page reset
+  const isInitialMount = useRef(true);
 
   // Initialize state from URL params
   const [projects, setProjects] = useState<Project[]>([]);
@@ -89,8 +92,12 @@ export default function ProjectsPage() {
     }
   }, [selectedTech, debouncedSearch, sortBy, currentPage, router]);
 
-  // Reset to page 1 when filters change
+  // Reset to page 1 when filters change (but not on initial mount)
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
     setCurrentPage(1);
   }, [selectedTech, debouncedSearch, sortBy]);
 
