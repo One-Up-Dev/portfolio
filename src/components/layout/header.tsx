@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Menu, X, Volume2, VolumeX, Monitor } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -18,6 +18,50 @@ export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [crtEnabled, setCrtEnabled] = useState(false);
+
+  // Load preferences from localStorage on mount
+  useEffect(() => {
+    const savedSound = localStorage.getItem("oneup-sound-enabled");
+    const savedCrt = localStorage.getItem("oneup-crt-enabled");
+
+    if (savedSound !== null) {
+      setSoundEnabled(savedSound === "true");
+    }
+    if (savedCrt !== null) {
+      setCrtEnabled(savedCrt === "true");
+    }
+  }, []);
+
+  // Save sound preference to localStorage
+  const toggleSound = () => {
+    const newValue = !soundEnabled;
+    setSoundEnabled(newValue);
+    localStorage.setItem("oneup-sound-enabled", String(newValue));
+  };
+
+  // Save CRT preference to localStorage and toggle body class
+  const toggleCrt = () => {
+    const newValue = !crtEnabled;
+    setCrtEnabled(newValue);
+    localStorage.setItem("oneup-crt-enabled", String(newValue));
+
+    // Toggle CRT effect on body
+    if (newValue) {
+      document.body.classList.add("crt-effect");
+    } else {
+      document.body.classList.remove("crt-effect");
+    }
+  };
+
+  // Apply CRT effect on mount if enabled
+  useEffect(() => {
+    if (crtEnabled) {
+      document.body.classList.add("crt-effect");
+    }
+    return () => {
+      document.body.classList.remove("crt-effect");
+    };
+  }, [crtEnabled]);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -48,7 +92,7 @@ export function Header() {
         <div className="flex items-center gap-2">
           {/* Sound Toggle */}
           <button
-            onClick={() => setSoundEnabled(!soundEnabled)}
+            onClick={toggleSound}
             className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
             aria-label={soundEnabled ? "Désactiver le son" : "Activer le son"}
           >
@@ -61,7 +105,7 @@ export function Header() {
 
           {/* CRT Toggle */}
           <button
-            onClick={() => setCrtEnabled(!crtEnabled)}
+            onClick={toggleCrt}
             className={cn(
               "rounded-md p-2 transition-colors hover:bg-accent hover:text-accent-foreground",
               crtEnabled ? "text-primary" : "text-muted-foreground",

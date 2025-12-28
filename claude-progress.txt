@@ -64,7 +64,13 @@
   - Contact form email format validation
   - Contact form successful submission with success message
   - Contact form clears after successful submission
-- Updated feature_list.json with 8 additional passing tests
+- Implemented localStorage persistence for CRT effect and sound toggles
+- Verified accessibility features:
+  - Icon buttons have proper aria-labels
+  - Form fields have associated labels
+  - Error messages have role="alert" for screen readers
+  - Heading hierarchy is properly structured (H1 → H2 → H3)
+- Updated feature_list.json with additional passing tests
 
 ### New Tests Now Passing (Session 3):
 - B-Navigation: Header navigation - clicking 'Accueil' navigates to homepage
@@ -75,22 +81,30 @@
 - D-Workflow: Complete contact form submission workflow
 - E-ErrorHandling: Contact form shows validation errors for empty required fields
 - E-ErrorHandling: Contact form shows error for invalid email format
+- G-StatePersistence: CRT effect toggle persists across page refresh
+- G-StatePersistence: Sound toggle persists across page refresh
 - M-FormValidation: Contact form email validation - invalid format rejected
 - M-FormValidation: Contact form email validation - valid format accepted
 - N-Feedback: Contact form shows success message after submit
 - O-Responsive: Mobile navigation menu works correctly
+- P-Accessibility: Form fields have associated labels
+- P-Accessibility: Icon-only buttons have aria-label
+- P-Accessibility: Error messages are announced to screen readers
+- P-Accessibility: Headings are properly hierarchical
 
 ### Current Status:
-- 26/277 tests passing (9.4%)
+- 32/277 tests passing (11.6%)
 - All public pages fully functional
 - Contact form with complete validation and submission
 - Mobile responsive navigation fully working
+- CRT and sound toggle persistence with localStorage
+- Good accessibility support implemented
 - Dev server running on port 3002
 
 ### Next Steps for Future Sessions:
 1. Implement admin authentication and login page
 2. Create admin dashboard layout
 3. Add project/blog CRUD functionality
-4. Implement CRT effect toggle with localStorage persistence
-5. Add sound effects system
-6. Add accessibility features (skip links, focus states)
+4. Implement skip-to-content accessibility link
+5. Add focus ring styles for keyboard navigation
+6. Implement more responsive design tests
