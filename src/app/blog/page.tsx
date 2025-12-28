@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Calendar, Clock, Tag, Search } from "lucide-react";
 
 interface BlogPost {
@@ -16,12 +17,30 @@ interface BlogPost {
 }
 
 export default function BlogPage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  // Initialize state from URL params
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [allTags, setAllTags] = useState<string[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
+  const [selectedTag, setSelectedTag] = useState<string | null>(
+    searchParams.get("tag") || null,
+  );
   const [isLoading, setIsLoading] = useState(true);
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState(
+    searchParams.get("q") || "",
+  );
+
+  // Update URL when filters change
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (selectedTag) params.set("tag", selectedTag);
+    if (debouncedSearch) params.set("q", debouncedSearch);
+
+    const newUrl = params.toString() ? `/blog?${params.toString()}` : "/blog";
+    router.replace(newUrl, { scroll: false });
+  }, [selectedTag, debouncedSearch, router]);
 
   // Debounce search query
   useEffect(() => {

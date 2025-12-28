@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ExternalLink, Github } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 
 interface Project {
   id: string;
@@ -28,13 +29,36 @@ const statusLabels = {
 type SortOption = "newest" | "oldest" | "projectDate";
 
 export default function ProjectsPage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  // Initialize state from URL params
   const [projects, setProjects] = useState<Project[]>([]);
   const [allTechnologies, setAllTechnologies] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedTech, setSelectedTech] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState<SortOption>("newest");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
+  const [selectedTech, setSelectedTech] = useState<string | null>(
+    searchParams.get("tech") || null,
+  );
+  const [sortBy, setSortBy] = useState<SortOption>(
+    (searchParams.get("sort") as SortOption) || "newest",
+  );
+  const [debouncedSearch, setDebouncedSearch] = useState(
+    searchParams.get("q") || "",
+  );
+
+  // Update URL when filters change
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (selectedTech) params.set("tech", selectedTech);
+    if (debouncedSearch) params.set("q", debouncedSearch);
+    if (sortBy !== "newest") params.set("sort", sortBy);
+
+    const newUrl = params.toString()
+      ? `/projets?${params.toString()}`
+      : "/projets";
+    router.replace(newUrl, { scroll: false });
+  }, [selectedTech, debouncedSearch, sortBy, router]);
 
   // Debounce search query
   useEffect(() => {

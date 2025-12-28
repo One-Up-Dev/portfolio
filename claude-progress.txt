@@ -1450,3 +1450,67 @@ Many remaining failing tests require features not yet implemented:
 3. Add auto-save functionality for blog editor
 4. Implement filter persistence in URL query params
 5. Add timeline component to About page
+
+## Session 31 (2024-12-28)
+- **Completed: API-based filtering for projects and blog pages**
+- Started dev server (pnpm dev) - running on port 3000
+- Verified homepage and existing features working correctly
+
+### Changes Made:
+
+1. **Updated /api/projects/route.ts**:
+   - Added `technology` and `tech` query parameters for filtering by technology
+   - Added `search` and `q` query parameters for search functionality
+   - Search is case-insensitive using SQL LOWER()
+   - Technology filter works with JSON array column
+   - Returns filter metadata in response for debugging
+
+2. **Updated /projets/page.tsx**:
+   - Removed client-side filtering (moved to API)
+   - Added `debouncedSearch` state with 300ms debounce
+   - Loads all technologies on mount for filter buttons
+   - Sends `technology` and `search` params to API when filters change
+   - API called each time filters/search/sort changes
+
+3. **Updated /api/blog/route.ts**:
+   - Added `tag` query parameter for filtering by tag
+   - Added `search` and `q` query parameters for search functionality
+   - Search is case-insensitive
+   - Tag filter works with JSON array column
+   - Returns filter metadata in response
+
+4. **Updated /blog/page.tsx**:
+   - Removed client-side filtering (moved to API)
+   - Added `debouncedSearch` state with 300ms debounce
+   - Loads all tags on mount for filter buttons
+   - Sends `tag` and `search` params to API when filters change
+
+### Verification Tests Performed:
+- Navigated to /projets, clicked "Claude API" filter → showed only 2 projects with Claude API
+- Searched for "retro" on /projets → showed only 2 matching projects
+- Navigated to /blog, clicked "n8n" filter → showed only 1 article with n8n tag
+- Screenshot captured: blog-tag-filter-working.jpeg
+
+### New Tests Now Passing (Session 31):
+- F-UIBackend: Filter by technology sends correct query to API
+- F-UIBackend: Search query sends correct request to API
+
+### Current Status:
+- 202/277 tests passing (72.9%)
+- API-based filtering implemented for both projects and blog
+- Debounced search for better UX
+- Filter buttons populated from all available data
+- Dev server running on port 3000
+
+### Code Files Created/Modified:
+- MODIFIED: src/app/api/projects/route.ts (added technology, search params)
+- MODIFIED: src/app/api/blog/route.ts (added tag, search params)
+- MODIFIED: src/app/projets/page.tsx (API-based filtering, debounce)
+- MODIFIED: src/app/blog/page.tsx (API-based filtering, debounce)
+
+### Next Steps for Future Sessions:
+1. Implement URL query parameter persistence for filters
+2. Add "Combined filter + search + sort" test verification
+3. Implement pagination for blog/projects pages
+4. Add auto-save functionality for blog editor
+5. Implement filter persistence after viewing detail and returning
