@@ -273,7 +273,7 @@
   {"category": "style", "description": "About page timeline styled correctly", "steps": ["Step 1: Navigate to /a-propos", "Step 2: Verify timeline visual", "Step 3: Verify dates and events styled"], "passes": true},
   {"category": "style", "description": "Project gallery has proper image grid", "steps": ["Step 1: Navigate to project with gallery", "Step 2: Verify images in grid", "Step 3: Verify hover zoom effect"], "passes": false},
   {"category": "style", "description": "Rich text editor toolbar styled correctly", "steps": ["Step 1: Open blog editor", "Step 2: Verify toolbar visible", "Step 3: Verify icons and buttons styled"], "passes": false},
-  {"category": "style", "description": "Konami code modal has pixel art styling", "steps": ["Step 1: Enter Konami code", "Step 2: Verify modal appears", "Step 3: Verify pixel art sprites visible", "Step 4: Verify retro styling"], "passes": false},
+  {"category": "style", "description": "Konami code modal has pixel art styling", "steps": ["Step 1: Enter Konami code", "Step 2: Verify modal appears", "Step 3: Verify pixel art sprites visible", "Step 4: Verify retro styling"], "passes": true},
   {"category": "style", "description": "Smooth scroll animations between sections", "steps": ["Step 1: Navigate to homepage", "Step 2: Click anchor link", "Step 3: Verify smooth scroll animation"], "passes": true},
   {"category": "style", "description": "Parallax effect on hero section", "steps": ["Step 1: Navigate to homepage", "Step 2: Scroll down", "Step 3: Verify parallax movement of background"], "passes": true}
 ]

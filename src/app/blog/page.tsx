@@ -34,6 +34,27 @@ interface PaginationInfo {
   hasPrevPage: boolean;
 }
 
+// Helper function to highlight matching text
+function highlightMatch(text: string, query: string): React.ReactNode {
+  if (!query || !text) return text;
+
+  const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const regex = new RegExp(`(${escapedQuery})`, "gi");
+  const parts = text.split(regex);
+
+  if (parts.length === 1) return text;
+
+  return parts.map((part, index) =>
+    regex.test(part) ? (
+      <mark key={index} className="bg-primary/30 text-primary px-0.5 rounded">
+        {part}
+      </mark>
+    ) : (
+      part
+    ),
+  );
+}
+
 export default function BlogPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -271,12 +292,12 @@ export default function BlogPage() {
 
                 {/* Title */}
                 <h2 className="mb-2 text-xl font-semibold text-foreground group-hover:text-primary line-clamp-2">
-                  {post.title}
+                  {highlightMatch(post.title, debouncedSearch)}
                 </h2>
 
                 {/* Excerpt */}
                 <p className="mb-4 text-muted-foreground line-clamp-3">
-                  {post.excerpt}
+                  {highlightMatch(post.excerpt, debouncedSearch)}
                 </p>
 
                 {/* Meta */}

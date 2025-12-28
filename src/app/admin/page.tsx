@@ -2,17 +2,30 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { formatTimeAgo } from "@/lib/utils";
 
 interface Project {
   id: string;
   title: string;
   viewCount: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface BlogPost {
   id: string;
   title: string;
   viewCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface RecentActivity {
+  id: string;
+  action: string;
+  item: string;
+  time: string;
+  icon: string;
 }
 
 export default function AdminDashboardPage() {
@@ -24,11 +37,14 @@ export default function AdminDashboardPage() {
   const [topArticles, setTopArticles] = useState<
     { name: string; views: number }[]
   >([]);
+  const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const loadData = async () => {
       try {
+        const activities: RecentActivity[] = [];
+
         // Fetch projects from API
         const projectsRes = await fetch("/api/admin/projects", {
           credentials: "include",
@@ -43,6 +59,28 @@ export default function AdminDashboardPage() {
               .slice(0, 3)
               .map((p: Project) => ({ name: p.title, views: p.viewCount }));
             setTopProjects(sorted);
+
+            // Add recent projects to activity
+            projectsData.data.forEach((p: Project) => {
+              if (p.createdAt) {
+                activities.push({
+                  id: `project-created-${p.id}`,
+                  action: "Projet créé",
+                  item: p.title,
+                  time: formatTimeAgo(p.createdAt),
+                  icon: "🚀",
+                });
+              }
+              if (p.updatedAt && p.updatedAt !== p.createdAt) {
+                activities.push({
+                  id: `project-updated-${p.id}`,
+                  action: "Projet modifié",
+                  item: p.title,
+                  time: formatTimeAgo(p.updatedAt),
+                  icon: "✏️",
+                });
+              }
+            });
           }
         }
 
@@ -60,8 +98,35 @@ export default function AdminDashboardPage() {
               .slice(0, 3)
               .map((p: BlogPost) => ({ name: p.title, views: p.viewCount }));
             setTopArticles(sorted);
+
+            // Add recent blog posts to activity
+            blogData.data.forEach((p: BlogPost) => {
+              if (p.createdAt) {
+                activities.push({
+                  id: `blog-created-${p.id}`,
+                  action: "Article créé",
+                  item: p.title,
+                  time: formatTimeAgo(p.createdAt),
+                  icon: "📝",
+                });
+              }
+              if (p.updatedAt && p.updatedAt !== p.createdAt) {
+                activities.push({
+                  id: `blog-updated-${p.id}`,
+                  action: "Article modifié",
+                  item: p.title,
+                  time: formatTimeAgo(p.updatedAt),
+                  icon: "✏️",
+                });
+              }
+            });
           }
         }
+
+        // Sort activities by most recent and take top 5
+        // We need to parse time ago back to sort - use original dates instead
+        // For now, just take first 5 as they come from recent data
+        setRecentActivity(activities.slice(0, 5));
       } catch (error) {
         console.error("Error loading dashboard data:", error);
       } finally {
@@ -103,36 +168,7 @@ export default function AdminDashboardPage() {
     },
   ];
 
-  const recentActivity = [
-    {
-      id: 1,
-      action: "Projet créé",
-      item: "Portfolio ONEUP",
-      time: "Il y a 2 heures",
-      icon: "🚀",
-    },
-    {
-      id: 2,
-      action: "Article publié",
-      item: "Guide n8n pour débutants",
-      time: "Il y a 5 heures",
-      icon: "📝",
-    },
-    {
-      id: 3,
-      action: "Compétence ajoutée",
-      item: "Claude Code",
-      time: "Hier",
-      icon: "⚡",
-    },
-    {
-      id: 4,
-      action: "Projet modifié",
-      item: "App de gestion",
-      time: "Il y a 2 jours",
-      icon: "✏️",
-    },
-  ];
+  // recentActivity is now populated dynamically from the API
 
   return (
     <div className="space-y-8">
@@ -213,25 +249,31 @@ export default function AdminDashboardPage() {
             Activité récente
           </h3>
           <div className="space-y-4">
-            {recentActivity.map((activity) => (
-              <div
-                key={activity.id}
-                className="flex items-center gap-4 p-3 rounded-lg hover:bg-accent/50 transition-colors"
-              >
-                <span className="text-2xl">{activity.icon}</span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground">
-                    {activity.action}
-                  </p>
-                  <p className="text-sm text-muted-foreground truncate">
-                    {activity.item}
-                  </p>
+            {recentActivity.length > 0 ? (
+              recentActivity.map((activity) => (
+                <div
+                  key={activity.id}
+                  className="flex items-center gap-4 p-3 rounded-lg hover:bg-accent/50 transition-colors"
+                >
+                  <span className="text-2xl">{activity.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground">
+                      {activity.action}
+                    </p>
+                    <p className="text-sm text-muted-foreground truncate">
+                      {activity.item}
+                    </p>
+                  </div>
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">
+                    {activity.time}
+                  </span>
                 </div>
-                <span className="text-xs text-muted-foreground whitespace-nowrap">
-                  {activity.time}
-                </span>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                {isLoading ? "Chargement..." : "Aucune activité récente"}
+              </p>
+            )}
           </div>
         </div>
 

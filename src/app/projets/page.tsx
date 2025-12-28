@@ -39,6 +39,27 @@ const statusLabels = {
 
 type SortOption = "newest" | "oldest" | "projectDate";
 
+// Helper function to highlight matching text
+function highlightMatch(text: string, query: string): React.ReactNode {
+  if (!query || !text) return text;
+
+  const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const regex = new RegExp(`(${escapedQuery})`, "gi");
+  const parts = text.split(regex);
+
+  if (parts.length === 1) return text;
+
+  return parts.map((part, index) =>
+    regex.test(part) ? (
+      <mark key={index} className="bg-primary/30 text-primary px-0.5 rounded">
+        {part}
+      </mark>
+    ) : (
+      part
+    ),
+  );
+}
+
 export default function ProjectsPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -328,13 +349,16 @@ export default function ProjectsPage() {
                     {/* Title */}
                     <h2 className="mb-2 text-lg font-semibold text-foreground group-hover:text-primary line-clamp-2">
                       <Link href={`/projets/${project.slug}`}>
-                        {project.title}
+                        {highlightMatch(project.title, debouncedSearch)}
                       </Link>
                     </h2>
 
                     {/* Description */}
                     <p className="mb-4 flex-1 text-sm text-muted-foreground line-clamp-3">
-                      {project.shortDescription}
+                      {highlightMatch(
+                        project.shortDescription,
+                        debouncedSearch,
+                      )}
                     </p>
 
                     {/* Technologies */}
