@@ -661,3 +661,38 @@
 3. Add project/blog timestamps tracking
 4. Test responsive design features
 5. Implement double-click prevention for forms
+
+## Session 16 (2024-12-28)
+- Ran verification tests - homepage, admin login, and dashboard working correctly
+- Verified and tested error handling features:
+  - Duplicate project slug shows error "Ce slug existe déjà" when creating project with same slug
+  - Duplicate blog slug shows error "Ce slug existe déjà" when creating blog post with same slug
+  - Form data preserved when validation fails (other fields still contain data)
+  - Deleted project removed from search results immediately (tested with "Test Duplicate Slug" project)
+- Verified idempotency features:
+  - Double-click submit on project form creates only one project (isSubmitting state prevents duplicates)
+  - Double-click submit on blog form creates only one article (isSubmitting state prevents duplicates)
+- Cleaned up test data after each verification
+
+### New Tests Now Passing (Session 16):
+- E-ErrorHandling: Project form shows error when slug already exists
+- E-ErrorHandling: Blog form shows error when slug already exists
+- G-StatePersistence: Form data preserved when validation fails
+- I-Idempotency: Double-click submit on project form creates only one project
+- I-Idempotency: Double-click submit on blog form creates only one article
+- J-DataCleanup: Deleted project removed from search results immediately
+
+### Current Status:
+- 126/276 tests passing (45.7%)
+- Duplicate slug detection working for both projects and blog posts
+- Form validation preserves user data when errors occur
+- Double-click prevention implemented via isSubmitting state
+- Delete workflow properly syncs between admin and public pages
+- Dev server running on port 3000
+
+### Next Steps for Future Sessions:
+1. Add skills creation workflow with localStorage
+2. Test double-click delete button
+3. Add project/blog timestamps tracking
+4. Test responsive design features
+5. Implement admin session persistence across browser tabs

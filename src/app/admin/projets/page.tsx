@@ -149,6 +149,20 @@ export default function AdminProjectsPage() {
     }
   };
 
+  // Handle Escape key to close modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && showDeleteModal) {
+        setShowDeleteModal(null);
+      }
+    };
+
+    if (showDeleteModal) {
+      document.addEventListener("keydown", handleKeyDown);
+      return () => document.removeEventListener("keydown", handleKeyDown);
+    }
+  }, [showDeleteModal]);
+
   const handleDelete = (id: string) => {
     // Check if it's a demo project (IDs 1-4 are demo)
     const isDemoProject = ["1", "2", "3", "4"].includes(id);

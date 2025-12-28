@@ -95,6 +95,20 @@ export default function AdminBlogPage() {
     loadPosts();
   }, []);
 
+  // Handle Escape key to close modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && showDeleteModal) {
+        setShowDeleteModal(null);
+      }
+    };
+
+    if (showDeleteModal) {
+      document.addEventListener("keydown", handleKeyDown);
+      return () => document.removeEventListener("keydown", handleKeyDown);
+    }
+  }, [showDeleteModal]);
+
   const handleDelete = (id: string) => {
     // Check if it's a demo post (IDs 1-3 are demo)
     const isDemoPost = ["1", "2", "3"].includes(id);
