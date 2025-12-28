@@ -23,6 +23,10 @@ const statusLabels: Record<string, { label: string; color: string }> = {
 export default function AdminProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [showDeleteModal, setShowDeleteModal] = useState<string | null>(null);
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
+  const [selectedProjects, setSelectedProjects] = useState<Set<string>>(
+    new Set(),
+  );
   const [successMessage, setSuccessMessage] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -153,6 +157,54 @@ export default function AdminProjectsPage() {
     setShowDeleteModal(null);
   };
 
+  // Toggle project selection for bulk delete
+  const toggleProjectSelection = (id: string) => {
+    const newSelection = new Set(selectedProjects);
+    if (newSelection.has(id)) {
+      newSelection.delete(id);
+    } else {
+      newSelection.add(id);
+    }
+    setSelectedProjects(newSelection);
+  };
+
+  // Toggle all projects selection
+  const toggleAllSelection = () => {
+    if (selectedProjects.size === projects.length) {
+      setSelectedProjects(new Set());
+    } else {
+      setSelectedProjects(new Set(projects.map((p) => p.id)));
+    }
+  };
+
+  // Handle bulk delete
+  const handleBulkDelete = async () => {
+    try {
+      const deletePromises = Array.from(selectedProjects).map((id) =>
+        fetch(`/api/admin/projects/${id}`, {
+          method: "DELETE",
+          credentials: "include",
+        }),
+      );
+
+      await Promise.all(deletePromises);
+
+      // Update state
+      setProjects(projects.filter((p) => !selectedProjects.has(p.id)));
+      setSelectedProjects(new Set());
+      setSuccessMessage(
+        `${selectedProjects.size} projet(s) supprimé(s) avec succès!`,
+      );
+      setTimeout(() => setSuccessMessage(""), 3000);
+    } catch (error) {
+      console.error("Error bulk deleting projects:", error);
+      setSuccessMessage("Erreur lors de la suppression des projets");
+      setTimeout(() => setSuccessMessage(""), 3000);
+    }
+
+    setShowBulkDeleteModal(false);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -184,13 +236,24 @@ export default function AdminProjectsPage() {
             Gérez vos projets et leur visibilité
           </p>
         </div>
-        <Link
-          href="/admin/projets/nouveau"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
-        >
-          <span>+</span>
-          <span>Nouveau projet</span>
-        </Link>
+        <div className="flex items-center gap-3">
+          {selectedProjects.size > 0 && (
+            <button
+              onClick={() => setShowBulkDeleteModal(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-destructive text-destructive-foreground rounded-lg hover:bg-destructive/90 transition-colors"
+            >
+              <span>🗑️</span>
+              <span>Supprimer ({selectedProjects.size})</span>
+            </button>
+          )}
+          <Link
+            href="/admin/projets/nouveau"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+          >
+            <span>+</span>
+            <span>Nouveau projet</span>
+          </Link>
+        </div>
       </div>
 
       {/* Projects Table */}
@@ -199,6 +262,18 @@ export default function AdminProjectsPage() {
           <table className="w-full">
             <thead className="bg-accent/50 border-b border-border">
               <tr>
+                <th className="w-12 px-4 py-4">
+                  <input
+                    type="checkbox"
+                    checked={
+                      selectedProjects.size === projects.length &&
+                      projects.length > 0
+                    }
+                    onChange={toggleAllSelection}
+                    className="w-4 h-4 rounded border-border bg-background text-primary focus:ring-primary"
+                    aria-label="Sélectionner tous les projets"
+                  />
+                </th>
                 <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">
                   Titre
                 </th>
@@ -223,7 +298,7 @@ export default function AdminProjectsPage() {
               {projects.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     className="px-6 py-12 text-center text-muted-foreground"
                   >
                     Aucun projet pour le moment. Créez votre premier projet !
@@ -233,8 +308,17 @@ export default function AdminProjectsPage() {
                 projects.map((project) => (
                   <tr
                     key={project.id}
-                    className="hover:bg-accent/30 transition-colors"
+                    className={`hover:bg-accent/30 transition-colors ${selectedProjects.has(project.id) ? "bg-accent/20" : ""}`}
                   >
+                    <td className="w-12 px-4 py-4">
+                      <input
+                        type="checkbox"
+                        checked={selectedProjects.has(project.id)}
+                        onChange={() => toggleProjectSelection(project.id)}
+                        className="w-4 h-4 rounded border-border bg-background text-primary focus:ring-primary"
+                        aria-label={`Sélectionner ${project.title}`}
+                      />
+                    </td>
                     <td className="px-6 py-4">
                       <div>
                         <p className="font-medium text-foreground">
@@ -345,6 +429,35 @@ export default function AdminProjectsPage() {
                 className="px-4 py-2 bg-destructive text-destructive-foreground rounded-lg hover:bg-destructive/90 transition-colors"
               >
                 Supprimer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Delete Confirmation Modal */}
+      {showBulkDeleteModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-card border border-border rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-foreground mb-2">
+              Confirmer la suppression multiple
+            </h3>
+            <p className="text-muted-foreground mb-6">
+              Êtes-vous sûr de vouloir supprimer {selectedProjects.size}{" "}
+              projet(s) ? Cette action est irréversible.
+            </p>
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={() => setShowBulkDeleteModal(false)}
+                className="px-4 py-2 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleBulkDelete}
+                className="px-4 py-2 bg-destructive text-destructive-foreground rounded-lg hover:bg-destructive/90 transition-colors"
+              >
+                Supprimer {selectedProjects.size} projet(s)
               </button>
             </div>
           </div>
