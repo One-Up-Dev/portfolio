@@ -1,3 +1,6 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import {
   Code2,
   Database,
@@ -9,13 +12,20 @@ import {
   Terminal,
 } from "lucide-react";
 
-export const metadata = {
-  title: "Compétences - ONEUP Portfolio",
-  description:
-    "Mes compétences en développement web, automatisation, et outils modernes.",
-};
+interface Skill {
+  name: string;
+  level: number;
+}
 
-const skillCategories = [
+interface SkillCategory {
+  id: string;
+  name: string;
+  icon: React.ComponentType<{ className?: string }>;
+  skills: Skill[];
+}
+
+// Demo skills data
+const demoSkillCategories: SkillCategory[] = [
   {
     id: "frontend",
     name: "Frontend",
@@ -78,6 +88,59 @@ const techIcons: Record<string, React.ReactNode> = {
 };
 
 export default function SkillsPage() {
+  const [skillCategories, setSkillCategories] =
+    useState<SkillCategory[]>(demoSkillCategories);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load skills from localStorage on mount
+  useEffect(() => {
+    const loadSkills = () => {
+      try {
+        const savedSkills = localStorage.getItem("demo_skills");
+        if (savedSkills) {
+          const parsed = JSON.parse(savedSkills);
+
+          // Merge user-created skills with demo skills
+          const mergedCategories = demoSkillCategories.map((category) => {
+            const userSkills = parsed[category.id] || [];
+            const additionalSkills = userSkills.map(
+              (s: { name: string; icon: string }) => ({
+                name: s.name,
+                level: 75, // Default level for user-created skills
+              }),
+            );
+
+            return {
+              ...category,
+              skills: [...category.skills, ...additionalSkills],
+            };
+          });
+
+          setSkillCategories(mergedCategories);
+        }
+      } catch (error) {
+        console.error("Error loading skills:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadSkills();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="py-20">
+        <div className="container mx-auto max-w-6xl px-4">
+          <div className="flex items-center justify-center py-20">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+            <span className="ml-3 text-muted-foreground">Chargement...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="py-20">
       <div className="container mx-auto max-w-6xl px-4">
