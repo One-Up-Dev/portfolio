@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 // Demo blog posts data
 const demoPosts = [
@@ -34,21 +34,132 @@ const demoPosts = [
   },
 ];
 
+interface BlogPost {
+  id: string;
+  title: string;
+  slug: string;
+  status: string;
+  tags: string[];
+  createdAt: string;
+  views: number;
+}
+
 const statusLabels: Record<string, { label: string; color: string }> = {
   published: { label: "Publié", color: "bg-green-500/20 text-green-500" },
   draft: { label: "Brouillon", color: "bg-yellow-500/20 text-yellow-500" },
 };
 
 export default function AdminBlogPage() {
-  const [posts] = useState(demoPosts);
+  const [posts, setPosts] = useState<BlogPost[]>(demoPosts);
   const [showDeleteModal, setShowDeleteModal] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState("");
 
-  const handleDelete = () => {
+  // Load posts from localStorage on mount
+  useEffect(() => {
+    const loadPosts = () => {
+      try {
+        const savedPosts = localStorage.getItem("demo_blog_posts");
+        if (savedPosts) {
+          const parsed = JSON.parse(savedPosts);
+          // Transform saved posts to match display format
+          const formattedPosts = parsed.map(
+            (post: {
+              id: string;
+              title: string;
+              slug: string;
+              status: string;
+              tags: string[];
+              createdAt: string;
+              publishDate?: string;
+              views: number;
+            }) => ({
+              id: post.id,
+              title: post.title,
+              slug: post.slug,
+              status: post.status,
+              tags: post.tags || [],
+              createdAt:
+                post.publishDate ||
+                post.createdAt?.split("T")[0] ||
+                new Date().toISOString().split("T")[0],
+              views: post.views || 0,
+            }),
+          );
+          // Combine demo posts with saved posts
+          setPosts([...demoPosts, ...formattedPosts]);
+        }
+      } catch (error) {
+        console.error("Error loading posts:", error);
+      }
+    };
+    loadPosts();
+  }, []);
+
+  const handleDelete = (id: string) => {
+    // Check if it's a demo post (IDs 1-3 are demo)
+    const isDemoPost = ["1", "2", "3"].includes(id);
+
+    if (isDemoPost) {
+      // For demo posts, just close the modal (don't actually delete)
+      setShowDeleteModal(null);
+      return;
+    }
+
+    // Delete from localStorage
+    try {
+      const savedPosts = localStorage.getItem("demo_blog_posts");
+      if (savedPosts) {
+        const parsed = JSON.parse(savedPosts);
+        const filtered = parsed.filter((p: BlogPost) => p.id !== id);
+        localStorage.setItem("demo_blog_posts", JSON.stringify(filtered));
+
+        // Transform and update state
+        const formattedPosts = filtered.map(
+          (post: {
+            id: string;
+            title: string;
+            slug: string;
+            status: string;
+            tags: string[];
+            createdAt: string;
+            publishDate?: string;
+            views: number;
+          }) => ({
+            id: post.id,
+            title: post.title,
+            slug: post.slug,
+            status: post.status,
+            tags: post.tags || [],
+            createdAt:
+              post.publishDate ||
+              post.createdAt?.split("T")[0] ||
+              new Date().toISOString().split("T")[0],
+            views: post.views || 0,
+          }),
+        );
+        setPosts([...demoPosts, ...formattedPosts]);
+        setSuccessMessage("Article supprimé avec succès!");
+        setTimeout(() => setSuccessMessage(""), 3000);
+      }
+    } catch (error) {
+      console.error("Error deleting post:", error);
+    }
+
     setShowDeleteModal(null);
   };
 
   return (
     <div className="space-y-6">
+      {/* Success Message */}
+      {successMessage && (
+        <div
+          className="bg-green-500/20 border border-green-500/50 text-green-500 rounded-lg p-4"
+          role="alert"
+        >
+          {successMessage}
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -184,7 +295,7 @@ export default function AdminBlogPage() {
                 Annuler
               </button>
               <button
-                onClick={handleDelete}
+                onClick={() => handleDelete(showDeleteModal)}
                 className="px-4 py-2 bg-destructive text-destructive-foreground rounded-lg hover:bg-destructive/90 transition-colors"
               >
                 Supprimer

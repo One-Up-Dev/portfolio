@@ -284,3 +284,47 @@
 3. Test URL validation for GitHub/Demo fields
 4. Implement modal close with Escape key
 5. Add more accessibility features (tab navigation, focus rings)
+
+## Session 8 (2024-12-28)
+- Ran verification test on homepage and admin dashboard - all working
+- Updated public /projets page to read projects from localStorage:
+  - Changed to client component to access localStorage
+  - Combined demo projects with user-created projects
+  - Added search functionality to filter by project name/description
+  - Added technology filter buttons
+  - Added loading state during data fetch
+  - Filter only shows visible projects (visible !== false)
+- Updated public /projets/[slug] page to read from localStorage:
+  - Changed to client component with useParams
+  - Checks both demo projects and localStorage for matching slug
+  - Respects visibility setting (hidden projects return 404)
+  - Added loading state
+- Tested complete project creation workflow:
+  - Created TEST_PROJECT_12345 via admin form
+  - Verified it appears in public /projets list
+  - Verified detail page /projets/testproject12345 works
+  - Verified search functionality filters correctly
+  - Verified technology filter shows only matching projects
+  - Verified persistence after page refresh
+
+### New Tests Now Passing (Session 8):
+- C-RealData: Create project via admin - verify it appears in public projects list
+- C-RealData: Created project persists after page refresh
+- C-RealData: Project filter by technology shows only matching projects
+- C-RealData: Search projects returns real matching results
+
+### Current Status:
+- 76/276 tests passing (27.5%)
+- Public projects page now reads from localStorage (combines demo + user projects)
+- Project detail page reads from localStorage
+- Search and filter functionality working on projects page
+- Complete project creation workflow tested end-to-end
+- Dev server running on port 3000
+
+### Next Steps for Future Sessions:
+1. Implement blog creation form at /admin/blog/nouveau
+2. Update public /blog page to read from localStorage (same pattern as projects)
+3. Add project edit functionality at /admin/projets/[id]/edit
+4. Implement delete project flow with public page updates
+5. Add sidebar collapse state persistence
+6. Test more responsive design features

@@ -1,9 +1,12 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowLeft, ExternalLink, Github, Calendar } from "lucide-react";
-import { notFound } from "next/navigation";
+import { useParams, notFound } from "next/navigation";
+import { useState, useEffect } from "react";
 
-// Demo projects data (will be replaced with real data from database)
-const projects = [
+// Demo projects data (combined with localStorage data)
+const demoProjects = [
   {
     id: "1",
     slug: "portfolio-retro-gaming",
@@ -28,6 +31,7 @@ const projects = [
     projectDate: "2024-12-01",
     githubUrl: "https://github.com/oneup/portfolio",
     demoUrl: "https://oneup.dev",
+    visible: true,
   },
   {
     id: "2",
@@ -50,6 +54,7 @@ const projects = [
     status: "termine" as const,
     projectDate: "2024-10-15",
     githubUrl: "https://github.com/oneup/n8n-workflows",
+    visible: true,
   },
   {
     id: "3",
@@ -73,8 +78,23 @@ const projects = [
     status: "en_cours" as const,
     projectDate: "2024-11-01",
     githubUrl: "https://github.com/oneup/claude-assistant",
+    visible: true,
   },
 ];
+
+interface Project {
+  id: string;
+  slug: string;
+  title: string;
+  shortDescription: string;
+  longDescription?: string;
+  technologies: string[];
+  status: "en_cours" | "termine" | "abandonne";
+  projectDate?: string;
+  githubUrl?: string;
+  demoUrl?: string;
+  visible: boolean;
+}
 
 const statusLabels = {
   en_cours: {
@@ -85,41 +105,85 @@ const statusLabels = {
   abandonne: { label: "Abandonné", className: "bg-red-500/20 text-red-400" },
 };
 
-export async function generateStaticParams() {
-  return projects.map((project) => ({
-    slug: project.slug,
-  }));
-}
+export default function ProjectDetailPage() {
+  const params = useParams();
+  const slug = params.slug as string;
+  const [project, setProject] = useState<Project | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [notFoundState, setNotFoundState] = useState(false);
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
-  const { slug } = await params;
-  const project = projects.find((p) => p.slug === slug);
+  useEffect(() => {
+    const loadProject = () => {
+      try {
+        // First check demo projects
+        let foundProject = demoProjects.find((p) => p.slug === slug);
 
-  if (!project) {
-    return {
-      title: "Projet non trouvé - ONEUP Portfolio",
+        // If not found in demo, check localStorage
+        if (!foundProject) {
+          const savedProjects = localStorage.getItem("demo_projects");
+          if (savedProjects) {
+            const parsed = JSON.parse(savedProjects);
+            const savedProject = parsed.find(
+              (p: Record<string, unknown>) => p.slug === slug,
+            );
+            if (savedProject) {
+              foundProject = {
+                id: savedProject.id as string,
+                slug: savedProject.slug as string,
+                title: savedProject.title as string,
+                shortDescription:
+                  (savedProject.shortDescription as string) ||
+                  (savedProject.description as string) ||
+                  "",
+                longDescription:
+                  (savedProject.longDescription as string) ||
+                  (savedProject.description as string) ||
+                  "",
+                technologies: (savedProject.technologies as string[]) || [],
+                status:
+                  (savedProject.status as
+                    | "en_cours"
+                    | "termine"
+                    | "abandonne") || "en_cours",
+                projectDate: savedProject.projectDate as string | undefined,
+                githubUrl: savedProject.githubUrl as string | undefined,
+                demoUrl: savedProject.demoUrl as string | undefined,
+                visible: savedProject.visible !== false,
+              };
+            }
+          }
+        }
+
+        if (foundProject && foundProject.visible !== false) {
+          setProject(foundProject);
+        } else {
+          setNotFoundState(true);
+        }
+      } catch (error) {
+        console.error("Error loading project:", error);
+        setNotFoundState(true);
+      } finally {
+        setIsLoading(false);
+      }
     };
+
+    loadProject();
+  }, [slug]);
+
+  if (isLoading) {
+    return (
+      <div className="py-20">
+        <div className="container mx-auto max-w-4xl px-4">
+          <div className="flex items-center justify-center py-20">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+            <span className="ml-3 text-muted-foreground">Chargement...</span>
+          </div>
+        </div>
+      </div>
+    );
   }
 
-  return {
-    title: `${project.title} - ONEUP Portfolio`,
-    description: project.shortDescription,
-  };
-}
-
-export default async function ProjectDetailPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
-  const { slug } = await params;
-  const project = projects.find((p) => p.slug === slug);
-
-  if (!project) {
+  if (notFoundState || !project) {
     notFound();
   }
 
@@ -147,9 +211,9 @@ export default async function ProjectDetailPage({
           {/* Status & Date */}
           <div className="mb-4 flex flex-wrap items-center gap-4">
             <span
-              className={`inline-block rounded-full px-3 py-1 text-sm font-medium ${statusLabels[project.status].className}`}
+              className={`inline-block rounded-full px-3 py-1 text-sm font-medium ${statusLabels[project.status]?.className || statusLabels.en_cours.className}`}
             >
-              {statusLabels[project.status].label}
+              {statusLabels[project.status]?.label || "En cours"}
             </span>
             {project.projectDate && (
               <span className="inline-flex items-center gap-1 text-sm text-muted-foreground">
@@ -217,14 +281,16 @@ export default async function ProjectDetailPage({
         </div>
 
         {/* Long description */}
-        <div className="prose prose-invert max-w-none">
-          <h2 className="mb-4 text-xl font-semibold text-foreground">
-            À propos du projet
-          </h2>
-          <div className="whitespace-pre-line text-muted-foreground">
-            {project.longDescription}
+        {project.longDescription && (
+          <div className="prose prose-invert max-w-none">
+            <h2 className="mb-4 text-xl font-semibold text-foreground">
+              À propos du projet
+            </h2>
+            <div className="whitespace-pre-line text-muted-foreground">
+              {project.longDescription}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
