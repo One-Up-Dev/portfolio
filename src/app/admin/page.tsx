@@ -1,37 +1,22 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
-// Demo statistics data
-const stats = [
-  {
-    name: "Projets",
-    value: 5,
-    icon: "🚀",
-    href: "/admin/projets",
-    change: "+2 ce mois",
-  },
-  {
-    name: "Articles",
-    value: 3,
-    icon: "📝",
-    href: "/admin/blog",
-    change: "+1 ce mois",
-  },
-  {
-    name: "Visiteurs",
-    value: 1247,
-    icon: "👥",
-    href: "/admin/analytics",
-    change: "+15% ce mois",
-  },
-  {
-    name: "Compétences",
-    value: 12,
-    icon: "⚡",
-    href: "/admin/competences",
-    change: "4 catégories",
-  },
+// Demo projects for counting
+const demoProjects = [
+  { id: "1", title: "Portfolio ONEUP" },
+  { id: "2", title: "App de gestion" },
+  { id: "3", title: "Bot Discord" },
+  { id: "4", title: "API REST" },
+  { id: "5", title: "Dashboard Analytics" },
+];
+
+// Demo blog posts for counting
+const demoBlogPosts = [
+  { id: "1", title: "Guide n8n pour débutants", status: "published" },
+  { id: "2", title: "Automatisation avec Claude", status: "published" },
+  { id: "3", title: "Vibe Coding expliqué", status: "published" },
 ];
 
 // Demo recent activity
@@ -80,6 +65,83 @@ const topArticles = [
 ];
 
 export default function AdminDashboardPage() {
+  const [projectCount, setProjectCount] = useState(5);
+  const [articleCount, setArticleCount] = useState(3);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Load real counts from localStorage
+    const loadCounts = () => {
+      try {
+        // Get user-created projects from localStorage
+        const storedProjects = localStorage.getItem("demo_projects");
+        const userProjects = storedProjects ? JSON.parse(storedProjects) : [];
+        const totalProjects = demoProjects.length + userProjects.length;
+        setProjectCount(totalProjects);
+
+        // Get user-created blog posts from localStorage
+        const storedPosts = localStorage.getItem("demo_blog_posts");
+        const userPosts = storedPosts ? JSON.parse(storedPosts) : [];
+        // Count all posts (demo + user), but for consistency with public view, count published only
+        const publishedDemoPosts = demoBlogPosts.filter(
+          (p) => p.status === "published",
+        ).length;
+        const publishedUserPosts = userPosts.filter(
+          (p: { status?: string }) =>
+            p.status === "published" || p.status === "Publié",
+        ).length;
+        // For admin dashboard, show total (including drafts)
+        const totalPosts = demoBlogPosts.length + userPosts.length;
+        setArticleCount(totalPosts);
+      } catch (error) {
+        console.error("Error loading counts:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadCounts();
+
+    // Listen for storage events to update counts in real-time
+    const handleStorageChange = () => {
+      loadCounts();
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
+
+  const stats = [
+    {
+      name: "Projets",
+      value: projectCount,
+      icon: "🚀",
+      href: "/admin/projets",
+      change: "+2 ce mois",
+    },
+    {
+      name: "Articles",
+      value: articleCount,
+      icon: "📝",
+      href: "/admin/blog",
+      change: "+1 ce mois",
+    },
+    {
+      name: "Visiteurs",
+      value: 1247,
+      icon: "👥",
+      href: "/admin/analytics",
+      change: "+15% ce mois",
+    },
+    {
+      name: "Compétences",
+      value: 12,
+      icon: "⚡",
+      href: "/admin/competences",
+      change: "4 catégories",
+    },
+  ];
+
   return (
     <div className="space-y-8">
       {/* Welcome Section */}
@@ -107,7 +169,12 @@ export default function AdminDashboardPage() {
               </span>
             </div>
             <div className="mt-4">
-              <p className="text-3xl font-bold text-foreground">{stat.value}</p>
+              <p
+                className="text-3xl font-bold text-foreground"
+                data-testid={`stat-${stat.name.toLowerCase()}`}
+              >
+                {isLoading ? "..." : stat.value}
+              </p>
               <p className="text-sm text-muted-foreground group-hover:text-primary transition-colors">
                 {stat.name}
               </p>
