@@ -516,3 +516,55 @@
 3. Add skills creation workflow with localStorage
 4. Test more form validation scenarios
 5. Implement duplicate slug detection for blog posts
+
+## Session 13 (2024-12-28)
+- Ran verification tests - homepage and projects page working correctly
+- Created blog edit page at /admin/blog/[id]/edit:
+  - Loads post data from demo posts or localStorage
+  - Form pre-populated with existing post data
+  - All fields editable: title, slug, excerpt, content, tags, status, date, meta description
+  - Form validation for required fields (title, slug, content)
+  - Tag selection with 15 predefined options + custom tags
+  - Status dropdown to change between Brouillon/Publié
+  - Success message on save with redirect to blog list
+  - Shows metadata: ID, views, created date, updated date
+  - Demo posts show warning that changes won't persist (read-only demo data)
+  - User-created posts save changes to localStorage
+  - Changes immediately reflect on public /blog page
+- Tested complete blog edit workflow:
+  - Navigated to admin blog list
+  - Clicked edit on user-created article "TEST_ARTICLE_67890"
+  - Modified title to "EDITED_BLOG_TITLE_TEST"
+  - Clicked save - success message appeared
+  - Verified redirect to blog list
+  - Verified new title appears in admin list
+  - Refreshed page - title still shows edited value (persistence verified)
+  - Navigated to public /blog - edited title appears there too
+- Tested publish/unpublish workflow:
+  - Edited "DRAFT_ARTICLE_HIDDEN" to change status from "Brouillon" to "Publié"
+  - Saved - article now appears in public /blog list
+  - Edited again to change status back to "Brouillon"
+  - Saved - article removed from public /blog list
+
+### New Tests Now Passing (Session 13):
+- C-RealData: Edit blog post - changes persist after refresh
+- D-Workflow: Edit existing blog post workflow
+- D-Workflow: Publish draft article workflow
+- D-Workflow: Unpublish article workflow (published to draft)
+- F-UIBackend: Changes in blog reflect in public view after save
+
+### Current Status:
+- 108/276 tests passing (39.1%)
+- Blog edit page complete with localStorage persistence
+- All CRUD operations for blog now working (Create, Read, Update, Delete)
+- Publish/unpublish workflow fully functional
+- Form validation on edit page matches create page
+- Changes sync between admin and public pages
+- Dev server running on port 3000
+
+### Next Steps for Future Sessions:
+1. Implement dashboard statistics to reflect real data counts
+2. Add skills creation workflow with localStorage
+3. Test more form validation scenarios
+4. Implement duplicate slug detection for blog posts
+5. Add project/blog timestamps (created_at, updated_at) tracking
