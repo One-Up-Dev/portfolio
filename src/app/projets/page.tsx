@@ -29,18 +29,49 @@ type SortOption = "newest" | "oldest" | "projectDate";
 
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
+  const [allTechnologies, setAllTechnologies] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTech, setSelectedTech] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>("newest");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
 
-  // Load projects from API on mount or when sort changes
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Load all technologies on mount (for filter buttons)
+  useEffect(() => {
+    const loadTechnologies = async () => {
+      try {
+        const response = await fetch("/api/projects");
+        const result = await response.json();
+        if (result.success && result.data) {
+          const techs = Array.from(
+            new Set(result.data.flatMap((p: Project) => p.technologies || [])),
+          ).sort() as string[];
+          setAllTechnologies(techs);
+        }
+      } catch (error) {
+        console.error("Error loading technologies:", error);
+      }
+    };
+    loadTechnologies();
+  }, []);
+
+  // Load projects from API when filters change
   useEffect(() => {
     const loadProjects = async () => {
       try {
         setIsLoading(true);
-        // Build URL with sort params
+        // Build URL with all params
         const params = new URLSearchParams();
+
+        // Sort params
         if (sortBy === "oldest") {
           params.set("sortBy", "createdAt");
           params.set("sortOrder", "asc");
@@ -51,6 +82,16 @@ export default function ProjectsPage() {
           // newest (default)
           params.set("sortBy", "createdAt");
           params.set("sortOrder", "desc");
+        }
+
+        // Technology filter
+        if (selectedTech) {
+          params.set("technology", selectedTech);
+        }
+
+        // Search query
+        if (debouncedSearch) {
+          params.set("search", debouncedSearch);
         }
 
         const response = await fetch(`/api/projects?${params.toString()}`);
@@ -70,27 +111,9 @@ export default function ProjectsPage() {
     };
 
     loadProjects();
-  }, [sortBy]);
+  }, [sortBy, selectedTech, debouncedSearch]);
 
-  // Get all unique technologies for filtering
-  const allTechnologies = Array.from(
-    new Set(projects.flatMap((p) => p.technologies || [])),
-  ).sort();
-
-  // Filter projects based on search and technology filter
-  const filteredProjects = projects.filter((project) => {
-    const matchesSearch =
-      !searchQuery ||
-      project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (project.shortDescription || "")
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase());
-
-    const matchesTech =
-      !selectedTech || (project.technologies || []).includes(selectedTech);
-
-    return matchesSearch && matchesTech;
-  });
+  // Projects are already filtered by API, no client-side filtering needed
 
   if (isLoading) {
     return (
@@ -184,9 +207,9 @@ export default function ProjectsPage() {
         </div>
 
         {/* Projects Grid */}
-        {filteredProjects.length > 0 ? (
+        {projects.length > 0 ? (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {filteredProjects.map((project) => (
+            {projects.map((project) => (
               <article
                 key={project.id}
                 className="group flex flex-col rounded-lg border border-border bg-card transition-all hover:border-primary/50"

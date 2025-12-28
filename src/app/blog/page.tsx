@@ -17,61 +17,72 @@ interface BlogPost {
 
 export default function BlogPage() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
-  const [filteredPosts, setFilteredPosts] = useState<BlogPost[]>([]);
+  const [allTags, setAllTags] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
 
-  // Load posts from API on mount
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Load all tags on mount (for filter buttons)
+  useEffect(() => {
+    const loadTags = async () => {
+      try {
+        const response = await fetch("/api/blog");
+        const result = await response.json();
+        if (result.success && result.data) {
+          const tags = Array.from(
+            new Set(result.data.flatMap((p: BlogPost) => p.tags || [])),
+          ).sort() as string[];
+          setAllTags(tags);
+        }
+      } catch (error) {
+        console.error("Error loading tags:", error);
+      }
+    };
+    loadTags();
+  }, []);
+
+  // Load posts from API when filters change
   useEffect(() => {
     const loadPosts = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch("/api/blog");
+        // Build URL with filter params
+        const params = new URLSearchParams();
+
+        if (selectedTag) {
+          params.set("tag", selectedTag);
+        }
+
+        if (debouncedSearch) {
+          params.set("search", debouncedSearch);
+        }
+
+        const response = await fetch(`/api/blog?${params.toString()}`);
         const result = await response.json();
 
         if (result.success && result.data) {
           setPosts(result.data);
-          setFilteredPosts(result.data);
         } else {
           setPosts([]);
-          setFilteredPosts([]);
         }
       } catch (error) {
         console.error("Error loading posts:", error);
         setPosts([]);
-        setFilteredPosts([]);
       }
       setIsLoading(false);
     };
 
     loadPosts();
-  }, []);
-
-  // Get all unique tags from posts
-  const allTags = Array.from(new Set(posts.flatMap((post) => post.tags || [])));
-
-  // Handle search and filter
-  useEffect(() => {
-    let result = posts;
-
-    // Filter by search query
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(
-        (post) =>
-          post.title.toLowerCase().includes(query) ||
-          (post.excerpt || "").toLowerCase().includes(query),
-      );
-    }
-
-    // Filter by tag
-    if (selectedTag) {
-      result = result.filter((post) => (post.tags || []).includes(selectedTag));
-    }
-
-    setFilteredPosts(result);
-  }, [searchQuery, selectedTag, posts]);
+  }, [selectedTag, debouncedSearch]);
 
   // Handle tag toggle
   const handleTagClick = (tag: string) => {
@@ -149,7 +160,7 @@ export default function BlogPage() {
 
         {/* Blog posts list */}
         <div className="space-y-8">
-          {filteredPosts.map((post) => (
+          {posts.map((post) => (
             <article
               key={post.id}
               className="group rounded-lg border border-border bg-card p-6 transition-all hover:border-primary/50"
@@ -199,7 +210,7 @@ export default function BlogPage() {
         </div>
 
         {/* Empty state */}
-        {filteredPosts.length === 0 && !isLoading && (
+        {posts.length === 0 && !isLoading && (
           <div className="py-20 text-center">
             <p className="text-lg text-muted-foreground">
               {searchQuery || selectedTag
