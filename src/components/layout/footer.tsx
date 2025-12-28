@@ -32,14 +32,14 @@ export function Footer() {
           </p>
 
           {/* Social Links */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
             {socialLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-muted-foreground transition-colors hover:text-primary"
+                className="min-h-[44px] min-w-[44px] flex items-center justify-center text-muted-foreground transition-colors hover:text-primary"
                 aria-label={link.label}
               >
                 <link.icon className="h-5 w-5" />

@@ -126,7 +126,7 @@ export function Header() {
           {/* Sound Toggle */}
           <button
             onClick={toggleSound}
-            className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+            className="rounded-md p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
             aria-label={soundEnabled ? "Désactiver le son" : "Activer le son"}
           >
             {soundEnabled ? (
@@ -140,7 +140,7 @@ export function Header() {
           <button
             onClick={toggleCrt}
             className={cn(
-              "rounded-md p-2 transition-colors hover:bg-accent hover:text-accent-foreground",
+              "rounded-md p-2 min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors hover:bg-accent hover:text-accent-foreground",
               crtEnabled ? "text-primary" : "text-muted-foreground",
             )}
             aria-label={
@@ -165,7 +165,7 @@ export function Header() {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground md:hidden"
+            className="rounded-md p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground md:hidden"
             aria-label={isMenuOpen ? "Fermer le menu" : "Ouvrir le menu"}
             aria-expanded={isMenuOpen}
           >
@@ -187,7 +187,7 @@ export function Header() {
                 key={item.href}
                 href={item.href}
                 onClick={() => setIsMenuOpen(false)}
-                className="block py-3 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+                className="block py-3 min-h-[44px] flex items-center text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
               >
                 {item.label}
               </Link>
