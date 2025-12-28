@@ -23,28 +23,6 @@ const defaultTechnologyOptions = [
   "Vercel",
 ];
 
-// Function to get all unique technologies from existing projects
-function getExistingTechnologies(): string[] {
-  if (typeof window === "undefined") return [];
-
-  try {
-    const existingProjects = JSON.parse(
-      localStorage.getItem("demo_projects") || "[]",
-    );
-
-    const allTechs = new Set<string>();
-    existingProjects.forEach((project: { technologies?: string[] }) => {
-      if (project.technologies && Array.isArray(project.technologies)) {
-        project.technologies.forEach((tech: string) => allTechs.add(tech));
-      }
-    });
-
-    return Array.from(allTechs);
-  } catch {
-    return [];
-  }
-}
-
 // Status options
 const statusOptions = [
   { value: "en_cours", label: "En cours" },
@@ -87,19 +65,7 @@ export default function NewProjectPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [autoSlug, setAutoSlug] = useState(true);
-  const [technologyOptions, setTechnologyOptions] = useState<string[]>(
-    defaultTechnologyOptions,
-  );
-
-  // Load existing technologies from localStorage on mount
-  useEffect(() => {
-    const existingTechs = getExistingTechnologies();
-    // Merge default technologies with existing technologies (removing duplicates)
-    const allTechs = [
-      ...new Set([...defaultTechnologyOptions, ...existingTechs]),
-    ];
-    setTechnologyOptions(allTechs);
-  }, []);
+  const [technologyOptions] = useState<string[]>(defaultTechnologyOptions);
   const [successMessage, setSuccessMessage] = useState("");
 
   // Form data with default values
@@ -219,42 +185,44 @@ export default function NewProjectPage() {
     setIsSubmitting(true);
 
     try {
-      // Get existing projects from localStorage
-      const existingProjects = JSON.parse(
-        localStorage.getItem("demo_projects") || "[]",
-      );
+      const response = await fetch("/api/admin/projects", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: formData.title,
+          slug: formData.slug,
+          shortDescription: formData.shortDescription,
+          longDescription: formData.longDescription,
+          technologies: formData.technologies,
+          githubUrl: formData.githubUrl || null,
+          demoUrl: formData.demoUrl || null,
+          status: formData.status,
+          projectDate: formData.projectDate,
+          visible: formData.visible,
+        }),
+      });
 
-      // Check for duplicate slug
-      if (
-        existingProjects.some((p: { slug: string }) => p.slug === formData.slug)
-      ) {
-        setErrors({ slug: "Ce slug existe déjà" });
-        setIsSubmitting(false);
-        return;
+      if (response.ok) {
+        // Show success message
+        setSuccessMessage("Projet créé avec succès!");
+
+        // Redirect after delay
+        setTimeout(() => {
+          router.push("/admin/projets");
+        }, 1500);
+      } else {
+        const data = await response.json();
+        if (data.message === "Ce slug existe déjà") {
+          setErrors({ slug: "Ce slug existe déjà" });
+        } else {
+          setErrors({
+            form: data.message || "Erreur lors de la création du projet",
+          });
+        }
       }
-
-      // Create new project object
-      const newProject = {
-        id: `demo_${Date.now()}`,
-        ...formData,
-        views: 0,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      // Save to localStorage
-      localStorage.setItem(
-        "demo_projects",
-        JSON.stringify([...existingProjects, newProject]),
-      );
-
-      // Show success message
-      setSuccessMessage("Projet créé avec succès!");
-
-      // Redirect after delay
-      setTimeout(() => {
-        router.push("/admin/projets");
-      }, 1500);
     } catch (error) {
       console.error("Error creating project:", error);
       setErrors({ form: "Erreur lors de la création du projet" });
@@ -599,15 +567,6 @@ export default function NewProjectPage() {
           </button>
         </div>
       </form>
-
-      {/* Demo Notice */}
-      <div className="bg-accent/20 border border-accent/50 rounded-lg p-4">
-        <p className="text-sm text-muted-foreground text-center">
-          <strong className="text-foreground">Mode démo:</strong> Le projet sera
-          sauvegardé dans le localStorage du navigateur. Les données seront
-          perdues si vous effacez les données du navigateur.
-        </p>
-      </div>
     </div>
   );
 }

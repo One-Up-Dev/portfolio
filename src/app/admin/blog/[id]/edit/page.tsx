@@ -67,12 +67,20 @@ export default function EditBlogPostPage() {
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(
     null,
   );
+  const [autoSaveStatus, setAutoSaveStatus] = useState<
+    "idle" | "saving" | "saved" | "error"
+  >("idle");
+  const [lastAutoSave, setLastAutoSave] = useState<Date | null>(null);
 
   // Form data
   const [formData, setFormData] = useState<BlogFormData | null>(null);
 
   // Initial form data for comparison (to detect unsaved changes)
   const initialFormDataRef = useRef<BlogFormData | null>(null);
+
+  // Track if form has been modified since last save (for auto-save)
+  const lastSavedDataRef = useRef<BlogFormData | null>(null);
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Check if form has unsaved changes
   const hasUnsavedChanges = useCallback(() => {
@@ -132,6 +140,11 @@ export default function EditBlogPostPage() {
           ...loadedData,
           tags: [...loadedData.tags],
         };
+        // Also set as last saved data for auto-save comparison
+        lastSavedDataRef.current = {
+          ...loadedData,
+          tags: [...loadedData.tags],
+        };
         setIsLoading(false);
       } catch (error) {
         console.error("Error loading post:", error);
@@ -142,6 +155,94 @@ export default function EditBlogPostPage() {
 
     loadPost();
   }, [postId]);
+
+  // Check if form has changes since last auto-save
+  const hasChangesSinceLastSave = useCallback(() => {
+    if (!formData || !lastSavedDataRef.current) return hasUnsavedChanges();
+    const lastSaved = lastSavedDataRef.current;
+    return (
+      formData.title !== lastSaved.title ||
+      formData.slug !== lastSaved.slug ||
+      formData.excerpt !== lastSaved.excerpt ||
+      formData.content !== lastSaved.content ||
+      JSON.stringify(formData.tags) !== JSON.stringify(lastSaved.tags) ||
+      formData.status !== lastSaved.status ||
+      formData.metaDescription !== lastSaved.metaDescription
+    );
+  }, [formData, hasUnsavedChanges]);
+
+  // Auto-save function
+  const performAutoSave = useCallback(async () => {
+    if (!formData || !hasChangesSinceLastSave()) return;
+
+    // Don't auto-save if there are validation errors in required fields
+    if (!formData.title.trim() || !formData.slug.trim()) return;
+
+    setAutoSaveStatus("saving");
+
+    try {
+      const response = await fetch(`/api/admin/blog/${postId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          title: formData.title,
+          slug: formData.slug,
+          excerpt: formData.excerpt,
+          content: formData.content,
+          tags: formData.tags,
+          status: formData.status,
+          metaDescription: formData.metaDescription,
+        }),
+      });
+
+      if (response.ok) {
+        // Update last saved data reference
+        lastSavedDataRef.current = {
+          ...formData,
+          tags: [...formData.tags],
+        };
+        setAutoSaveStatus("saved");
+        setLastAutoSave(new Date());
+
+        // Reset to idle after 3 seconds
+        setTimeout(() => {
+          setAutoSaveStatus("idle");
+        }, 3000);
+      } else {
+        setAutoSaveStatus("error");
+        setTimeout(() => {
+          setAutoSaveStatus("idle");
+        }, 5000);
+      }
+    } catch (error) {
+      console.error("Auto-save error:", error);
+      setAutoSaveStatus("error");
+      setTimeout(() => {
+        setAutoSaveStatus("idle");
+      }, 5000);
+    }
+  }, [formData, hasChangesSinceLastSave, postId]);
+
+  // Auto-save effect - runs every 30 seconds
+  useEffect(() => {
+    // Clear any existing timer
+    if (autoSaveTimerRef.current) {
+      clearInterval(autoSaveTimerRef.current);
+    }
+
+    // Set up auto-save timer (every 30 seconds)
+    autoSaveTimerRef.current = setInterval(() => {
+      performAutoSave();
+    }, 30000);
+
+    // Cleanup on unmount
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearInterval(autoSaveTimerRef.current);
+      }
+    };
+  }, [performAutoSave]);
 
   // Warn user before leaving page with unsaved changes
   useEffect(() => {
@@ -403,6 +504,33 @@ export default function EditBlogPostPage() {
             Modifiez les informations de l&apos;article &quot;{formData.title}
             &quot;
           </p>
+        </div>
+
+        {/* Auto-save indicator */}
+        <div className="flex items-center gap-2">
+          {autoSaveStatus === "saving" && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span className="animate-spin">⏳</span>
+              <span>Sauvegarde automatique...</span>
+            </div>
+          )}
+          {autoSaveStatus === "saved" && (
+            <div className="flex items-center gap-2 text-sm text-green-500">
+              <span>✓</span>
+              <span>Sauvegardé automatiquement</span>
+              {lastAutoSave && (
+                <span className="text-muted-foreground">
+                  ({lastAutoSave.toLocaleTimeString("fr-FR")})
+                </span>
+              )}
+            </div>
+          )}
+          {autoSaveStatus === "error" && (
+            <div className="flex items-center gap-2 text-sm text-destructive">
+              <span>⚠</span>
+              <span>Erreur de sauvegarde auto</span>
+            </div>
+          )}
         </div>
       </div>
 
