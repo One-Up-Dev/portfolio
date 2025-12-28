@@ -856,15 +856,20 @@
 - J-DataCleanup: Deleted items cannot be accessed by cached URLs
 
 ### Current Status:
-- 162/276 tests passing (58.7%)
+- 166/276 tests passing (60.1%)
 - Dashboard statistics properly sync with localStorage changes
 - Deleted items correctly return 404
 - Blog articles correctly sorted by published date (newest first)
 - Sidebar collapse state persists across pages
+- Export functionality verified (includes projects, blog posts, and skills)
 - Dev server running on port 3000
 
 ### Additional Tests Verified (Session 20 continued):
 - F-UIBackend: Blog articles sorted by published_at date
+- S-ExportImport: Export all content produces valid JSON file
+- S-ExportImport: Export contains all projects
+- S-ExportImport: Export contains all blog posts
+- S-ExportImport: Export contains all skills
 
 ### Next Steps for Future Sessions:
 1. Test more accessibility features (images alt text, color contrast)
