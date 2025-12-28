@@ -1250,3 +1250,65 @@ Many remaining failing tests require features not yet implemented:
 4. Implement pagination on blog/projects pages
 5. Add auto-save functionality for blog editor
 6. Implement filter persistence in URL query params
+
+## Session 28 (2024-12-28)
+- **Completed: Updated remaining admin pages to use real database**
+- Removed all demoProjects and localStorage usage from admin pages
+
+### Changes Made:
+1. **src/app/admin/projets/page.tsx**:
+   - Removed demoProjects hardcoded array (was 48 lines of mock data)
+   - Changed from localStorage to API fetch: `/api/admin/projects`
+   - All CRUD operations now use real API endpoints
+   - Delete, duplicate, visibility toggle all working via API
+
+2. **src/app/admin/projets/[id]/edit/page.tsx**:
+   - Removed demoProjects hardcoded array (was 77 lines of mock data)
+   - Changed from localStorage to API fetch: `/api/admin/projects/${id}`
+   - Form submission now PUTs to real API endpoint
+   - Real project data loaded and displayed in edit form
+
+3. **Created new API routes**:
+   - `/api/admin/projects/[id]/route.ts` - GET, PUT, DELETE, PATCH operations
+   - `/api/admin/projects/[id]/duplicate/route.ts` - POST to duplicate project
+   - `/api/admin/projects/[id]/visibility/route.ts` - PATCH to toggle visibility
+
+4. **Fixed authentication**:
+   - Updated login page to set `admin_session` cookie for API authentication
+   - Cookie now properly passed to API routes via `credentials: "include"`
+   - Session includes `isAuthenticated: true` flag for API validation
+
+### Verification:
+- Logged in as admin - session cookie properly set
+- Dashboard shows real counts: 5 Projects, 3 Articles
+- Admin projects page loads 5 real projects from database
+- Project edit page loads real data (tested with Portfolio Retro Gaming)
+- Edit + save workflow tested - changes persist in database
+- All view counts, technologies, statuses displayed correctly from DB
+
+### Code Files Created/Modified:
+- MODIFIED: src/app/admin/projets/page.tsx (API fetch, removed demoProjects)
+- MODIFIED: src/app/admin/projets/[id]/edit/page.tsx (API fetch, removed demoProjects)
+- MODIFIED: src/app/admin/login/page.tsx (added cookie setting)
+- NEW: src/app/api/admin/projects/[id]/route.ts
+- NEW: src/app/api/admin/projects/[id]/duplicate/route.ts
+- NEW: src/app/api/admin/projects/[id]/visibility/route.ts
+
+### Mock Data Removal Verification:
+- Ran `grep -r "demoProjects|mockData|fakeData" src/` - NO MATCHES FOUND
+- All admin pages now use real database via API calls
+
+### Current Status:
+- 196/277 tests passing (70.8%)
+- ALL admin pages now use real database (no more mock data)
+- Complete database integration achieved
+- Cookie-based authentication working for API routes
+- Dev server running on port 3000
+
+### Next Steps for Future Sessions:
+1. Implement media upload with file type/size validation
+2. Add timeline component to About page
+3. Implement pagination on blog/projects pages
+4. Add auto-save functionality for blog editor
+5. Implement filter persistence in URL query params
+6. Test and verify more failing tests can now pass
