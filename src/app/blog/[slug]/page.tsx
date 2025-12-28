@@ -1,9 +1,12 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowLeft, Calendar, Clock, Tag } from "lucide-react";
-import { notFound } from "next/navigation";
+import { useParams, notFound } from "next/navigation";
+import { useState, useEffect } from "react";
 
-// Demo blog posts (will be replaced with real data from database)
-const posts = [
+// Demo blog posts (fallback data)
+const demoPosts = [
   {
     id: "1",
     slug: "reconversion-developpeur-46-ans",
@@ -37,6 +40,7 @@ J'ai commencé par apprendre les bases : HTML, CSS, JavaScript. Puis j'ai décou
 À 46 ans, je prouve qu'il n'est jamais trop tard pour se réinventer. Si vous hésitez, lancez-vous !
     `,
     tags: ["Reconversion", "Parcours", "Motivation"],
+    status: "published",
     publishedAt: "2024-12-15",
     readTimeMinutes: 8,
   },
@@ -77,6 +81,7 @@ n8n start
 n8n est un outil puissant pour gagner du temps au quotidien.
     `,
     tags: ["n8n", "Automatisation", "Tutorial"],
+    status: "published",
     publishedAt: "2024-12-10",
     readTimeMinutes: 12,
   },
@@ -116,46 +121,100 @@ Claude peut améliorer mon code existant pour le rendre plus propre et performan
 Claude Code est devenu un outil indispensable dans mon workflow quotidien.
     `,
     tags: ["IA", "Claude", "Productivité"],
+    status: "published",
     publishedAt: "2024-12-05",
     readTimeMinutes: 10,
   },
 ];
 
-export async function generateStaticParams() {
-  return posts.map((post) => ({
-    slug: post.slug,
-  }));
+interface BlogPost {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt?: string;
+  content: string;
+  tags: string[];
+  status: string;
+  publishedAt: string;
+  publishDate?: string;
+  createdAt?: string;
+  readTimeMinutes?: number;
+  readTime?: number;
 }
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
-  const { slug } = await params;
-  const post = posts.find((p) => p.slug === slug);
+export default function BlogPostPage() {
+  const params = useParams();
+  const slug = params.slug as string;
+  const [post, setPost] = useState<BlogPost | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [notFoundState, setNotFoundState] = useState(false);
 
-  if (!post) {
-    return {
-      title: "Article non trouvé - ONEUP Portfolio",
-    };
+  useEffect(() => {
+    setIsLoading(true);
+    try {
+      // First check demo posts
+      let foundPost = demoPosts.find((p) => p.slug === slug);
+
+      // If not in demo posts, check localStorage
+      if (!foundPost) {
+        const savedPosts = localStorage.getItem("demo_blog_posts");
+        if (savedPosts) {
+          const parsed = JSON.parse(savedPosts);
+          const savedPost = parsed.find(
+            (p: { slug: string }) => p.slug === slug,
+          );
+          if (savedPost) {
+            foundPost = {
+              id: savedPost.id,
+              slug: savedPost.slug,
+              title: savedPost.title,
+              excerpt: savedPost.excerpt || "",
+              content: savedPost.content || "",
+              tags: savedPost.tags || [],
+              status: savedPost.status,
+              publishedAt:
+                savedPost.publishDate ||
+                savedPost.publishedAt ||
+                savedPost.createdAt?.split("T")[0] ||
+                new Date().toISOString().split("T")[0],
+              readTimeMinutes: savedPost.readTime || 5,
+            };
+          }
+        }
+      }
+
+      // Check if post exists and is published (or if it's a draft being viewed by admin)
+      if (foundPost) {
+        // Only show published posts publicly
+        if (foundPost.status === "published") {
+          setPost(foundPost);
+        } else {
+          // Draft posts should return 404 for public access
+          setNotFoundState(true);
+        }
+      } else {
+        setNotFoundState(true);
+      }
+    } catch (error) {
+      console.error("Error loading post:", error);
+      setNotFoundState(true);
+    }
+    setIsLoading(false);
+  }, [slug]);
+
+  if (isLoading) {
+    return (
+      <div className="py-20">
+        <div className="container mx-auto max-w-3xl px-4">
+          <div className="flex items-center justify-center py-20">
+            <div className="animate-spin text-4xl">⏳</div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
-  return {
-    title: `${post.title} - ONEUP Blog`,
-    description: post.excerpt,
-  };
-}
-
-export default async function BlogPostPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
-  const { slug } = await params;
-  const post = posts.find((p) => p.slug === slug);
-
-  if (!post) {
+  if (notFoundState || !post) {
     notFound();
   }
 
@@ -203,7 +262,7 @@ export default async function BlogPostPage({
             </span>
             <span className="inline-flex items-center gap-1">
               <Clock className="h-4 w-4" />
-              {post.readTimeMinutes} min de lecture
+              {post.readTimeMinutes || post.readTime || 5} min de lecture
             </span>
           </div>
         </header>

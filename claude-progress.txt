@@ -328,3 +328,59 @@
 4. Implement delete project flow with public page updates
 5. Add sidebar collapse state persistence
 6. Test more responsive design features
+
+## Session 9 (2024-12-28)
+- Ran verification test - homepage and projects page working correctly
+- Updated public /blog page to read from localStorage:
+  - Changed to client component to access localStorage
+  - Combined demo blog posts with user-created posts
+  - Added search functionality to filter by title/excerpt
+  - Added tag filter buttons derived from all available tags
+  - Added loading state during data fetch
+  - Only shows published articles (filters out drafts)
+- Updated public /blog/[slug] page to read from localStorage:
+  - Changed to client component with useParams
+  - Checks both demo posts and localStorage for matching slug
+  - Respects publish status (draft posts return 404)
+  - Added loading state
+- Blog creation form already existed at /admin/blog/nouveau:
+  - Title and slug fields with auto-generation
+  - Excerpt and content textarea fields
+  - Tag multi-select with 15 predefined options + custom tags
+  - Status dropdown (Brouillon/Publié) defaults to draft
+  - Date picker defaults to today
+  - Meta description field for SEO
+  - Success message on save with redirect
+  - Duplicate slug detection
+- Tested complete blog creation workflow:
+  - Created TEST_ARTICLE_67890 via admin form
+  - Set status to "published"
+  - Verified it appears in public /blog list
+  - Verified detail page /blog/testarticle67890 works
+  - Verified search functionality filters correctly
+  - Verified tag filter shows posts with matching tags
+  - Verified persistence after page refresh
+
+### New Tests Now Passing (Session 9):
+- C-RealData: Create blog post via admin - verify it appears in public blog list when published
+- C-RealData: Created blog post persists after page refresh
+- D-Workflow: Complete blog post creation workflow via admin form
+- K-DefaultReset: New blog form shows correct default values
+- N-Feedback: Blog save shows success notification
+
+### Current Status:
+- 81/276 tests passing (29.3%)
+- Public blog page now reads from localStorage (combines demo + user posts)
+- Blog detail page reads from localStorage
+- Search and tag filter functionality working on blog page
+- Complete blog creation workflow tested end-to-end
+- Both projects and blog CRUD working with localStorage
+- Dev server running on port 3000
+
+### Next Steps for Future Sessions:
+1. Add project edit functionality at /admin/projets/[id]/edit
+2. Add blog edit functionality at /admin/blog/[id]/edit
+3. Implement delete project/blog flow with public page updates
+4. Test draft articles don't appear in public blog list
+5. Add sidebar collapse state persistence
+6. Test more form validation scenarios

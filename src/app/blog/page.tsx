@@ -1,22 +1,19 @@
+"use client";
+
 import Link from "next/link";
-import { Calendar, Clock, Tag } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Calendar, Clock, Tag, Search } from "lucide-react";
 
-export const metadata = {
-  title: "Blog - ONEUP Portfolio",
-  description:
-    "Articles sur le développement web, l'automatisation, l'IA et ma reconversion professionnelle.",
-};
-
-// Demo blog posts (will be replaced with real data from database)
-const posts = [
+// Demo blog posts (fallback data)
+const demoPosts = [
   {
     id: "1",
     slug: "reconversion-developpeur-46-ans",
     title: "Se reconvertir développeur à 46 ans : mon parcours",
     excerpt:
       "Retour sur mon parcours de reconversion professionnelle, de la restauration au développement web. Les défis, les apprentissages et les conseils.",
-    coverImage: null,
     tags: ["Reconversion", "Parcours", "Motivation"],
+    status: "published",
     publishedAt: "2024-12-15",
     readTimeMinutes: 8,
   },
@@ -26,8 +23,8 @@ const posts = [
     title: "Automatisation avec n8n : guide du débutant",
     excerpt:
       "Découvrez comment automatiser vos tâches répétitives avec n8n. Un guide complet pour créer votre premier workflow.",
-    coverImage: null,
     tags: ["n8n", "Automatisation", "Tutorial"],
+    status: "published",
     publishedAt: "2024-12-10",
     readTimeMinutes: 12,
   },
@@ -37,14 +34,130 @@ const posts = [
     title: "Claude Code : booster sa productivité de développeur",
     excerpt:
       "Comment j'utilise Claude Code au quotidien pour coder plus vite et mieux. Astuces et bonnes pratiques.",
-    coverImage: null,
     tags: ["IA", "Claude", "Productivité"],
+    status: "published",
     publishedAt: "2024-12-05",
     readTimeMinutes: 10,
   },
 ];
 
+interface BlogPost {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string;
+  tags: string[];
+  status: string;
+  publishedAt: string;
+  readTimeMinutes?: number;
+  readTime?: number;
+  publishDate?: string;
+}
+
 export default function BlogPage() {
+  const [posts, setPosts] = useState<BlogPost[]>([]);
+  const [filteredPosts, setFilteredPosts] = useState<BlogPost[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load posts from localStorage on mount
+  useEffect(() => {
+    setIsLoading(true);
+    try {
+      const savedPosts = localStorage.getItem("demo_blog_posts");
+      let allPosts = [...demoPosts];
+
+      if (savedPosts) {
+        const parsed = JSON.parse(savedPosts);
+        // Transform saved posts to match display format
+        const formattedPosts = parsed.map(
+          (post: {
+            id: string;
+            slug: string;
+            title: string;
+            excerpt?: string;
+            content?: string;
+            tags: string[];
+            status: string;
+            publishDate?: string;
+            createdAt?: string;
+            publishedAt?: string;
+            readTime?: number;
+          }) => ({
+            id: post.id,
+            slug: post.slug,
+            title: post.title,
+            excerpt:
+              post.excerpt || post.content?.substring(0, 150) + "..." || "",
+            tags: post.tags || [],
+            status: post.status,
+            publishedAt:
+              post.publishDate ||
+              post.publishedAt ||
+              post.createdAt?.split("T")[0] ||
+              new Date().toISOString().split("T")[0],
+            readTimeMinutes: post.readTime || 5,
+          }),
+        );
+        allPosts = [...demoPosts, ...formattedPosts];
+      }
+
+      // Only show published posts
+      const publishedPosts = allPosts.filter((p) => p.status === "published");
+      setPosts(publishedPosts);
+      setFilteredPosts(publishedPosts);
+    } catch (error) {
+      console.error("Error loading posts:", error);
+      const publishedPosts = demoPosts.filter((p) => p.status === "published");
+      setPosts(publishedPosts);
+      setFilteredPosts(publishedPosts);
+    }
+    setIsLoading(false);
+  }, []);
+
+  // Get all unique tags from posts
+  const allTags = Array.from(new Set(posts.flatMap((post) => post.tags)));
+
+  // Handle search and filter
+  useEffect(() => {
+    let result = posts;
+
+    // Filter by search query
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(
+        (post) =>
+          post.title.toLowerCase().includes(query) ||
+          post.excerpt.toLowerCase().includes(query),
+      );
+    }
+
+    // Filter by tag
+    if (selectedTag) {
+      result = result.filter((post) => post.tags.includes(selectedTag));
+    }
+
+    setFilteredPosts(result);
+  }, [searchQuery, selectedTag, posts]);
+
+  // Handle tag toggle
+  const handleTagClick = (tag: string) => {
+    setSelectedTag(selectedTag === tag ? null : tag);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="py-20">
+        <div className="container mx-auto max-w-4xl px-4">
+          <div className="flex items-center justify-center py-20">
+            <div className="animate-spin text-4xl">⏳</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="py-20">
       <div className="container mx-auto max-w-4xl px-4">
@@ -59,9 +172,51 @@ export default function BlogPage() {
           </p>
         </div>
 
+        {/* Search and Filters */}
+        <div className="mb-8 space-y-4">
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Rechercher un article..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full rounded-lg border border-border bg-background py-3 pl-12 pr-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+          </div>
+
+          {/* Tag filters */}
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setSelectedTag(null)}
+              className={`rounded-lg px-3 py-1 text-sm transition-colors ${
+                selectedTag === null
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+              }`}
+            >
+              Tous
+            </button>
+            {allTags.map((tag) => (
+              <button
+                key={tag}
+                onClick={() => handleTagClick(tag)}
+                className={`rounded-lg px-3 py-1 text-sm transition-colors ${
+                  selectedTag === tag
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                }`}
+              >
+                {tag}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Blog posts list */}
         <div className="space-y-8">
-          {posts.map((post) => (
+          {filteredPosts.map((post) => (
             <article
               key={post.id}
               className="group rounded-lg border border-border bg-card p-6 transition-all hover:border-primary/50"
@@ -100,7 +255,7 @@ export default function BlogPage() {
                   </span>
                   <span className="inline-flex items-center gap-1">
                     <Clock className="h-4 w-4" />
-                    {post.readTimeMinutes} min de lecture
+                    {post.readTimeMinutes || post.readTime || 5} min de lecture
                   </span>
                 </div>
               </Link>
@@ -109,11 +264,24 @@ export default function BlogPage() {
         </div>
 
         {/* Empty state */}
-        {posts.length === 0 && (
+        {filteredPosts.length === 0 && !isLoading && (
           <div className="py-20 text-center">
             <p className="text-lg text-muted-foreground">
-              Aucun article pour le moment. Revenez bientôt !
+              {searchQuery || selectedTag
+                ? "Aucun article ne correspond à votre recherche."
+                : "Aucun article pour le moment. Revenez bientôt !"}
             </p>
+            {(searchQuery || selectedTag) && (
+              <button
+                onClick={() => {
+                  setSearchQuery("");
+                  setSelectedTag(null);
+                }}
+                className="mt-4 text-primary hover:underline"
+              >
+                Réinitialiser les filtres
+              </button>
+            )}
           </div>
         )}
       </div>
