@@ -9,6 +9,8 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const tag = searchParams.get("tag"); // tag filter
     const search = searchParams.get("search") || searchParams.get("q"); // search query
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    const limit = parseInt(searchParams.get("limit") || "10", 10);
 
     // Build where conditions
     const conditions = [eq(blogPosts.status, "published")];
@@ -39,10 +41,21 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    // Calculate pagination
+    const total = publishedPosts.length;
+    const totalPages = Math.ceil(total / limit);
+    const offset = (page - 1) * limit;
+    const paginatedPosts = publishedPosts.slice(offset, offset + limit);
+
     return NextResponse.json({
       success: true,
-      data: publishedPosts,
-      total: publishedPosts.length,
+      data: paginatedPosts,
+      total,
+      page,
+      limit,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPrevPage: page > 1,
       filters: {
         tag: tag || null,
         search: search || null,

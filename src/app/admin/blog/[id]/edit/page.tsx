@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 // Tag options for multi-select (common blog tags)
 const tagOptions = [
@@ -63,9 +63,31 @@ export default function EditBlogPostPage() {
   const [successMessage, setSuccessMessage] = useState("");
   const [notFound, setNotFound] = useState(false);
   const [customTag, setCustomTag] = useState("");
+  const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState<string | null>(
+    null,
+  );
 
   // Form data
   const [formData, setFormData] = useState<BlogFormData | null>(null);
+
+  // Initial form data for comparison (to detect unsaved changes)
+  const initialFormDataRef = useRef<BlogFormData | null>(null);
+
+  // Check if form has unsaved changes
+  const hasUnsavedChanges = useCallback(() => {
+    if (!formData || !initialFormDataRef.current) return false;
+    const initial = initialFormDataRef.current;
+    return (
+      formData.title !== initial.title ||
+      formData.slug !== initial.slug ||
+      formData.excerpt !== initial.excerpt ||
+      formData.content !== initial.content ||
+      JSON.stringify(formData.tags) !== JSON.stringify(initial.tags) ||
+      formData.status !== initial.status ||
+      formData.metaDescription !== initial.metaDescription
+    );
+  }, [formData]);
 
   // Load post data from API on mount
   useEffect(() => {
@@ -89,7 +111,7 @@ export default function EditBlogPostPage() {
         const data = await response.json();
         const post = data.data;
 
-        setFormData({
+        const loadedData = {
           id: post.id,
           title: post.title || "",
           slug: post.slug || "",
@@ -103,7 +125,13 @@ export default function EditBlogPostPage() {
           readTimeMinutes: post.readTimeMinutes || 1,
           createdAt: post.createdAt,
           updatedAt: post.updatedAt,
-        });
+        };
+        setFormData(loadedData);
+        // Store initial data for comparison
+        initialFormDataRef.current = {
+          ...loadedData,
+          tags: [...loadedData.tags],
+        };
         setIsLoading(false);
       } catch (error) {
         console.error("Error loading post:", error);
@@ -114,6 +142,46 @@ export default function EditBlogPostPage() {
 
     loadPost();
   }, [postId]);
+
+  // Warn user before leaving page with unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges()) {
+        e.preventDefault();
+        e.returnValue = "";
+        return "";
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [hasUnsavedChanges]);
+
+  // Handle navigation with unsaved changes warning
+  const handleNavigate = (href: string) => {
+    if (hasUnsavedChanges()) {
+      setPendingNavigation(href);
+      setShowUnsavedWarning(true);
+    } else {
+      router.push(href);
+    }
+  };
+
+  // Confirm navigation (discard changes)
+  const confirmNavigation = () => {
+    if (pendingNavigation) {
+      setShowUnsavedWarning(false);
+      router.push(pendingNavigation);
+    }
+  };
+
+  // Cancel navigation (stay on page)
+  const cancelNavigation = () => {
+    setShowUnsavedWarning(false);
+    setPendingNavigation(null);
+  };
 
   // Handle input changes
   const handleChange = (
@@ -318,9 +386,13 @@ export default function EditBlogPostPage() {
       <div className="flex items-center justify-between">
         <div>
           <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-            <Link href="/admin/blog" className="hover:text-primary">
+            <button
+              type="button"
+              onClick={() => handleNavigate("/admin/blog")}
+              className="hover:text-primary"
+            >
               Blog
-            </Link>
+            </button>
             <span>/</span>
             <span className="text-foreground">Modifier</span>
           </nav>
@@ -661,12 +733,13 @@ export default function EditBlogPostPage() {
 
         {/* Actions */}
         <div className="flex justify-end gap-4">
-          <Link
-            href="/admin/blog"
+          <button
+            type="button"
+            onClick={() => handleNavigate("/admin/blog")}
             className="px-6 py-2 text-muted-foreground hover:text-foreground transition-colors"
           >
             Annuler
-          </Link>
+          </button>
           <button
             type="submit"
             disabled={isSubmitting}
@@ -686,6 +759,42 @@ export default function EditBlogPostPage() {
           </button>
         </div>
       </form>
+
+      {/* Unsaved Changes Warning Modal */}
+      {showUnsavedWarning && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={cancelNavigation}
+          />
+          <div className="relative bg-card border border-border rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
+            <div className="text-center mb-4">
+              <div className="text-4xl mb-2">⚠️</div>
+              <h3 className="text-lg font-bold text-foreground">
+                Modifications non enregistrées
+              </h3>
+            </div>
+            <p className="text-muted-foreground text-center mb-6">
+              Vous avez des modifications non enregistrées. Voulez-vous vraiment
+              quitter cette page ? Vos modifications seront perdues.
+            </p>
+            <div className="flex gap-4 justify-center">
+              <button
+                onClick={cancelNavigation}
+                className="px-4 py-2 bg-accent text-foreground rounded-lg hover:bg-accent/80 transition-colors"
+              >
+                Rester sur la page
+              </button>
+              <button
+                onClick={confirmNavigation}
+                className="px-4 py-2 bg-destructive text-destructive-foreground rounded-lg hover:bg-destructive/90 transition-colors"
+              >
+                Quitter sans enregistrer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,11 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 interface Skill {
   id: string;
   name: string;
-  icon: string;
+  category: string;
+  iconUrl: string | null;
+  orderIndex: number | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface SkillsData {
@@ -14,31 +18,6 @@ interface SkillsData {
   outils: Skill[];
   soft_skills: Skill[];
 }
-
-// Demo skills data
-const demoSkills: SkillsData = {
-  frontend: [
-    { id: "1", name: "React", icon: "⚛️" },
-    { id: "2", name: "Next.js", icon: "▲" },
-    { id: "3", name: "TypeScript", icon: "📘" },
-    { id: "4", name: "Tailwind CSS", icon: "🎨" },
-  ],
-  backend: [
-    { id: "5", name: "Node.js", icon: "🟢" },
-    { id: "6", name: "PostgreSQL", icon: "🐘" },
-    { id: "7", name: "API REST", icon: "🔌" },
-  ],
-  outils: [
-    { id: "8", name: "n8n", icon: "🔄" },
-    { id: "9", name: "Claude Code", icon: "🤖" },
-    { id: "10", name: "Git", icon: "📦" },
-    { id: "11", name: "Figma", icon: "🎯" },
-  ],
-  soft_skills: [
-    { id: "12", name: "Créativité", icon: "💡" },
-    { id: "13", name: "Adaptabilité", icon: "🔄" },
-  ],
-};
 
 const categoryLabels: Record<string, string> = {
   frontend: "Frontend",
@@ -71,7 +50,13 @@ const iconOptions = [
 ];
 
 export default function AdminSkillsPage() {
-  const [skills, setSkills] = useState<SkillsData>(demoSkills);
+  const [skills, setSkills] = useState<SkillsData>({
+    frontend: [],
+    backend: [],
+    outils: [],
+    soft_skills: [],
+  });
+  const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newSkillName, setNewSkillName] = useState("");
   const [newSkillCategory, setNewSkillCategory] =
@@ -79,35 +64,48 @@ export default function AdminSkillsPage() {
   const [newSkillIcon, setNewSkillIcon] = useState("⚡");
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [saving, setSaving] = useState(false);
 
-  // Load skills from localStorage on mount
+  // Drag and drop state
+  const [draggedSkill, setDraggedSkill] = useState<Skill | null>(null);
+  const [draggedCategory, setDraggedCategory] = useState<string | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [dragOverCategory, setDragOverCategory] = useState<string | null>(null);
+  const dragNodeRef = useRef<HTMLDivElement | null>(null);
+
+  // Fetch skills from API
   useEffect(() => {
-    const loadSkills = () => {
-      try {
-        const savedSkills = localStorage.getItem("demo_skills");
-        if (savedSkills) {
-          const parsed = JSON.parse(savedSkills);
-          // Merge demo skills with saved skills
-          const merged: SkillsData = {
-            frontend: [...demoSkills.frontend, ...(parsed.frontend || [])],
-            backend: [...demoSkills.backend, ...(parsed.backend || [])],
-            outils: [...demoSkills.outils, ...(parsed.outils || [])],
-            soft_skills: [
-              ...demoSkills.soft_skills,
-              ...(parsed.soft_skills || []),
-            ],
-          };
-          setSkills(merged);
-        }
-      } catch (error) {
-        console.error("Error loading skills:", error);
-      }
-    };
-
-    loadSkills();
+    fetchSkills();
   }, []);
 
-  const handleAddSkill = () => {
+  const fetchSkills = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch("/api/admin/skills");
+      if (!response.ok) {
+        throw new Error("Failed to fetch skills");
+      }
+      const result = await response.json();
+      if (result.success) {
+        // Ensure all categories exist even if empty
+        const data: SkillsData = {
+          frontend: result.data.frontend || [],
+          backend: result.data.backend || [],
+          outils: result.data.outils || [],
+          soft_skills: result.data.soft_skills || [],
+        };
+        setSkills(data);
+      }
+    } catch (error) {
+      console.error("Error fetching skills:", error);
+      setErrorMessage("Erreur lors du chargement des compétences");
+      setTimeout(() => setErrorMessage(""), 3000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddSkill = async () => {
     // Validation
     if (!newSkillName.trim()) {
       setErrorMessage("Le nom de la compétence est requis");
@@ -125,81 +123,206 @@ export default function AdminSkillsPage() {
       return;
     }
 
-    // Create new skill
-    const newSkill: Skill = {
-      id: `user_${Date.now()}`,
-      name: newSkillName.trim(),
-      icon: newSkillIcon,
-    };
-
-    // Update state
-    const updatedSkills = {
-      ...skills,
-      [newSkillCategory]: [...skills[newSkillCategory], newSkill],
-    };
-    setSkills(updatedSkills);
-
-    // Save only user-created skills to localStorage
+    setSaving(true);
     try {
-      const savedSkills = localStorage.getItem("demo_skills");
-      const currentUserSkills = savedSkills
-        ? JSON.parse(savedSkills)
-        : { frontend: [], backend: [], outils: [], soft_skills: [] };
-      currentUserSkills[newSkillCategory] = [
-        ...(currentUserSkills[newSkillCategory] || []),
-        newSkill,
-      ];
-      localStorage.setItem("demo_skills", JSON.stringify(currentUserSkills));
+      const response = await fetch("/api/admin/skills", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newSkillName.trim(),
+          category: newSkillCategory,
+          iconUrl: newSkillIcon,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create skill");
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        // Add to local state
+        setSkills((prev) => ({
+          ...prev,
+          [newSkillCategory]: [...prev[newSkillCategory], result.data],
+        }));
+
+        // Reset form and close modal
+        setNewSkillName("");
+        setNewSkillCategory("frontend");
+        setNewSkillIcon("⚡");
+        setShowAddModal(false);
+        setErrorMessage("");
+
+        // Show success message
+        setSuccessMessage("Compétence ajoutée avec succès !");
+        setTimeout(() => setSuccessMessage(""), 3000);
+      }
     } catch (error) {
-      console.error("Error saving skill:", error);
+      console.error("Error creating skill:", error);
+      setErrorMessage("Erreur lors de la création de la compétence");
+    } finally {
+      setSaving(false);
     }
-
-    // Reset form and close modal
-    setNewSkillName("");
-    setNewSkillCategory("frontend");
-    setNewSkillIcon("⚡");
-    setShowAddModal(false);
-    setErrorMessage("");
-
-    // Show success message
-    setSuccessMessage("Compétence ajoutée avec succès !");
-    setTimeout(() => setSuccessMessage(""), 3000);
   };
 
-  const handleDeleteSkill = (category: keyof SkillsData, skillId: string) => {
-    // Only allow deleting user-created skills (those with id starting with "user_")
-    if (!skillId.startsWith("user_")) {
-      setErrorMessage(
-        "Les compétences de démonstration ne peuvent pas être supprimées",
-      );
+  const handleDeleteSkill = async (
+    category: keyof SkillsData,
+    skillId: string,
+  ) => {
+    try {
+      const response = await fetch(`/api/admin/skills/${skillId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete skill");
+      }
+
+      // Update local state
+      setSkills((prev) => ({
+        ...prev,
+        [category]: prev[category].filter((s) => s.id !== skillId),
+      }));
+
+      setSuccessMessage("Compétence supprimée avec succès !");
+      setTimeout(() => setSuccessMessage(""), 3000);
+    } catch (error) {
+      console.error("Error deleting skill:", error);
+      setErrorMessage("Erreur lors de la suppression de la compétence");
       setTimeout(() => setErrorMessage(""), 3000);
+    }
+  };
+
+  // Drag and drop handlers
+  const handleDragStart = (
+    e: React.DragEvent<HTMLDivElement>,
+    skill: Skill,
+    category: string,
+  ) => {
+    setDraggedSkill(skill);
+    setDraggedCategory(category);
+    dragNodeRef.current = e.currentTarget as HTMLDivElement;
+
+    // Set drag image
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", skill.id);
+
+    // Add dragging class after a small delay to avoid it affecting the drag image
+    setTimeout(() => {
+      if (dragNodeRef.current) {
+        dragNodeRef.current.classList.add("opacity-50");
+      }
+    }, 0);
+  };
+
+  const handleDragEnd = () => {
+    if (dragNodeRef.current) {
+      dragNodeRef.current.classList.remove("opacity-50");
+    }
+    setDraggedSkill(null);
+    setDraggedCategory(null);
+    setDragOverIndex(null);
+    setDragOverCategory(null);
+    dragNodeRef.current = null;
+  };
+
+  const handleDragOver = (
+    e: React.DragEvent<HTMLDivElement>,
+    index: number,
+    category: string,
+  ) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+
+    if (draggedCategory === category) {
+      setDragOverIndex(index);
+      setDragOverCategory(category);
+    }
+  };
+
+  const handleDragLeave = () => {
+    setDragOverIndex(null);
+    setDragOverCategory(null);
+  };
+
+  const handleDrop = async (
+    e: React.DragEvent<HTMLDivElement>,
+    dropIndex: number,
+    category: string,
+  ) => {
+    e.preventDefault();
+
+    if (!draggedSkill || draggedCategory !== category) {
+      handleDragEnd();
       return;
     }
 
-    // Update state
-    const updatedSkills = {
-      ...skills,
-      [category]: skills[category].filter((s) => s.id !== skillId),
-    };
-    setSkills(updatedSkills);
+    const categorySkills = [...skills[category as keyof SkillsData]];
+    const draggedIndex = categorySkills.findIndex(
+      (s) => s.id === draggedSkill.id,
+    );
 
-    // Update localStorage
-    try {
-      const savedSkills = localStorage.getItem("demo_skills");
-      if (savedSkills) {
-        const currentUserSkills = JSON.parse(savedSkills);
-        currentUserSkills[category] = (
-          currentUserSkills[category] || []
-        ).filter((s: Skill) => s.id !== skillId);
-        localStorage.setItem("demo_skills", JSON.stringify(currentUserSkills));
-      }
-    } catch (error) {
-      console.error("Error deleting skill:", error);
+    if (draggedIndex === dropIndex) {
+      handleDragEnd();
+      return;
     }
 
-    setSuccessMessage("Compétence supprimée avec succès !");
-    setTimeout(() => setSuccessMessage(""), 3000);
+    // Remove from old position and insert at new position
+    const [removed] = categorySkills.splice(draggedIndex, 1);
+    categorySkills.splice(dropIndex, 0, removed);
+
+    // Update orderIndex for all skills in this category
+    const updatedSkills = categorySkills.map((skill, index) => ({
+      ...skill,
+      orderIndex: index,
+    }));
+
+    // Update local state immediately
+    setSkills((prev) => ({
+      ...prev,
+      [category]: updatedSkills,
+    }));
+
+    handleDragEnd();
+
+    // Save to database
+    try {
+      const response = await fetch("/api/admin/skills", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          skills: updatedSkills.map((s) => ({
+            id: s.id,
+            orderIndex: s.orderIndex,
+          })),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to reorder skills");
+      }
+
+      setSuccessMessage("Ordre des compétences mis à jour !");
+      setTimeout(() => setSuccessMessage(""), 3000);
+    } catch (error) {
+      console.error("Error reordering skills:", error);
+      setErrorMessage("Erreur lors de la réorganisation");
+      setTimeout(() => setErrorMessage(""), 3000);
+      // Refetch to reset state
+      fetchSkills();
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-muted-foreground">
+          Chargement des compétences...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -222,7 +345,8 @@ export default function AdminSkillsPage() {
         <div>
           <h2 className="text-2xl font-bold text-foreground">Compétences</h2>
           <p className="text-muted-foreground">
-            Gérez vos compétences par catégorie
+            Gérez vos compétences par catégorie. Glissez-déposez pour
+            réorganiser.
           </p>
         </div>
         <button
@@ -236,52 +360,66 @@ export default function AdminSkillsPage() {
 
       {/* Skills by Category */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {Object.entries(skills).map(([category, categorySkills]) => (
-          <div
-            key={category}
-            className="bg-card border border-border rounded-lg p-6"
-          >
-            <h3 className="text-lg font-semibold text-foreground mb-4">
-              {categoryLabels[category]}
-            </h3>
-            <div className="space-y-2">
-              {categorySkills.map((skill) => (
-                <div
-                  key={skill.id}
-                  className="flex items-center justify-between p-3 bg-accent/30 rounded-lg hover:bg-accent/50 transition-colors group"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-xl">{skill.icon}</span>
-                    <span className="text-foreground">{skill.name}</span>
+        {(Object.keys(categoryLabels) as Array<keyof SkillsData>).map(
+          (category) => (
+            <div
+              key={category}
+              className="bg-card border border-border rounded-lg p-6"
+            >
+              <h3 className="text-lg font-semibold text-foreground mb-4">
+                {categoryLabels[category]}
+              </h3>
+              <div className="space-y-2 min-h-[100px]">
+                {skills[category].length === 0 ? (
+                  <div className="text-muted-foreground text-sm italic py-4 text-center">
+                    Aucune compétence dans cette catégorie
                   </div>
-                  <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    {skill.id.startsWith("user_") && (
-                      <button
-                        onClick={() =>
-                          handleDeleteSkill(
-                            category as keyof SkillsData,
-                            skill.id,
-                          )
-                        }
-                        className="p-1 text-muted-foreground hover:text-destructive transition-colors"
-                        title="Supprimer"
-                      >
-                        🗑️
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
+                ) : (
+                  skills[category].map((skill, index) => (
+                    <div
+                      key={skill.id}
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, skill, category)}
+                      onDragEnd={handleDragEnd}
+                      onDragOver={(e) => handleDragOver(e, index, category)}
+                      onDragLeave={handleDragLeave}
+                      onDrop={(e) => handleDrop(e, index, category)}
+                      className={`flex items-center justify-between p-3 bg-accent/30 rounded-lg hover:bg-accent/50 transition-colors group cursor-grab active:cursor-grabbing ${
+                        dragOverIndex === index && dragOverCategory === category
+                          ? "border-2 border-primary border-dashed"
+                          : "border-2 border-transparent"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-muted-foreground cursor-grab">
+                          ⋮⋮
+                        </span>
+                        <span className="text-xl">{skill.iconUrl || "⚡"}</span>
+                        <span className="text-foreground">{skill.name}</span>
+                      </div>
+                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => handleDeleteSkill(category, skill.id)}
+                          className="p-1 text-muted-foreground hover:text-destructive transition-colors"
+                          title="Supprimer"
+                        >
+                          🗑️
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          ),
+        )}
       </div>
 
-      {/* Demo Notice */}
+      {/* Drag and Drop Hint */}
       <div className="bg-accent/20 border border-accent/50 rounded-lg p-4">
         <p className="text-sm text-muted-foreground text-center">
-          <strong className="text-foreground">Mode démo:</strong> Les
-          compétences affichées sont des exemples.
+          <strong className="text-foreground">Astuce:</strong> Glissez-déposez
+          les compétences pour les réorganiser dans leur catégorie.
         </p>
       </div>
 
@@ -376,9 +514,10 @@ export default function AdminSkillsPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                  disabled={saving}
+                  className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
                 >
-                  Ajouter
+                  {saving ? "Ajout..." : "Ajouter"}
                 </button>
               </div>
             </form>

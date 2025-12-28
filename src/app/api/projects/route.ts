@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "../../../../db";
 import { projects } from "../../../../db/schema";
-import { eq, desc, asc, and, like, or, sql } from "drizzle-orm";
+import { eq, desc, asc, and, or, sql } from "drizzle-orm";
 
 // GET /api/projects - List all visible projects
 export async function GET(request: NextRequest) {
@@ -12,6 +12,8 @@ export async function GET(request: NextRequest) {
     const technology =
       searchParams.get("technology") || searchParams.get("tech"); // technology filter
     const search = searchParams.get("search") || searchParams.get("q"); // search query
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    const limit = parseInt(searchParams.get("limit") || "12", 10);
 
     // Determine sort column
     const sortColumn =
@@ -49,10 +51,21 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    // Calculate pagination
+    const total = visibleProjects.length;
+    const totalPages = Math.ceil(total / limit);
+    const offset = (page - 1) * limit;
+    const paginatedProjects = visibleProjects.slice(offset, offset + limit);
+
     return NextResponse.json({
       success: true,
-      data: visibleProjects,
-      total: visibleProjects.length,
+      data: paginatedProjects,
+      total,
+      page,
+      limit,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPrevPage: page > 1,
       filters: {
         technology: technology || null,
         search: search || null,

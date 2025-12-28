@@ -3,7 +3,14 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Calendar, Clock, Tag, Search } from "lucide-react";
+import {
+  Calendar,
+  Clock,
+  Tag,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 
 interface BlogPost {
   id: string;
@@ -14,6 +21,16 @@ interface BlogPost {
   status: string;
   publishedAt: string;
   readTimeMinutes?: number;
+  coverImageUrl?: string;
+}
+
+interface PaginationInfo {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
 }
 
 export default function BlogPage() {
@@ -27,6 +44,17 @@ export default function BlogPage() {
   const [selectedTag, setSelectedTag] = useState<string | null>(
     searchParams.get("tag") || null,
   );
+  const [currentPage, setCurrentPage] = useState(
+    parseInt(searchParams.get("page") || "1", 10),
+  );
+  const [pagination, setPagination] = useState<PaginationInfo>({
+    total: 0,
+    page: 1,
+    limit: 10,
+    totalPages: 1,
+    hasNextPage: false,
+    hasPrevPage: false,
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [debouncedSearch, setDebouncedSearch] = useState(
     searchParams.get("q") || "",
@@ -37,6 +65,7 @@ export default function BlogPage() {
     const params = new URLSearchParams();
     if (selectedTag) params.set("tag", selectedTag);
     if (debouncedSearch) params.set("q", debouncedSearch);
+    if (currentPage > 1) params.set("page", currentPage.toString());
 
     const paramsString = params.toString();
     const newUrl = paramsString ? `/blog?${paramsString}` : "/blog";
@@ -48,7 +77,12 @@ export default function BlogPage() {
     } else {
       sessionStorage.removeItem("blogFilterParams");
     }
-  }, [selectedTag, debouncedSearch, router]);
+  }, [selectedTag, debouncedSearch, currentPage, router]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedTag, debouncedSearch]);
 
   // Debounce search query
   useEffect(() => {
@@ -93,11 +127,22 @@ export default function BlogPage() {
           params.set("search", debouncedSearch);
         }
 
+        params.set("page", currentPage.toString());
+        params.set("limit", "10");
+
         const response = await fetch(`/api/blog?${params.toString()}`);
         const result = await response.json();
 
         if (result.success && result.data) {
           setPosts(result.data);
+          setPagination({
+            total: result.total,
+            page: result.page,
+            limit: result.limit,
+            totalPages: result.totalPages,
+            hasNextPage: result.hasNextPage,
+            hasPrevPage: result.hasPrevPage,
+          });
         } else {
           setPosts([]);
         }
@@ -109,7 +154,7 @@ export default function BlogPage() {
     };
 
     loadPosts();
-  }, [selectedTag, debouncedSearch]);
+  }, [selectedTag, debouncedSearch, currentPage]);
 
   // Handle tag toggle
   const handleTagClick = (tag: string) => {
@@ -235,6 +280,63 @@ export default function BlogPage() {
             </article>
           ))}
         </div>
+
+        {/* Pagination */}
+        {pagination.totalPages > 1 && (
+          <div className="mt-12 flex items-center justify-center gap-4">
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={!pagination.hasPrevPage}
+              className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm transition-colors hover:border-primary disabled:cursor-not-allowed disabled:opacity-50"
+              aria-label="Page précédente"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Précédent
+            </button>
+
+            <div className="flex items-center gap-2">
+              {Array.from(
+                { length: pagination.totalPages },
+                (_, i) => i + 1,
+              ).map((pageNum) => (
+                <button
+                  key={pageNum}
+                  onClick={() => setCurrentPage(pageNum)}
+                  className={`h-10 w-10 rounded-lg text-sm transition-colors ${
+                    pageNum === currentPage
+                      ? "bg-primary text-primary-foreground"
+                      : "border border-border bg-card hover:border-primary"
+                  }`}
+                  aria-label={`Page ${pageNum}`}
+                  aria-current={pageNum === currentPage ? "page" : undefined}
+                >
+                  {pageNum}
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={() =>
+                setCurrentPage((p) => Math.min(pagination.totalPages, p + 1))
+              }
+              disabled={!pagination.hasNextPage}
+              className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm transition-colors hover:border-primary disabled:cursor-not-allowed disabled:opacity-50"
+              aria-label="Page suivante"
+            >
+              Suivant
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+
+        {/* Page info */}
+        {pagination.total > 0 && (
+          <p className="mt-4 text-center text-sm text-muted-foreground">
+            Affichage {(currentPage - 1) * pagination.limit + 1} -{" "}
+            {Math.min(currentPage * pagination.limit, pagination.total)} sur{" "}
+            {pagination.total} articles
+          </p>
+        )}
 
         {/* Empty state */}
         {posts.length === 0 && !isLoading && (
