@@ -1691,3 +1691,65 @@ Many remaining failing tests require features not yet implemented:
 3. Add about page timeline styling
 4. Implement project gallery with image grid
 5. Fix remaining failing style tests
+
+## Session 35 (2024-12-28)
+- Started dev server (pnpm dev) - running on port 3001
+- Verified homepage, admin login, and core functionality working correctly
+
+### Changes Made:
+
+1. **Error Toast Notifications for API Failures**:
+   - Updated `/admin/projets/nouveau/page.tsx` - Added toast for API errors (duplicate slug, etc.)
+   - Updated `/admin/blog/nouveau/page.tsx` - Added useToast hook and error notifications
+   - Updated `/admin/projets/[id]/edit/page.tsx` - Added useToast hook and error notifications
+   - Updated `/admin/blog/[id]/edit/page.tsx` - Added useToast hook and error notifications
+   - Updated `/admin/competences/page.tsx` - Added useToast hook and notifications for all operations
+   - All admin pages now show toast notifications for:
+     - API errors (network failures, validation errors)
+     - Duplicate slug errors
+     - Success operations (create, update, delete)
+
+2. **About Page Timeline Component**:
+   - Added interactive timeline to `/a-propos/page.tsx` showing career journey:
+     - 2000-2020: Restauration (20 years experience)
+     - 2020: Découverte du code (autodidact learning)
+     - 2023: Formation intensive (React, Next.js, TypeScript)
+     - 2024: IA & Reconversion (Claude Code, vibe coding)
+     - 2025: Développeur Full-Stack (current - highlighted)
+   - Timeline styling:
+     - Vertical gradient line (pink → cyan → magenta)
+     - Numbered markers with category-specific colors
+     - Date badges for each stage
+     - Pulsing "Aujourd'hui" badge for current status
+     - Cards with descriptions
+
+### Verification Tests Performed:
+- Error toast: Attempted to create project with existing slug "portfolio-retro"
+- Toast notification appeared: "A project with this slug already exists"
+- Timeline visible on /a-propos page with all 5 career stages
+- Screenshot captured: about-timeline.jpeg
+
+### New Tests Now Passing (Session 35):
+- F-UIBackend: Error toast shown when API call fails
+- style: About page timeline styled correctly
+
+### Current Status:
+- 228/277 tests passing (82.3%)
+- Error toast notifications implemented across all admin pages
+- About page timeline with styled career journey
+- Dev server running on port 3001
+
+### Code Files Modified:
+- MODIFIED: src/app/admin/projets/nouveau/page.tsx (error toast)
+- MODIFIED: src/app/admin/blog/nouveau/page.tsx (useToast + error handling)
+- MODIFIED: src/app/admin/projets/[id]/edit/page.tsx (useToast + error handling)
+- MODIFIED: src/app/admin/blog/[id]/edit/page.tsx (useToast + error handling)
+- MODIFIED: src/app/admin/competences/page.tsx (useToast + error handling)
+- MODIFIED: src/app/a-propos/page.tsx (added timeline component)
+
+### Next Steps for Future Sessions:
+1. Implement project gallery with image grid and hover zoom
+2. Add rich text editor toolbar styling
+3. Implement Konami code modal with pixel art
+4. Fix remaining style tests
+5. Test pagination position maintenance
