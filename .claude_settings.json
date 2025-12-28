@@ -1,0 +1,23 @@
+{
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": true
+  },
+  "permissions": {
+    "defaultMode": "acceptEdits",
+    "allow": [
+      "Read(./**)",
+      "Write(./**)",
+      "Edit(./**)",
+      "Glob(./**)",
+      "Grep(./**)",
+      "Bash(*)",
+      "mcp__playwright__*"
+    ]
+  },
+  "pluginConfig": {
+    "playwright@claude-plugins-official": {
+      "args": ["--browser", "chromium"]
+    }
+  }
+}

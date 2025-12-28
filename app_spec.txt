@@ -1,0 +1,1495 @@
+<project_specification>
+  <project_name>ONEUP Portfolio - Portfolio Développeur Rétro Gaming</project_name>
+
+  <overview>
+    Portfolio professionnel avec thème rétro gaming (années 80-90) pour développeur full-stack en reconversion professionnelle.
+    Le site combine un design pixel art nostalgique avec des fonctionnalités modernes : dashboard d'administration pour gérer
+    projets et articles de blog, génération de contenu par IA (Claude API), analytics de visite, et easter eggs interactifs.
+    L'interface publique présente le parcours de reconversion, les compétences en automatisation (n8n, claude-code),
+    et les réalisations, le tout dans une ambiance rétro gaming professionnelle avec sons 8-bit, effets CRT, et surprises cachées.
+  </overview>
+
+  <technology_stack>
+    <frontend>
+      <framework>Next.js 14 (App Router) avec React 18 et TypeScript</framework>
+      <styling>Tailwind CSS avec shadcn/ui et tweakcn pour le design system</styling>
+      <state_management>React hooks, Context API, et Zustand pour l'état global</state_management>
+      <routing>Next.js App Router avec Server Components et Client Components</routing>
+      <rich_text_editor>Tiptap ou Novel (éditeur WYSIWYG pour le blog)</rich_text_editor>
+      <icons>Lucide React pour les icônes, sprites pixel art custom pour thème rétro</icons>
+      <animations>Framer Motion pour animations fluides et effets de scroll</animations>
+      <seo>Next.js metadata API, sitemap dynamique, robots.txt, Open Graph</seo>
+    </frontend>
+    <backend>
+      <runtime>Node.js avec Next.js API Routes (App Router)</runtime>
+      <database>PostgreSQL avec Vercel Postgres (ou Neon/Supabase alternative)</database>
+      <orm>Drizzle ORM pour migrations et requêtes type-safe</orm>
+      <authentication>Better Auth pour email/password authentication</authentication>
+      <storage>Vercel Blob Storage pour images et médias</storage>
+      <email>Resend pour notifications et formulaire de contact</email>
+      <ai>Claude API (Anthropic SDK) pour génération de contenu blog</ai>
+      <analytics>Lightweight analytics custom (track views, pas de cookies)</analytics>
+    </backend>
+    <communication>
+      <api>Next.js API Routes (RESTful endpoints)</api>
+      <data_fetching>Server Actions et React Server Components</data_fetching>
+      <validation>Zod pour validation de schémas</validation>
+      <error_handling>React Error Boundaries et gestionnaires d'erreurs API</error_handling>
+    </communication>
+    <deployment>
+      <platform>Vercel (optimisé pour Next.js)</platform>
+      <ci_cd>Vercel Git integration (auto-deploy sur push)</ci_cd>
+      <environment>Variables d'environnement via Vercel dashboard</environment>
+    </deployment>
+  </technology_stack>
+
+  <prerequisites>
+    <environment_setup>
+      - Node.js 18+ et pnpm installés
+      - Compte Vercel pour déploiement et Vercel Postgres
+      - Compte Anthropic avec clé API Claude
+      - Compte Resend avec clé API pour emails
+      - Git repository (GitHub/GitLab)
+      - Variables d'environnement (.env.local) :
+        * DATABASE_URL (Postgres connection string)
+        * ANTHROPIC_API_KEY (Claude API)
+        * RESEND_API_KEY (email service)
+        * BETTER_AUTH_SECRET (auth secret key)
+        * BLOB_READ_WRITE_TOKEN (Vercel Blob)
+        * NEXT_PUBLIC_BASE_URL (pour SEO et OG images)
+    </environment_setup>
+    <design_assets>
+      - Logo ONEUP pixel art (format PNG et SVG)
+      - GIF nature style Miyazaki pour fond d'écran
+      - Sprites pixel art pour easter eggs
+      - Sons 8-bit (effets UI, musique background optionnelle)
+      - Fichier CSS fourni avec variables de couleurs OKLCH
+    </design_assets>
+  </prerequisites>
+
+  <security_and_access_control>
+    <complexity_tier>Medium</complexity_tier>
+    <test_count_target>250+</test_count_target>
+
+    <user_roles>
+      <role name="public">
+        <permissions>
+          - Consulter toutes les pages publiques (accueil, à propos, projets, blog, compétences, contact)
+          - Lire les articles de blog publiés
+          - Voir les projets affichés
+          - Utiliser le formulaire de contact
+          - Activer/désactiver sons et effets rétro
+          - Accéder aux easter eggs publics
+        </permissions>
+        <protected_routes>
+          - Aucune restriction côté public
+        </protected_routes>
+      </role>
+
+      <role name="admin">
+        <permissions>
+          - Toutes les permissions public
+          - Accéder au dashboard d'administration (/admin/*)
+          - Créer, éditer, supprimer des projets
+          - Créer, éditer, supprimer des articles de blog
+          - Gérer les brouillons et publications
+          - Upload et gestion des médias (images)
+          - Modifier la liste des compétences
+          - Utiliser l'IA pour générer du contenu blog
+          - Consulter les analytics (visiteurs, pages vues)
+          - Exporter tout le contenu (JSON)
+          - Gérer les paramètres du site
+        </permissions>
+        <protected_routes>
+          - /admin/* (toutes les routes admin)
+          - /api/admin/* (tous les endpoints admin)
+          - /api/ai/* (génération IA)
+        </protected_routes>
+      </role>
+    </user_roles>
+
+    <authentication>
+      <method>Email + mot de passe (Better Auth)</method>
+      <session_timeout>7 jours (avec refresh token)</session_timeout>
+      <password_requirements>
+        - Minimum 8 caractères
+        - Au moins une majuscule, une minuscule, un chiffre
+        - Hashage bcrypt
+      </password_requirements>
+      <rate_limiting>
+        - Limite de tentatives de connexion (5 par 15 minutes)
+        - Protection CSRF sur tous les formulaires
+      </rate_limiting>
+    </authentication>
+
+    <sensitive_operations>
+      - Suppression de projets/articles : confirmation modale
+      - Génération IA : limite de requêtes par jour (éviter coûts excessifs)
+      - Upload de fichiers : validation stricte (types, taille max 5MB)
+      - Export de données : log de l'action
+    </sensitive_operations>
+
+    <data_protection>
+      - Pas de cookies de tracking tiers
+      - Analytics anonymes (pas de PII)
+      - Formulaire de contact : validation et sanitization
+      - Protection contre injection SQL (ORM Drizzle)
+      - Sanitization du contenu HTML (éditeur riche)
+      - HTTPS obligatoire (Vercel)
+    </data_protection>
+  </security_and_access_control>
+
+  <core_features>
+    <public_homepage>
+      - Hero section avec logo ONEUP pixel art
+      - GIF nature Miyazaki en fond d'écran (overlay subtil)
+      - Présentation courte : nom, titre (Développeur Full-Stack en Reconversion)
+      - Call-to-action vers projets et contact
+      - Animation d'entrée style 8-bit
+      - Effet parallax sur scroll
+      - Toggle CRT/scanlines disponible
+      - Particules ou animations pixel art subtiles
+    </public_homepage>
+
+    <about_page>
+      - Parcours de reconversion (restauration → développement)
+      - Section "Pourquoi le développement ?" (motivations personnelles)
+      - Mise en avant de l'expérience de vie (46 ans = atout)
+      - Spécialités actuelles : n8n automation, claude-code, vibe coding
+      - Photo ou avatar pixel art
+      - Timeline interactive du parcours (optionnel)
+      - Citation ou devise personnelle
+      - Liens vers CV téléchargeable (PDF)
+    </about_page>
+
+    <projects_section>
+      - Galerie de 5 projets initiaux (extensible)
+      - Affichage en grille responsive (cartes)
+      - Chaque projet inclut :
+        * Titre et courte description
+        * Technologies utilisées (badges avec icônes)
+        * Image principale / screenshot
+        * Liens GitHub et démo live (si disponibles)
+        * Statut (En cours / Terminé / Abandonné)
+        * Date de réalisation
+      - Filtrage par technologie/tag
+      - Tri (plus récents, alphabétique)
+      - Modal/drawer pour détails complets du projet
+      - Page dédiée par projet (/projets/[slug])
+      - Galerie d'images (screenshots) dans détails
+      - Animations au survol (pixel art glitch effect)
+    </projects_section>
+
+    <blog_section>
+      - Liste d'articles avec preview (titre, excerpt, date)
+      - Image de couverture pour chaque article
+      - Système de tags (filtrage)
+      - Recherche par titre/contenu
+      - Temps de lecture estimé affiché
+      - Navigation article précédent/suivant
+      - Page article complète (/blog/[slug])
+      - Éditeur riche de contenu (headings, bold, italic, lists, code blocks, images)
+      - Partage social (Twitter, LinkedIn)
+      - Table des matières auto-générée (pour articles longs)
+      - Syntaxe highlighting pour code blocks
+    </blog_section>
+
+    <skills_section>
+      - Liste de compétences organisées par catégories :
+        * Frontend (React, Next.js, Tailwind, TypeScript)
+        * Backend (Node.js, APIs, Databases)
+        * Outils (n8n, claude-code, Git, Figma)
+        * Soft skills (Créativité, Adaptabilité, etc.)
+      - Icônes pour chaque technologie
+      - Hover effects rétro (pixel shift)
+      - Éditable depuis le dashboard admin
+      - Animation d'apparition séquentielle au scroll
+    </skills_section>
+
+    <contact_page>
+      - Formulaire de contact :
+        * Nom
+        * Email
+        * Sujet
+        * Message
+        * Bouton d'envoi avec animation
+      - Validation côté client et serveur
+      - Envoi via Resend vers email admin
+      - Confirmation d'envoi (message de succès)
+      - Gestion d'erreurs (messages clairs)
+      - Liens sociaux : Email, LinkedIn, GitHub, autres
+      - Icônes animées au survol
+      - Option "Copier l'email" (clipboard)
+    </contact_page>
+
+    <navigation_ux>
+      - Header fixe avec :
+        * Logo ONEUP (lien vers accueil)
+        * Menu desktop : Accueil, À propos, Projets, Blog, Compétences, Contact
+        * Toggle sons 8-bit (on/off)
+        * Toggle effet CRT (on/off)
+        * Bouton Admin (visible seulement si connecté)
+      - Menu burger pour mobile/tablette
+      - Sidebar rétro gaming (optionnel) avec easter eggs
+      - Footer avec :
+        * Copyright et année
+        * Liens réseaux sociaux
+        * Mention "Fait avec Next.js ❤️"
+      - Smooth scroll entre sections
+      - Indicateur de scroll (progress bar)
+    </navigation_ux>
+
+    <retro_gaming_features>
+      - Sons 8-bit :
+        * Click sur boutons (bip)
+        * Navigation entre pages (woosh)
+        * Succès/erreur (jingles)
+        * Toggle on/off persistant (localStorage)
+      - Effet CRT/scanlines :
+        * Overlay CSS avec scanlines animées
+        * Effet tube cathodique sur tout le site
+        * Toggle on/off persistant
+      - Konami code (↑↑↓↓←→←→BA) :
+        * Ouvre une modal "mini-jeu"
+        * Placeholder pour jeu futur (Snake, Pong, etc.)
+        * Message "À venir..." avec animation pixel art
+      - Easter eggs cachés :
+        * Sprite Mario/champignon qui apparaît aléatoirement
+        * Double-click sur logo = animation secrète
+        * Hover prolongé sur certains éléments = surprise
+        * Message caché dans le code source (ASCII art)
+      - Animations pixel art :
+        * Loading spinner style Game Boy
+        * Transitions de page (pixel dissolve)
+        * Hover effects sur images (pixel shift)
+    </retro_gaming_features>
+
+    <seo_optimization>
+      - Metadata dynamique par page (title, description, OG)
+      - Sitemap.xml généré dynamiquement
+      - Robots.txt configuré
+      - Structured data (JSON-LD) pour articles et projets
+      - Images optimisées (Next.js Image avec lazy loading)
+      - Performance Lighthouse > 90
+      - Canonical URLs
+      - Alt text sur toutes les images
+      - Headings hiérarchisés (H1, H2, H3)
+      - Liens internes optimisés
+    </seo_optimization>
+
+    <admin_dashboard>
+      <authentication_flow>
+        - Page de connexion /admin/login
+        - Formulaire email + mot de passe
+        - Message d'erreur clair si échec
+        - Redirection vers /admin après succès
+        - Logout avec confirmation
+        - Protection toutes routes /admin/* (middleware)
+      </authentication_flow>
+
+      <dashboard_home>
+        - Vue d'ensemble :
+          * Nombre total de projets
+          * Nombre total d'articles (publiés + brouillons)
+          * Visiteurs ce mois-ci
+          * Projets/articles les plus vus
+        - Graphiques simples (lignes ou barres)
+        - Actions rapides (Nouveau projet, Nouvel article)
+        - Dernières activités (logs)
+      </dashboard_home>
+
+      <projects_management>
+        - Liste de tous les projets (table avec tri/filtrage)
+        - Actions : Créer, Éditer, Supprimer, Dupliquer
+        - Formulaire création/édition :
+          * Titre (requis)
+          * Slug (auto-généré ou custom)
+          * Description courte (pour carte)
+          * Description longue (détails complets)
+          * Technologies utilisées (multi-select tags)
+          * Lien GitHub (URL)
+          * Lien démo (URL)
+          * Statut (En cours, Terminé, Abandonné)
+          * Date de réalisation
+          * Image principale (upload)
+          * Galerie d'images (multi-upload)
+          * Visible (oui/non)
+        - Upload d'images drag & drop
+        - Preview en temps réel
+        - Auto-save (toutes les 30 secondes)
+        - Confirmation avant suppression
+      </projects_management>
+
+      <blog_management>
+        - Liste de tous les articles (publiés + brouillons)
+        - Filtrage par statut, tags
+        - Actions : Créer, Éditer, Supprimer, Dupliquer
+        - Formulaire création/édition :
+          * Titre (requis)
+          * Slug (auto-généré ou custom)
+          * Excerpt (résumé court)
+          * Contenu (éditeur riche WYSIWYG)
+          * Tags (création libre, multi-select)
+          * Image de couverture (upload)
+          * Statut (Brouillon / Publié)
+          * Date de publication (programmable)
+          * SEO : Meta description, meta keywords
+        - Éditeur riche (Tiptap/Novel) :
+          * Headings (H1-H6)
+          * Bold, italic, underline, strikethrough
+          * Listes (ordered, unordered)
+          * Blockquotes
+          * Code inline et code blocks (avec syntaxe)
+          * Images inline (upload)
+          * Liens
+          * Tables (optionnel)
+        - Bouton "Générer avec IA" :
+          * Modal pour entrer un prompt
+          * Appel Claude API
+          * Insérer le contenu généré dans l'éditeur
+          * Options : générer titre, générer outline, générer section, améliorer texte
+        - Auto-save (toutes les 30 secondes)
+        - Preview live de l'article
+        - Confirmation avant suppression
+      </blog_management>
+
+      <skills_management>
+        - Liste de toutes les compétences
+        - Organisées par catégories (Frontend, Backend, Outils, etc.)
+        - Actions : Ajouter, Éditer, Supprimer, Réorganiser
+        - Formulaire :
+          * Nom de la compétence
+          * Catégorie (select)
+          * Icône (upload ou sélection depuis bibliothèque)
+          * Ordre d'affichage (drag & drop)
+        - Preview en temps réel
+      </skills_management>
+
+      <media_library>
+        - Bibliothèque centrale de tous les médias uploadés
+        - Vue en grille avec thumbnails
+        - Upload multiple (drag & drop)
+        - Filtrage par type (images, documents)
+        - Recherche par nom
+        - Informations : taille, dimensions, URL
+        - Copier URL au clipboard
+        - Suppression avec confirmation
+        - Compression automatique des images (format WebP)
+        - Stockage Vercel Blob
+      </media_library>
+
+      <analytics_dashboard>
+        - Visiteurs uniques (par jour, semaine, mois)
+        - Pages vues par page
+        - Projets les plus consultés
+        - Articles les plus lus
+        - Sources de trafic (direct, referral, search)
+        - Graphiques simples (Chart.js ou Recharts)
+        - Export CSV des données
+        - Pas de cookies tiers (analytics légers custom)
+      </analytics_dashboard>
+
+      <ai_content_generation>
+        - Accessible depuis l'éditeur de blog
+        - Options de génération :
+          * Générer un article complet (à partir d'un titre/sujet)
+          * Générer un titre accrocheur
+          * Générer un plan d'article (outline)
+          * Générer une section spécifique
+          * Améliorer/réécrire un paragraphe
+          * Générer meta description SEO
+        - Formulaire de prompt avec paramètres :
+          * Ton (professionnel, décontracté, technique)
+          * Longueur cible
+          * Mots-clés à inclure
+        - Utilisation de l'API Claude (Sonnet 4.5)
+        - Limite quotidienne pour contrôler les coûts (ex: 20 générations/jour)
+        - Historique des générations (logs)
+        - Possibilité de régénérer ou modifier le prompt
+      </ai_content_generation>
+
+      <settings_config>
+        - Informations du site :
+          * Titre du site
+          * Description
+          * URL de base
+          * Email de contact
+        - Compte admin :
+          * Changer email
+          * Changer mot de passe
+        - Intégrations :
+          * Clé API Claude (masquée)
+          * Clé API Resend (masquée)
+          * Reconfigurer si nécessaire
+        - Apparence (admin) :
+          * Thème dashboard (light/dark - optionnel)
+        - Notifications :
+          * Email lors de nouveau message contact (on/off)
+        - Sauvegardes :
+          * Export complet du contenu (JSON)
+          * Import de contenu (restauration)
+      </settings_config>
+
+      <data_export_import>
+        - Export JSON :
+          * Tous les projets
+          * Tous les articles
+          * Toutes les compétences
+          * Métadonnées du site
+        - Bouton "Télécharger export complet"
+        - Import JSON (restauration depuis backup)
+        - Format structuré et documenté
+      </data_export_import>
+    </admin_dashboard>
+
+    <responsive_design>
+      - Mobile-first approach
+      - Breakpoints Tailwind :
+        * sm (640px) : ajustements tablette
+        * md (768px) : layout deux colonnes
+        * lg (1024px) : layout desktop complet
+        * xl (1280px) : max-width content
+      - Touch-optimized :
+        * Boutons taille minimum 44x44px
+        * Swipe gestures pour galeries
+        * Menu burger animé sur mobile
+      - Images responsive (srcset, Next.js Image)
+      - Texte lisible sur tous devices
+      - Test sur iPhone, Android, iPad
+    </responsive_design>
+
+    <performance_optimization>
+      - Code splitting automatique (Next.js)
+      - Lazy loading des images
+      - Prefetch des liens au survol
+      - Server Components par défaut (moins JS côté client)
+      - Compression Gzip/Brotli (Vercel)
+      - CDN pour assets statiques
+      - Cache headers optimisés
+      - Minification CSS/JS
+      - Lighthouse score > 90 toutes catégories
+    </performance_optimization>
+
+    <accessibility>
+      - Navigation complète au clavier (Tab, Enter, Esc)
+      - Focus visible sur tous éléments interactifs
+      - ARIA labels sur icônes et boutons
+      - Alt text descriptif sur images
+      - Contraste de couleurs AA (WCAG 2.1)
+      - Skip to content link
+      - Headings hiérarchisés
+      - Messages d'erreur clairs et accessibles
+      - Formulaires bien labellisés
+    </accessibility>
+  </core_features>
+
+  <database_schema>
+    <tables>
+      <users>
+        - id (UUID, primary key)
+        - email (unique, not null)
+        - password_hash (not null)
+        - name (nullable)
+        - created_at (timestamp)
+        - updated_at (timestamp)
+        - last_login (timestamp, nullable)
+        Note: Table unique pour l'admin, extensible si besoin de multi-users futur
+      </users>
+
+      <projects>
+        - id (UUID, primary key)
+        - slug (unique, not null, for URL)
+        - title (not null)
+        - short_description (text)
+        - long_description (text)
+        - technologies (JSON array of tags)
+        - github_url (nullable)
+        - demo_url (nullable)
+        - status (enum: 'en_cours', 'termine', 'abandonne')
+        - project_date (date, nullable)
+        - main_image_url (nullable)
+        - gallery_images (JSON array of URLs)
+        - visible (boolean, default true)
+        - view_count (integer, default 0)
+        - created_at (timestamp)
+        - updated_at (timestamp)
+        - order_index (integer, for manual ordering)
+      </projects>
+
+      <blog_posts>
+        - id (UUID, primary key)
+        - slug (unique, not null, for URL)
+        - title (not null)
+        - excerpt (text)
+        - content (rich text HTML)
+        - cover_image_url (nullable)
+        - tags (JSON array of strings)
+        - status (enum: 'draft', 'published')
+        - published_at (timestamp, nullable)
+        - meta_description (text, for SEO)
+        - meta_keywords (text, nullable)
+        - read_time_minutes (integer, calculated)
+        - view_count (integer, default 0)
+        - created_at (timestamp)
+        - updated_at (timestamp)
+        - author_id (FK to users, nullable)
+      </blog_posts>
+
+      <skills>
+        - id (UUID, primary key)
+        - name (not null)
+        - category (enum: 'frontend', 'backend', 'outils', 'soft_skills')
+        - icon_url (nullable, path to icon image)
+        - order_index (integer, for display order)
+        - created_at (timestamp)
+        - updated_at (timestamp)
+      </skills>
+
+      <media_library>
+        - id (UUID, primary key)
+        - filename (not null)
+        - original_filename (not null)
+        - url (Vercel Blob URL, not null)
+        - mime_type (not null)
+        - size_bytes (integer)
+        - width (integer, nullable, for images)
+        - height (integer, nullable, for images)
+        - uploaded_by (FK to users, nullable)
+        - created_at (timestamp)
+        - alt_text (text, nullable)
+        - used_in (JSON array, refs to projects/posts where used)
+      </media_library>
+
+      <page_views>
+        - id (UUID, primary key)
+        - page_path (not null, indexed)
+        - referrer (nullable)
+        - user_agent (text, nullable)
+        - ip_hash (hashed IP for privacy, nullable)
+        - viewed_at (timestamp, indexed)
+        - session_id (UUID, for grouping visits)
+        Note: Analytics légers, anonymisés
+      </page_views>
+
+      <contact_messages>
+        - id (UUID, primary key)
+        - name (not null)
+        - email (not null)
+        - subject (not null)
+        - message (text, not null)
+        - ip_address (hashed, for spam protection)
+        - status (enum: 'new', 'read', 'archived')
+        - created_at (timestamp)
+        Note: Optionnel, peut juste envoyer email direct sans stockage
+      </contact_messages>
+
+      <ai_generations>
+        - id (UUID, primary key)
+        - prompt (text, not null)
+        - generated_content (text, not null)
+        - model (string, e.g., 'claude-sonnet-4.5')
+        - tokens_used (integer)
+        - created_at (timestamp)
+        - used_in_post_id (FK to blog_posts, nullable)
+        Note: Pour tracking et limite quotidienne
+      </ai_generations>
+
+      <site_settings>
+        - key (string, primary key)
+        - value (JSON or text)
+        - updated_at (timestamp)
+        Note: Stockage clé-valeur pour config (titre site, etc.)
+      </site_settings>
+    </tables>
+
+    <indexes>
+      - projects: slug, visible, created_at, view_count
+      - blog_posts: slug, status, published_at, tags (GIN index), view_count
+      - skills: category, order_index
+      - page_views: page_path, viewed_at
+      - ai_generations: created_at (for daily limit checks)
+    </indexes>
+
+    <relationships>
+      - users 1:N blog_posts (author)
+      - users 1:N media_library (uploader)
+      - blog_posts N:M media_library (images dans contenu)
+      - projects N:M media_library (galerie d'images)
+    </relationships>
+  </database_schema>
+
+  <api_endpoints_summary>
+    <public_endpoints>
+      - GET /api/projects (liste tous projets visibles)
+      - GET /api/projects/[slug] (détails d'un projet)
+      - POST /api/projects/[id]/view (increment view count)
+      - GET /api/blog (liste articles publiés, pagination, filtrage par tags)
+      - GET /api/blog/[slug] (détails article)
+      - POST /api/blog/[id]/view (increment view count)
+      - GET /api/blog/tags (liste tous tags utilisés)
+      - GET /api/skills (liste compétences par catégorie)
+      - POST /api/contact (envoi formulaire contact)
+      - GET /api/search?q=query (recherche projets et articles)
+    </public_endpoints>
+
+    <admin_auth>
+      - POST /api/admin/auth/login (connexion admin)
+      - POST /api/admin/auth/logout (déconnexion)
+      - GET /api/admin/auth/me (vérifier session)
+    </admin_auth>
+
+    <admin_projects>
+      - GET /api/admin/projects (liste tous projets, incluant non visibles)
+      - POST /api/admin/projects (créer projet)
+      - GET /api/admin/projects/[id] (détails projet pour édition)
+      - PUT /api/admin/projects/[id] (mettre à jour projet)
+      - DELETE /api/admin/projects/[id] (supprimer projet)
+      - PATCH /api/admin/projects/[id]/visibility (toggle visible)
+      - POST /api/admin/projects/[id]/duplicate (dupliquer projet)
+    </admin_projects>
+
+    <admin_blog>
+      - GET /api/admin/blog (liste tous articles, incluant brouillons)
+      - POST /api/admin/blog (créer article)
+      - GET /api/admin/blog/[id] (détails article pour édition)
+      - PUT /api/admin/blog/[id] (mettre à jour article)
+      - DELETE /api/admin/blog/[id] (supprimer article)
+      - PATCH /api/admin/blog/[id]/status (changer statut draft/published)
+      - POST /api/admin/blog/[id]/duplicate (dupliquer article)
+      - POST /api/admin/blog/auto-save (sauvegarder brouillon auto)
+    </admin_blog>
+
+    <admin_skills>
+      - GET /api/admin/skills (liste toutes compétences)
+      - POST /api/admin/skills (ajouter compétence)
+      - PUT /api/admin/skills/[id] (modifier compétence)
+      - DELETE /api/admin/skills/[id] (supprimer compétence)
+      - PUT /api/admin/skills/reorder (réorganiser ordre)
+    </admin_skills>
+
+    <admin_media>
+      - GET /api/admin/media (liste tous médias)
+      - POST /api/admin/media/upload (upload fichier vers Blob Storage)
+      - DELETE /api/admin/media/[id] (supprimer média)
+      - GET /api/admin/media/[id] (détails média)
+    </admin_media>
+
+    <admin_analytics>
+      - GET /api/admin/analytics/overview (stats générales)
+      - GET /api/admin/analytics/pages (vues par page)
+      - GET /api/admin/analytics/top-projects (projets les plus vus)
+      - GET /api/admin/analytics/top-posts (articles les plus lus)
+      - GET /api/admin/analytics/traffic-sources (sources de trafic)
+      - GET /api/admin/analytics/export (export CSV)
+    </admin_analytics>
+
+    <admin_ai>
+      - POST /api/admin/ai/generate (génération de contenu Claude)
+        Body: { prompt, type: 'article'|'title'|'outline'|'section', options: {...} }
+      - GET /api/admin/ai/usage (stats utilisation IA quotidienne)
+      - GET /api/admin/ai/history (historique générations)
+    </admin_ai>
+
+    <admin_settings>
+      - GET /api/admin/settings (récupérer config site)
+      - PUT /api/admin/settings (mettre à jour config)
+      - POST /api/admin/export (export JSON complet)
+      - POST /api/admin/import (import JSON restauration)
+    </admin_settings>
+
+    <utilities>
+      - POST /api/analytics/track (track page view côté client)
+      - GET /api/sitemap.xml (sitemap dynamique)
+      - GET /api/rss.xml (flux RSS du blog, optionnel)
+    </utilities>
+  </api_endpoints_summary>
+
+  <ui_layout>
+    <public_site_structure>
+      - Header (sticky) :
+        * Logo ONEUP (lien accueil)
+        * Navigation : Accueil | À propos | Projets | Blog | Compétences | Contact
+        * Toggles : Sons 🔊/🔇 | CRT 📺
+        * Bouton Admin (si connecté)
+        * Menu burger (mobile)
+      - Main Content Area (variable selon page)
+      - Footer :
+        * Copyright © 2025 ONEUP
+        * Liens sociaux (icônes)
+        * Made with Next.js ❤️
+    </public_site_structure>
+
+    <admin_dashboard_layout>
+      - Sidebar gauche (collapsible) :
+        * Logo ONEUP + "Admin"
+        * Navigation :
+          - Dashboard (home)
+          - Projets
+          - Blog
+          - Compétences
+          - Médias
+          - Analytics
+          - Paramètres
+        * Logout en bas
+      - Main content (droite) :
+        * Header avec fil d'Ariane et nom de page
+        * Zone de contenu dynamique
+      - Toasts/Notifications pour succès/erreurs
+    </admin_dashboard_layout>
+
+    <page_templates>
+      <homepage>
+        - Hero section full-screen :
+          * GIF Miyazaki en arrière-plan
+          * Logo ONEUP pixel art centré
+          * Titre animé : "Développeur Full-Stack en Reconversion"
+          * Sous-titre : n8n | claude-code | automatisation
+          * CTA : "Voir mes projets" + "Me contacter"
+        - Section projets (featured, 3 derniers)
+        - Section compétences (overview)
+        - Section blog (derniers articles, 3)
+        - CTA final (contact)
+      </homepage>
+
+      <about_page>
+        - Hero avec photo/avatar
+        - Texte de présentation (parcours, motivations)
+        - Timeline (optionnelle)
+        - Call-to-action (télécharger CV)
+      </about_page>
+
+      <projects_page>
+        - Filtres par technologie (badges cliquables)
+        - Tri (récents, alphabétique)
+        - Grille de cartes projets (responsive 1-3 colonnes)
+        - Modal ou page détail pour chaque projet
+      </projects_page>
+
+      <project_detail_page>
+        - Image principale en haut
+        - Titre, date, status
+        - Technologies (badges)
+        - Description complète
+        - Galerie d'images (carousel)
+        - Liens GitHub + Démo (boutons)
+        - Navigation projet précédent/suivant
+      </project_detail_page>
+
+      <blog_page>
+        - Filtres par tags
+        - Barre de recherche
+        - Liste d'articles (pagination)
+        - Chaque article : image, titre, excerpt, date, tags, temps lecture
+      </blog_page>
+
+      <blog_post_page>
+        - Image de couverture
+        - Titre, date, tags
+        - Contenu riche (HTML)
+        - Table des matières (sidebar sticky, si article long)
+        - Partage social (Twitter, LinkedIn)
+        - Navigation article précédent/suivant
+      </blog_post_page>
+
+      <skills_page>
+        - Sections par catégorie (Frontend, Backend, Outils, Soft)
+        - Icônes avec nom de compétence
+        - Animations au scroll
+      </skills_page>
+
+      <contact_page>
+        - Formulaire centré
+        - Liens sociaux en dessous
+        - Map ou image décorative (optionnel)
+      </contact_page>
+
+      <admin_dashboard_home>
+        - Cartes de stats (projets, articles, visiteurs)
+        - Graphique de visiteurs (30 derniers jours)
+        - Liste "Dernières activités"
+        - Actions rapides (nouveau projet, nouvel article)
+      </admin_dashboard_home>
+
+      <admin_projects_list>
+        - Bouton "Nouveau projet"
+        - Table/grille avec :
+          * Miniature, titre, status, date, visible, actions
+        - Filtres et recherche
+      </admin_projects_list>
+
+      <admin_project_form>
+        - Formulaire structuré (sections)
+        - Upload d'images drag & drop
+        - Multi-select pour technologies
+        - Preview en temps réel (sidebar)
+        - Boutons : Sauvegarder, Sauvegarder et publier, Annuler
+      </admin_project_form>
+
+      <admin_blog_list>
+        - Bouton "Nouvel article"
+        - Table avec : titre, status, tags, date, vues, actions
+        - Filtres par status et tags
+      </admin_blog_list>
+
+      <admin_blog_form>
+        - Éditeur riche (Tiptap) full-width
+        - Sidebar avec :
+          * Bouton "Générer avec IA"
+          * Paramètres article (tags, image, status, SEO)
+          * Preview
+        - Auto-save indicator
+        - Boutons : Sauvegarder brouillon, Publier, Programmer
+      </admin_blog_form>
+
+      <admin_ai_generation_modal>
+        - Champ prompt (textarea)
+        - Options : type de génération, ton, longueur
+        - Bouton "Générer"
+        - Affichage résultat avec boutons : Insérer, Régénérer, Annuler
+      </admin_ai_generation_modal>
+
+      <admin_media_library>
+        - Bouton "Upload"
+        - Grille de thumbnails
+        - Filtres par type
+        - Click sur image : modal avec détails et actions (copier URL, supprimer)
+      </admin_media_library>
+
+      <admin_analytics_page>
+        - Vue d'ensemble (cartes de stats)
+        - Graphiques (visiteurs, pages vues)
+        - Tables (top projets, top articles)
+        - Export CSV
+      </admin_analytics_page>
+
+      <admin_settings_page>
+        - Onglets : Général, Compte, Intégrations, Sauvegardes
+        - Formulaires par section
+        - Boutons d'action (sauvegarder, exporter, tester connexion API)
+      </admin_settings_page>
+    </page_templates>
+  </ui_layout>
+
+  <design_system>
+    <color_palette>
+      Utiliser les variables CSS fournies (fichier OKLCH) :
+      - Light mode (si jamais ajouté) :
+        * Background: oklch(0.9779 0.0042 56.3756) - blanc cassé
+        * Foreground: oklch(0.2178 0 0) - noir
+        * Primary: oklch(0.4650 0.1470 24.9381) - orange/brique
+        * Accent: oklch(0.9619 0.0580 95.6174) - beige chaud
+      - Dark mode (par défaut) :
+        * Background: oklch(0.2161 0.0061 56.0434) - noir foncé
+        * Foreground: oklch(0.9699 0.0013 106.4238) - blanc cassé
+        * Primary: oklch(0.5054 0.1905 27.5181) - orange vif (rétro)
+        * Secondary: oklch(0.4732 0.1247 46.2007) - orange foncé
+        * Accent: oklch(0.5553 0.1455 48.9975) - jaune-orange
+      - Couleurs rétro gaming :
+        * Vert CRT: #33ff33 (pour texte effet terminal)
+        * Cyan néon: #00ffff (pour highlights)
+        * Magenta: #ff00ff (pour accents pixel art)
+    </color_palette>
+
+    <typography>
+      - Font-family :
+        * Sans-serif : Poppins (headings, UI)
+        * Serif : Libre Baskerville (texte long, articles)
+        * Mono : IBM Plex Mono (code, terminal effects)
+      - Tailles (Tailwind) :
+        * Display : text-5xl, text-6xl (hero)
+        * Heading 1 : text-4xl
+        * Heading 2 : text-3xl
+        * Heading 3 : text-2xl
+        * Body : text-base (16px)
+        * Small : text-sm
+      - Line-height : leading-relaxed pour confort lecture
+      - Font-weight :
+        * Normal : 400
+        * Medium : 500
+        * Semibold : 600 (headings)
+        * Bold : 700 (emphasis)
+    </typography>
+
+    <spacing>
+      Utiliser spacing Tailwind (--spacing: 0.25rem) :
+      - Sections : py-16, py-24 (desktop)
+      - Cartes : p-6, p-8
+      - Gaps grilles : gap-6, gap-8
+      - Marges : mb-4, mb-8, mb-12
+    </spacing>
+
+    <border_radius>
+      - Cards : rounded-lg (--radius-lg)
+      - Buttons : rounded-md (--radius-md)
+      - Images : rounded-lg
+      - Modals : rounded-xl
+      - Pixel art éléments : rounded-none ou très subtil
+    </border_radius>
+
+    <shadows>
+      Utiliser shadow variables du CSS fourni :
+      - Cards : shadow-md
+      - Elevated : shadow-lg
+      - Hover : shadow-xl
+      - Retro glow : box-shadow custom avec couleurs néon
+    </shadows>
+
+    <buttons>
+      - Primary : bg-primary text-primary-foreground, hover:brightness-110
+      - Secondary : bg-secondary text-secondary-foreground
+      - Outline : border-2 border-primary, hover:bg-primary/10
+      - Ghost : transparent, hover:bg-accent
+      - Icon : carré, hover:bg-accent
+      - Pixel art style : border-4 avec coins carrés, effet press (translate)
+    </buttons>
+
+    <inputs>
+      - Border : border border-input
+      - Focus : ring-2 ring-primary
+      - Padding : px-4 py-2
+      - Background : bg-background
+      - Placeholder : text-muted-foreground
+      - Error state : border-destructive, text-destructive
+    </inputs>
+
+    <cards>
+      - Background : bg-card
+      - Border : border border-border (subtile)
+      - Shadow : shadow-sm par défaut, shadow-md au hover
+      - Padding : p-6
+      - Hover : transition transform, scale-105 ou glow effect
+      - Pixel art variant : border-4 style chunky
+    </cards>
+
+    <animations>
+      - Transitions : transition-all duration-300 ease-in-out
+      - Fade in : opacity-0 to opacity-100
+      - Slide up : translate-y-4 to translate-y-0
+      - Hover scale : hover:scale-105
+      - Retro effects :
+        * Pixel dissolve (appear/disappear)
+        * Glitch effect (random shift rapide)
+        * CRT scanlines animation (keyframes CSS)
+        * 8-bit loading spinner (rotation avec steps)
+      - Framer Motion pour animations complexes :
+        * Page transitions
+        * Stagger children (liste d'éléments)
+        * Parallax scroll
+        * Drag interactions (galeries)
+    </animations>
+
+    <icons>
+      - Lucide React pour icônes modernes
+      - Custom SVG pixel art pour :
+        * Logo 1UP (sprite)
+        * Easter eggs (mario, champignon, étoiles)
+        * Loading spinners (game boy style)
+        * Curseurs custom (pixel sword, etc.)
+    </icons>
+
+    <responsive_breakpoints>
+      - Mobile : < 640px (menu burger, single column)
+      - Tablet : 640px - 1024px (two columns, sidebar collapsible)
+      - Desktop : > 1024px (full layout, three columns si needed)
+      - Max-width content : 1280px
+    </responsive_breakpoints>
+
+    <accessibility_patterns>
+      - Focus visible : ring-2 ring-offset-2 ring-primary
+      - Skip links : invisible jusqu'à focus
+      - ARIA labels sur tous boutons icônes
+      - Alt text descriptif
+      - Contrast ratios : vérifier avec outils (AA minimum)
+      - Keyboard navigation : focus trap dans modals, tab order logique
+    </accessibility_patterns>
+
+    <retro_gaming_aesthetic>
+      - Pixel art sprites (8x8, 16x16)
+      - Chunky borders (border-4, border-8)
+      - CRT effect overlay (CSS filter + animation)
+      - Scanlines (pseudo-element avec repeating-linear-gradient)
+      - Green terminal text (#33ff33)
+      - Glow effects (box-shadow avec néon)
+      - 8-bit fonts pour titres (Press Start 2P ou similaire)
+      - Retro color palette (orange, cyan, magenta, green)
+    </retro_gaming_aesthetic>
+  </design_system>
+
+  <implementation_steps>
+    <step number="1">
+      <title>Configuration initiale et architecture</title>
+      <tasks>
+        - Initialiser projet Next.js 14 avec TypeScript, App Router, Tailwind CSS
+        - Configurer shadcn/ui et tweakcn
+        - Mettre en place Drizzle ORM avec schéma de base de données
+        - Configurer Vercel Postgres (ou alternative)
+        - Créer variables d'environnement (.env.local)
+        - Configurer Better Auth pour authentification
+        - Installer dépendances : Anthropic SDK, Resend, Zod, etc.
+        - Structure de dossiers :
+          * /app (pages et API routes)
+          * /components (composants réutilisables)
+          * /lib (utilities, DB client, API clients)
+          * /public (assets statiques, images, sons)
+          * /styles (CSS global, variables)
+          * /types (TypeScript types)
+      </tasks>
+    </step>
+
+    <step number="2">
+      <title>Design system et composants de base</title>
+      <tasks>
+        - Intégrer fichier CSS de couleurs OKLCH
+        - Créer composants shadcn de base (Button, Input, Card, etc.)
+        - Créer Header et Footer publics
+        - Implémenter navigation responsive (menu burger)
+        - Créer Layout principal avec Provider pour thème/sons
+        - Développer composants rétro :
+          * PixelButton (bouton style 8-bit)
+          * CRTOverlay (effet tube cathodique)
+          * RetroLoader (spinner game boy)
+          * SoundToggle (bouton sons)
+        - Ajouter sons 8-bit (fichiers audio dans /public/sounds)
+        - Créer hook useRetroSounds pour gestion des sons
+      </tasks>
+    </step>
+
+    <step number="3">
+      <title>Pages publiques principales</title>
+      <tasks>
+        - Page d'accueil (/) :
+          * Hero section avec logo 1UP et GIF Miyazaki
+          * Animations d'entrée (Framer Motion)
+          * Sections featured projects, skills, blog
+        - Page À propos (/a-propos)
+        - Page Projets (/projets) :
+          * Liste/grille de projets
+          * Filtres par technologie
+          * Tri
+        - Page détail projet (/projets/[slug])
+        - Page Blog (/blog) :
+          * Liste d'articles
+          * Filtres par tags
+          * Recherche
+        - Page article (/blog/[slug])
+        - Page Compétences (/competences)
+        - Page Contact (/contact) avec formulaire
+        - Toutes pages : SEO metadata, animations, responsive
+      </tasks>
+    </step>
+
+    <step number="4">
+      <title>API publiques et fonctionnalités interactives</title>
+      <tasks>
+        - Créer API routes publiques :
+          * GET /api/projects (avec filtrage)
+          * GET /api/projects/[slug]
+          * GET /api/blog (avec pagination, filtres)
+          * GET /api/blog/[slug]
+          * GET /api/blog/tags
+          * GET /api/skills
+          * POST /api/contact (envoi email via Resend)
+          * POST /api/analytics/track (track page views)
+        - Implémenter incrémentation view_count (projets/articles)
+        - Créer recherche globale (projets + articles)
+        - Intégrer analytics légers (tracking anonymous)
+        - Tester toutes routes publiques
+      </tasks>
+    </step>
+
+    <step number="5">
+      <title>Authentification admin</title>
+      <tasks>
+        - Page login admin (/admin/login)
+        - Configurer Better Auth (email + password)
+        - Middleware pour protéger routes /admin/*
+        - API routes auth :
+          * POST /api/admin/auth/login
+          * POST /api/admin/auth/logout
+          * GET /api/admin/auth/me
+        - Système de session (cookies HTTP-only)
+        - Gestion erreurs connexion (rate limiting)
+        - Redirection après login vers /admin
+        - Créer utilisateur admin initial (seed script)
+      </tasks>
+    </step>
+
+    <step number="6">
+      <title>Dashboard admin - structure et home</title>
+      <tasks>
+        - Layout dashboard avec sidebar et header
+        - Navigation sidebar (Dashboard, Projets, Blog, Compétences, Médias, Analytics, Paramètres)
+        - Page dashboard home (/admin) :
+          * Cartes de stats (nombre projets, articles, visiteurs)
+          * Graphique visiteurs (30 derniers jours)
+          * Actions rapides
+        - Composants admin réutilisables :
+          * AdminHeader
+          * AdminSidebar
+          * StatsCard
+          * DataTable (pour listes)
+        - Toast notifications (succès/erreurs)
+      </tasks>
+    </step>
+
+    <step number="7">
+      <title>Gestion des projets (admin)</title>
+      <tasks>
+        - Page liste projets (/admin/projets)
+        - Page création projet (/admin/projets/nouveau)
+        - Page édition projet (/admin/projets/[id]/edit)
+        - Formulaire projet complet :
+          * Tous les champs (titre, slug, descriptions, technologies, etc.)
+          * Upload image principale (Vercel Blob)
+          * Upload galerie images (multi-upload)
+          * Preview en temps réel
+          * Auto-save (30s)
+        - API routes :
+          * GET /api/admin/projects
+          * POST /api/admin/projects
+          * GET /api/admin/projects/[id]
+          * PUT /api/admin/projects/[id]
+          * DELETE /api/admin/projects/[id]
+          * POST /api/admin/projects/[id]/duplicate
+        - Validation Zod sur formulaires et API
+        - Gestion erreurs et confirmations
+      </tasks>
+    </step>
+
+    <step number="8">
+      <title>Gestion du blog (admin)</title>
+      <tasks>
+        - Page liste articles (/admin/blog)
+        - Page création article (/admin/blog/nouveau)
+        - Page édition article (/admin/blog/[id]/edit)
+        - Intégrer éditeur riche (Tiptap ou Novel) :
+          * Headings, bold, italic, lists, quotes
+          * Code blocks avec syntax highlighting
+          * Images inline
+          * Tables
+        - Formulaire article complet :
+          * Titre, slug, excerpt, contenu
+          * Tags (multi-select créable)
+          * Image de couverture
+          * Status (draft/published)
+          * SEO (meta description)
+        - Auto-save brouillon (30s)
+        - Preview live de l'article
+        - API routes :
+          * GET /api/admin/blog
+          * POST /api/admin/blog
+          * GET /api/admin/blog/[id]
+          * PUT /api/admin/blog/[id]
+          * DELETE /api/admin/blog/[id]
+          * POST /api/admin/blog/auto-save
+        - Calcul automatique read_time_minutes
+      </tasks>
+    </step>
+
+    <step number="9">
+      <title>Génération de contenu par IA (Claude API)</title>
+      <tasks>
+        - Intégrer Anthropic SDK
+        - Créer service /lib/ai/claude.ts pour appels API
+        - Modal génération IA dans éditeur blog :
+          * Input prompt
+          * Options (type, ton, longueur)
+          * Bouton générer
+          * Affichage résultat avec actions (insérer, régénérer)
+        - API route POST /api/admin/ai/generate :
+          * Prompt engineering pour génération blog
+          * Options : article complet, titre, outline, section, amélioration
+          * Rate limiting (limite quotidienne)
+          * Logging des générations (table ai_generations)
+        - GET /api/admin/ai/usage (stats quotidiennes)
+        - Gestion erreurs API Claude (timeout, quota, etc.)
+        - Interface pour configurer clé API (settings)
+      </tasks>
+    </step>
+
+    <step number="10">
+      <title>Bibliothèque de médias</title>
+      <tasks>
+        - Page médias (/admin/medias)
+        - Upload de fichiers :
+          * Drag & drop
+          * Multi-upload
+          * Progress bar
+          * Validation (type MIME, taille max 5MB)
+        - Intégration Vercel Blob Storage :
+          * Upload
+          * Génération URL publique
+          * Suppression
+        - Compression images automatique (sharp ou Next.js Image optimization)
+        - Génération thumbnails
+        - Liste médias en grille avec thumbnails
+        - Modal détails média (URL, dimensions, actions)
+        - Bouton "Copier URL" (clipboard)
+        - API routes :
+          * GET /api/admin/media
+          * POST /api/admin/media/upload
+          * DELETE /api/admin/media/[id]
+        - Tracking utilisation médias (used_in)
+      </tasks>
+    </step>
+
+    <step number="11">
+      <title>Gestion des compétences</title>
+      <tasks>
+        - Page compétences admin (/admin/competences)
+        - Liste par catégories
+        - Formulaire ajout/édition compétence :
+          * Nom
+          * Catégorie (select)
+          * Icône (upload ou select depuis bibliothèque)
+        - Drag & drop pour réorganiser ordre
+        - API routes :
+          * GET /api/admin/skills
+          * POST /api/admin/skills
+          * PUT /api/admin/skills/[id]
+          * DELETE /api/admin/skills/[id]
+          * PUT /api/admin/skills/reorder
+        - Preview en temps réel (sidebar)
+      </tasks>
+    </step>
+
+    <step number="12">
+      <title>Analytics et statistiques</title>
+      <tasks>
+        - Tracking page views côté client (lightweight) :
+          * Composant AnalyticsTracker
+          * Envoi POST /api/analytics/track
+          * Anonymisation (hash IP, pas de cookies tiers)
+        - Stockage dans table page_views
+        - Page analytics admin (/admin/analytics) :
+          * Cartes de stats (visiteurs uniques, pages vues)
+          * Graphiques (Chart.js ou Recharts) :
+            - Visiteurs par jour (30 derniers jours)
+            - Pages les plus vues
+          * Tables :
+            - Top 10 projets vus
+            - Top 10 articles lus
+            - Sources de trafic
+        - API routes :
+          * GET /api/admin/analytics/overview
+          * GET /api/admin/analytics/pages
+          * GET /api/admin/analytics/top-projects
+          * GET /api/admin/analytics/top-posts
+          * GET /api/admin/analytics/traffic-sources
+          * GET /api/admin/analytics/export (CSV)
+        - Export CSV des données
+      </tasks>
+    </step>
+
+    <step number="13">
+      <title>Paramètres et configuration</title>
+      <tasks>
+        - Page paramètres admin (/admin/parametres)
+        - Onglets :
+          * Général (titre site, description, email contact)
+          * Compte admin (changer email, mot de passe)
+          * Intégrations (clés API Claude, Resend - masquées)
+          * Sauvegardes (export/import JSON)
+        - API routes :
+          * GET /api/admin/settings
+          * PUT /api/admin/settings
+          * POST /api/admin/export (génère JSON complet)
+          * POST /api/admin/import (restaure depuis JSON)
+        - Validation et feedback
+        - Bouton "Tester connexion API" (Claude, Resend)
+      </tasks>
+    </step>
+
+    <step number="14">
+      <title>Easter eggs et interactions rétro</title>
+      <tasks>
+        - Toggle sons 8-bit :
+          * Bouton header (icône speaker)
+          * Context provider pour état sons
+          * Hook useSound pour jouer sons
+          * Sons : click, hover, navigation, success, error
+        - Toggle effet CRT :
+          * Bouton header (icône TV)
+          * Overlay CSS avec scanlines
+          * Effet glow et curvature
+        - Konami code :
+          * Hook useKonamiCode (détection séquence clavier)
+          * Modal "Mini-jeu" avec placeholder
+          * Animation pixel art (sprites)
+        - Surprises cachées :
+          * Sprite Mario apparaît aléatoirement (3% chance)
+          * Double-click sur logo = animation secrète
+          * Hover prolongé (5s) sur footer = easter egg
+          * ASCII art dans source HTML (commentaire)
+          * Curseur custom pixel art (optionnel)
+        - Sons déclenchés par interactions
+      </tasks>
+    </step>
+
+    <step number="15">
+      <title>SEO et optimisations finales</title>
+      <tasks>
+        - Metadata dynamique par page (Next.js metadata API)
+        - Open Graph images (og:image) par page
+        - Sitemap.xml dynamique (/sitemap.xml)
+        - Robots.txt (/robots.txt)
+        - Structured data JSON-LD :
+          * Article schema pour blog posts
+          * WebPage schema pour pages
+          * Person schema pour page à propos
+        - Optimisation images (Next.js Image)
+        - Lazy loading composants lourds
+        - Code splitting automatique
+        - Prefetch des liens
+        - Cache headers (Vercel config)
+        - Compression Gzip/Brotli
+        - Test Lighthouse (viser 90+)
+        - Accessibility audit (WAVE, axe DevTools)
+        - Performance monitoring (Vercel Analytics, optionnel)
+      </tasks>
+    </step>
+
+    <step number="16">
+      <title>Tests et déploiement</title>
+      <tasks>
+        - Tests unitaires (Vitest) pour utils et helpers
+        - Tests d'intégration API routes (Vitest + MSW)
+        - Tests E2E (Playwright) :
+          * Navigation publique
+          * Formulaire contact
+          * Login admin
+          * CRUD projets/articles
+          * Upload médias
+          * Génération IA
+        - Tests responsiveness (différents devices)
+        - Tests cross-browser (Chrome, Firefox, Safari)
+        - Validation accessibilité (axe)
+        - Configuration Vercel :
+          * Variables d'environnement
+          * Build settings
+          * Domaine custom (si applicable)
+        - Déploiement sur Vercel
+        - Setup CI/CD (GitHub Actions pour tests automatiques, optionnel)
+        - Monitoring post-déploiement
+      </tasks>
+    </step>
+
+    <step number="17">
+      <title>Documentation et handoff</title>
+      <tasks>
+        - README.md complet :
+          * Description projet
+          * Stack technique
+          * Installation locale
+          * Variables d'environnement
+          * Scripts disponibles
+          * Structure de dossiers
+        - Documentation API (Swagger/OpenAPI, optionnel)
+        - Guide utilisateur admin (comment utiliser dashboard)
+        - Guide de déploiement
+        - Exemples de configuration
+        - Troubleshooting common issues
+        - Roadmap futures améliorations (génération IA avancée, mini-jeu, etc.)
+      </tasks>
+    </step>
+  </implementation_steps>
+
+  <success_criteria>
+    <functionality>
+      - Toutes pages publiques fonctionnelles et responsive
+      - Formulaire de contact envoie emails correctement
+      - Dashboard admin complet et sécurisé
+      - CRUD projets et articles sans bugs
+      - Upload médias vers Vercel Blob fonctionne
+      - Génération IA Claude intégrée et opérationnelle
+      - Analytics tracking page views de manière anonyme
+      - Export/import de données JSON opérationnel
+      - Easter eggs et sons fonctionnent
+      - Navigation fluide (pas de bugs routing)
+    </functionality>
+
+    <user_experience>
+      - Design cohérent avec thème rétro gaming professionnel
+      - Animations fluides et agréables (pas de lag)
+      - Formulaires intuitifs avec validation claire
+      - Messages d'erreur/succès explicites
+      - Navigation logique et facile
+      - Responsive parfait sur mobile, tablette, desktop
+      - Accessibilité clavier complète
+      - Performance rapide (< 2s load time)
+      - Easter eggs amusants sans être intrusifs
+    </user_experience>
+
+    <technical_quality>
+      - Code propre et maintenable (TypeScript strict)
+      - Composants réutilisables bien organisés
+      - API routes sécurisées et validées (Zod)
+      - Authentification solide (Better Auth)
+      - Gestion erreurs complète (try/catch, error boundaries)
+      - Base de données optimisée (indexes, relations)
+      - Tests coverage > 70% (E2E sur chemins critiques)
+      - Pas de console errors en production
+      - SEO score Lighthouse > 90
+      - Accessibility score > 90
+      - Performance score > 90
+    </technical_quality>
+
+    <design_polish>
+      - Palette de couleurs OKLCH appliquée uniformément
+      - Typographies cohérentes (Poppins, Libre Baskerville, IBM Plex)
+      - Espacements et alignements précis
+      - Ombres et effets subtils
+      - Thème rétro gaming bien intégré :
+        * Logo ONEUP visible et mis en avant
+        * GIF Miyazaki bien placé en fond
+        * Effets CRT convaincants
+        * Sons 8-bit de qualité
+        * Easter eggs créatifs
+      - Transitions fluides (300ms)
+      - Micro-interactions soignées (hover, click)
+      - Pas d'éléments cassés ou mal alignés
+      - Dark mode impeccable (pas de flash blanc)
+      - Images optimisées (WebP, lazy loading)
+    </design_polish>
+
+    <security_compliance>
+      - Authentification sécurisée (bcrypt, sessions HTTP-only)
+      - Protection CSRF sur formulaires
+      - Validation stricte côté serveur (Zod)
+      - Sanitization des entrées (éditeur riche)
+      - Rate limiting sur API sensibles (login, IA)
+      - HTTPS forcé (Vercel)
+      - Pas de clés API exposées côté client
+      - Analytics sans cookies tiers (RGPD-friendly)
+      - Confirmation avant suppressions
+    </security_compliance>
+  </success_criteria>
+
+  <future_enhancements>
+    - Phase 2 : Mini-jeu (Snake, Pong, ou Tetris) accessible via Konami code
+    - Génération IA avancée : suggestions automatiques de tags, SEO optimizer
+    - Newsletter integration (Mailchimp/ConvertKit)
+    - Commentaires sur articles de blog (système custom ou Disqus)
+    - Mode multi-langues (français + anglais)
+    - PWA complète (offline mode, install prompt)
+    - Recherche avancée full-text (Algolia ou Meilisearch)
+    - Système de tags hiérarchiques (catégories + sous-catégories)
+    - Intégration GitHub pour auto-import de projets
+    - Calendrier éditorial (planification d'articles)
+    - A/B testing pour CTA et layouts
+    - Dark/Light mode toggle (en plus du thème rétro dark)
+  </future_enhancements>
+
+  <notes>
+    - Priorité au MVP : toutes les fonctionnalités listées sont pour la V1
+    - Le mini-jeu Konami code est un placeholder (implémentation future)
+    - Les easter eggs surprises sont laissés à la créativité du développeur
+    - Le GIF Miyazaki nature doit être fourni par le client ou trouvé (libre de droits)
+    - Les sons 8-bit peuvent être générés avec des outils comme Bfxr ou téléchargés (freesound.org)
+    - L'optimisation SEO est critique pour visibilité (portfolio = vitrine pro)
+    - L'accessibilité est non-négociable (A11Y conforme)
+    - La performance est essentielle (users = recruteurs impatients)
+    - Le thème rétro doit rester professionnel, pas "jouet" ou "amateur"
+    - La génération IA doit être utilisée avec modération (coûts API)
+  </notes>
+</project_specification>
