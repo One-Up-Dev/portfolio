@@ -306,7 +306,7 @@ export default function ProjectsPage() {
         {/* Projects Grid */}
         {projects.length > 0 ? (
           <>
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div className="projects-grid">
               {projects.map((project) => (
                 <article
                   key={project.id}
@@ -362,7 +362,7 @@ export default function ProjectsPage() {
                     </p>
 
                     {/* Technologies */}
-                    <div className="mb-4 flex flex-wrap gap-2">
+                    <div className="tech-tags flex flex-wrap gap-2">
                       {(project.technologies || []).map((tech) => (
                         <span
                           key={tech}
@@ -374,7 +374,7 @@ export default function ProjectsPage() {
                     </div>
 
                     {/* Links */}
-                    <div className="flex gap-3">
+                    <div className="card-links">
                       {project.githubUrl && (
                         <Link
                           href={project.githubUrl}

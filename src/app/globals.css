@@ -76,11 +76,12 @@ code, pre, .code-block, kbd, samp {
   font-family: 'IBM Plex Mono', monospace;
 }
 
-/* CRT Effect Overlay */
+/* Enhanced CRT Effect Overlay - Prominent Arcade Cabinet Monitor */
 .crt-effect {
   position: relative;
 }
 
+/* Scanlines - Dense and prominent */
 .crt-effect::before {
   content: '';
   position: fixed;
@@ -88,17 +89,27 @@ code, pre, .code-block, kbd, samp {
   left: 0;
   width: 100%;
   height: 100%;
-  background: repeating-linear-gradient(
-    0deg,
-    rgba(0, 0, 0, 0.15),
-    rgba(0, 0, 0, 0.15) 1px,
-    transparent 1px,
-    transparent 2px
-  );
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(0, 0, 0, 0.35),
+      rgba(0, 0, 0, 0.35) 1px,
+      transparent 1px,
+      transparent 2px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(255, 140, 0, 0.02),
+      rgba(255, 140, 0, 0.02) 2px,
+      transparent 2px,
+      transparent 4px
+    );
   pointer-events: none;
   z-index: 9999;
+  animation: crtScanlineMove 8s linear infinite;
 }
 
+/* CRT Vignetting and Tube Effect */
 .crt-effect::after {
   content: '';
   position: fixed;
@@ -106,13 +117,40 @@ code, pre, .code-block, kbd, samp {
   left: 0;
   width: 100%;
   height: 100%;
-  background: radial-gradient(
-    ellipse at center,
-    transparent 0%,
-    rgba(0, 0, 0, 0.2) 100%
-  );
+  background:
+    radial-gradient(
+      ellipse 100% 100% at 50% 50%,
+      transparent 0%,
+      transparent 40%,
+      rgba(0, 0, 0, 0.35) 75%,
+      rgba(0, 0, 0, 0.65) 100%
+    ),
+    radial-gradient(
+      circle at 50% 50%,
+      rgba(255, 140, 0, 0.03) 0%,
+      transparent 50%
+    );
   pointer-events: none;
   z-index: 9998;
+  box-shadow:
+    inset 0 0 100px rgba(0, 0, 0, 0.4),
+    inset 0 0 200px rgba(0, 0, 0, 0.3);
+}
+
+/* Subtle flicker effect for authenticity */
+@keyframes crtFlicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.97; }
+}
+
+.crt-effect {
+  animation: crtFlicker 0.15s infinite;
+}
+
+/* Scanline animation - subtle movement */
+@keyframes crtScanlineMove {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(10px); }
 }
 
 /* Pixel art rendering */
@@ -200,10 +238,14 @@ code, pre, .code-block, kbd, samp {
   box-shadow: 0 0 0 rgba(0, 0, 0, 0.3);
 }
 
-/* Pixel Glitch Effect for Cards */
+/* Professional Project Card Styling - Uniform Size */
 .card-glitch {
   position: relative;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 480px;
 }
 
 .card-glitch:hover {
@@ -530,4 +572,50 @@ input:disabled,
 textarea:disabled,
 select:disabled {
   @apply opacity-50 cursor-not-allowed;
+}
+
+/* Professional Projects Grid */
+.projects-grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: 1fr;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .projects-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .projects-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+  }
+}
+
+/* Ensure uniform card content spacing */
+.card-glitch .glitch-image {
+  aspect-ratio: 16 / 9;
+  flex-shrink: 0;
+}
+
+.card-glitch > div:last-child {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.card-glitch .tech-tags {
+  margin-top: auto;
+  padding-top: 1rem;
+}
+
+.card-glitch .card-links {
+  display: flex;
+  gap: 1rem;
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid hsl(var(--border) / 0.5);
 }
