@@ -4,43 +4,6 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { Calendar, Clock, Tag, Search } from "lucide-react";
 
-// Demo blog posts (fallback data)
-const demoPosts = [
-  {
-    id: "1",
-    slug: "reconversion-developpeur-46-ans",
-    title: "Se reconvertir développeur à 46 ans : mon parcours",
-    excerpt:
-      "Retour sur mon parcours de reconversion professionnelle, de la restauration au développement web. Les défis, les apprentissages et les conseils.",
-    tags: ["Reconversion", "Parcours", "Motivation"],
-    status: "published",
-    publishedAt: "2024-12-15",
-    readTimeMinutes: 8,
-  },
-  {
-    id: "2",
-    slug: "automatisation-n8n-guide-debutant",
-    title: "Automatisation avec n8n : guide du débutant",
-    excerpt:
-      "Découvrez comment automatiser vos tâches répétitives avec n8n. Un guide complet pour créer votre premier workflow.",
-    tags: ["n8n", "Automatisation", "Tutorial"],
-    status: "published",
-    publishedAt: "2024-12-10",
-    readTimeMinutes: 12,
-  },
-  {
-    id: "3",
-    slug: "claude-code-productivite-developpeur",
-    title: "Claude Code : booster sa productivité de développeur",
-    excerpt:
-      "Comment j'utilise Claude Code au quotidien pour coder plus vite et mieux. Astuces et bonnes pratiques.",
-    tags: ["IA", "Claude", "Productivité"],
-    status: "published",
-    publishedAt: "2024-12-05",
-    readTimeMinutes: 10,
-  },
-];
-
 interface BlogPost {
   id: string;
   slug: string;
@@ -66,12 +29,12 @@ export default function BlogPage() {
     setIsLoading(true);
     try {
       const savedPosts = localStorage.getItem("demo_blog_posts");
-      let allPosts = [...demoPosts];
+      let allPosts: BlogPost[] = [];
 
       if (savedPosts) {
         const parsed = JSON.parse(savedPosts);
         // Transform saved posts to match display format
-        const formattedPosts = parsed.map(
+        allPosts = parsed.map(
           (post: {
             id: string;
             slug: string;
@@ -100,7 +63,6 @@ export default function BlogPage() {
             readTimeMinutes: post.readTime || 5,
           }),
         );
-        allPosts = [...demoPosts, ...formattedPosts];
       }
 
       // Only show published posts
@@ -109,9 +71,8 @@ export default function BlogPage() {
       setFilteredPosts(publishedPosts);
     } catch (error) {
       console.error("Error loading posts:", error);
-      const publishedPosts = demoPosts.filter((p) => p.status === "published");
-      setPosts(publishedPosts);
-      setFilteredPosts(publishedPosts);
+      setPosts([]);
+      setFilteredPosts([]);
     }
     setIsLoading(false);
   }, []);

@@ -4,44 +4,6 @@ import Link from "next/link";
 import { ExternalLink, Github } from "lucide-react";
 import { useState, useEffect } from "react";
 
-// Demo projects data (combined with localStorage data)
-const demoProjects = [
-  {
-    id: "1",
-    slug: "portfolio-retro-gaming",
-    title: "Portfolio Rétro Gaming",
-    shortDescription:
-      "Portfolio personnel avec thème rétro gaming années 80-90, effet CRT et sons 8-bit.",
-    technologies: ["Next.js", "TypeScript", "Tailwind CSS", "Framer Motion"],
-    status: "en_cours" as const,
-    githubUrl: "https://github.com/oneup/portfolio",
-    demoUrl: "https://oneup.dev",
-    visible: true,
-  },
-  {
-    id: "2",
-    slug: "n8n-workflows-collection",
-    title: "Collection Workflows n8n",
-    shortDescription:
-      "Ensemble de workflows n8n pour automatiser des tâches courantes : notifications, backups, sync.",
-    technologies: ["n8n", "Node.js", "APIs", "Webhooks"],
-    status: "termine" as const,
-    githubUrl: "https://github.com/oneup/n8n-workflows",
-    visible: true,
-  },
-  {
-    id: "3",
-    slug: "claude-code-assistant",
-    title: "Assistant Claude Code",
-    shortDescription:
-      "Extension VS Code pour intégrer Claude dans le workflow de développement quotidien.",
-    technologies: ["TypeScript", "VS Code API", "Claude API"],
-    status: "en_cours" as const,
-    githubUrl: "https://github.com/oneup/claude-assistant",
-    visible: true,
-  },
-];
-
 interface Project {
   id: string;
   slug: string;
@@ -74,25 +36,22 @@ export default function ProjectsPage() {
     const loadProjects = () => {
       try {
         const savedProjects = localStorage.getItem("demo_projects");
-        let allProjects: Project[] = [...demoProjects];
+        let allProjects: Project[] = [];
 
         if (savedProjects) {
           const parsed = JSON.parse(savedProjects);
           // Transform localStorage projects to match public format
-          const transformedProjects = parsed.map(
-            (p: Record<string, unknown>) => ({
-              id: p.id,
-              slug: p.slug,
-              title: p.title,
-              shortDescription: p.shortDescription || p.description || "",
-              technologies: p.technologies || [],
-              status: p.status || "en_cours",
-              githubUrl: p.githubUrl,
-              demoUrl: p.demoUrl,
-              visible: p.visible !== false, // Default to true
-            }),
-          );
-          allProjects = [...demoProjects, ...transformedProjects];
+          allProjects = parsed.map((p: Record<string, unknown>) => ({
+            id: p.id,
+            slug: p.slug,
+            title: p.title,
+            shortDescription: p.shortDescription || p.description || "",
+            technologies: p.technologies || [],
+            status: p.status || "en_cours",
+            githubUrl: p.githubUrl,
+            demoUrl: p.demoUrl,
+            visible: p.visible !== false, // Default to true
+          }));
         }
 
         // Filter to only visible projects
@@ -100,7 +59,7 @@ export default function ProjectsPage() {
         setProjects(visibleProjects);
       } catch (error) {
         console.error("Error loading projects:", error);
-        setProjects(demoProjects.filter((p) => p.visible !== false));
+        setProjects([]);
       } finally {
         setIsLoading(false);
       }
