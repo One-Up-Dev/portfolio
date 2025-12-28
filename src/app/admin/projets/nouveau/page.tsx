@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/retro-toast";
 
-// Default technology options for multi-select
-const defaultTechnologyOptions = [
+// Default technology options (fallback if API fails)
+const fallbackTechnologyOptions = [
   "React",
   "Next.js",
   "TypeScript",
@@ -67,7 +67,34 @@ export default function NewProjectPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [autoSlug, setAutoSlug] = useState(true);
-  const [technologyOptions] = useState<string[]>(defaultTechnologyOptions);
+  const [technologyOptions, setTechnologyOptions] = useState<string[]>(
+    fallbackTechnologyOptions,
+  );
+  const [isLoadingTechnologies, setIsLoadingTechnologies] = useState(true);
+  const [customTech, setCustomTech] = useState("");
+
+  // Fetch technologies from database on mount
+  useEffect(() => {
+    async function fetchTechnologies() {
+      try {
+        const response = await fetch("/api/admin/technologies", {
+          credentials: "include",
+        });
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.data?.technologies) {
+            setTechnologyOptions(data.data.technologies);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching technologies:", error);
+        // Keep fallback options
+      } finally {
+        setIsLoadingTechnologies(false);
+      }
+    }
+    fetchTechnologies();
+  }, []);
 
   // Form data with default values
   const [formData, setFormData] = useState<ProjectFormData>({
@@ -393,7 +420,83 @@ export default function NewProjectPage() {
           <div>
             <label className="block text-sm font-medium text-foreground mb-2">
               Technologies
+              {isLoadingTechnologies && (
+                <span className="ml-2 text-xs text-muted-foreground animate-pulse">
+                  (Chargement...)
+                </span>
+              )}
             </label>
+            {/* Add custom technology input */}
+            <div className="flex gap-2 mb-3">
+              <input
+                type="text"
+                value={customTech}
+                onChange={(e) => setCustomTech(e.target.value)}
+                placeholder="Ajouter une technologie..."
+                className="flex-1 px-3 py-1.5 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    if (
+                      customTech.trim() &&
+                      !technologyOptions.includes(customTech.trim())
+                    ) {
+                      setTechnologyOptions((prev) =>
+                        [...prev, customTech.trim()].sort((a, b) =>
+                          a.toLowerCase().localeCompare(b.toLowerCase()),
+                        ),
+                      );
+                      setFormData((prev) => ({
+                        ...prev,
+                        technologies: [...prev.technologies, customTech.trim()],
+                      }));
+                      setCustomTech("");
+                    } else if (
+                      customTech.trim() &&
+                      !formData.technologies.includes(customTech.trim())
+                    ) {
+                      setFormData((prev) => ({
+                        ...prev,
+                        technologies: [...prev.technologies, customTech.trim()],
+                      }));
+                      setCustomTech("");
+                    }
+                  }
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  if (
+                    customTech.trim() &&
+                    !technologyOptions.includes(customTech.trim())
+                  ) {
+                    setTechnologyOptions((prev) =>
+                      [...prev, customTech.trim()].sort((a, b) =>
+                        a.toLowerCase().localeCompare(b.toLowerCase()),
+                      ),
+                    );
+                    setFormData((prev) => ({
+                      ...prev,
+                      technologies: [...prev.technologies, customTech.trim()],
+                    }));
+                    setCustomTech("");
+                  } else if (
+                    customTech.trim() &&
+                    !formData.technologies.includes(customTech.trim())
+                  ) {
+                    setFormData((prev) => ({
+                      ...prev,
+                      technologies: [...prev.technologies, customTech.trim()],
+                    }));
+                    setCustomTech("");
+                  }
+                }}
+                className="px-3 py-1.5 text-sm bg-accent text-foreground rounded-lg border border-border hover:border-primary transition-colors"
+              >
+                + Ajouter
+              </button>
+            </div>
             <div className="flex flex-wrap gap-2">
               {technologyOptions.map((tech) => (
                 <button

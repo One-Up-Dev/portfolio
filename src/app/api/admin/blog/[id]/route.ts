@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "../../../../../../db";
-import { blogPosts } from "../../../../../../db/schema";
+import { blogPosts, pageViews } from "../../../../../../db/schema";
 import { eq } from "drizzle-orm";
 
 function isAuthenticated(request: NextRequest): boolean {
@@ -198,6 +198,10 @@ export async function DELETE(
 
     // Delete the post
     await db.delete(blogPosts).where(eq(blogPosts.id, id));
+
+    // Clean up page views for this blog post
+    const blogPath = `/blog/${existing.slug}`;
+    await db.delete(pageViews).where(eq(pageViews.pagePath, blogPath));
 
     return NextResponse.json({
       success: true,

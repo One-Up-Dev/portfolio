@@ -5,8 +5,8 @@ import { useRouter, useParams } from "next/navigation";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useToast } from "@/components/ui/retro-toast";
 
-// Technology options for multi-select
-const technologyOptions = [
+// Default technology options (fallback if API fails)
+const fallbackTechnologyOptions = [
   "React",
   "Next.js",
   "TypeScript",
@@ -65,9 +65,33 @@ export default function EditProjectPage() {
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(
     null,
   );
+  const [technologyOptions, setTechnologyOptions] = useState<string[]>(
+    fallbackTechnologyOptions,
+  );
+  const [customTech, setCustomTech] = useState("");
 
   // Form data
   const [formData, setFormData] = useState<ProjectFormData | null>(null);
+
+  // Fetch technologies from database on mount
+  useEffect(() => {
+    async function fetchTechnologies() {
+      try {
+        const response = await fetch("/api/admin/technologies", {
+          credentials: "include",
+        });
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.data?.technologies) {
+            setTechnologyOptions(data.data.technologies);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching technologies:", error);
+      }
+    }
+    fetchTechnologies();
+  }, []);
 
   // Initial form data for comparison (to detect unsaved changes)
   const initialFormDataRef = useRef<ProjectFormData | null>(null);
@@ -530,6 +554,107 @@ export default function EditProjectPage() {
             <label className="block text-sm font-medium text-foreground mb-2">
               Technologies
             </label>
+            {/* Add custom technology input */}
+            <div className="flex gap-2 mb-3">
+              <input
+                type="text"
+                value={customTech}
+                onChange={(e) => setCustomTech(e.target.value)}
+                placeholder="Ajouter une technologie..."
+                className="flex-1 px-3 py-1.5 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    if (
+                      customTech.trim() &&
+                      !technologyOptions.includes(customTech.trim())
+                    ) {
+                      setTechnologyOptions((prev) =>
+                        [...prev, customTech.trim()].sort((a, b) =>
+                          a.toLowerCase().localeCompare(b.toLowerCase()),
+                        ),
+                      );
+                      setFormData((prev) =>
+                        prev
+                          ? {
+                              ...prev,
+                              technologies: [
+                                ...prev.technologies,
+                                customTech.trim(),
+                              ],
+                            }
+                          : prev,
+                      );
+                      setCustomTech("");
+                    } else if (
+                      customTech.trim() &&
+                      formData &&
+                      !formData.technologies.includes(customTech.trim())
+                    ) {
+                      setFormData((prev) =>
+                        prev
+                          ? {
+                              ...prev,
+                              technologies: [
+                                ...prev.technologies,
+                                customTech.trim(),
+                              ],
+                            }
+                          : prev,
+                      );
+                      setCustomTech("");
+                    }
+                  }
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  if (
+                    customTech.trim() &&
+                    !technologyOptions.includes(customTech.trim())
+                  ) {
+                    setTechnologyOptions((prev) =>
+                      [...prev, customTech.trim()].sort((a, b) =>
+                        a.toLowerCase().localeCompare(b.toLowerCase()),
+                      ),
+                    );
+                    setFormData((prev) =>
+                      prev
+                        ? {
+                            ...prev,
+                            technologies: [
+                              ...prev.technologies,
+                              customTech.trim(),
+                            ],
+                          }
+                        : prev,
+                    );
+                    setCustomTech("");
+                  } else if (
+                    customTech.trim() &&
+                    formData &&
+                    !formData.technologies.includes(customTech.trim())
+                  ) {
+                    setFormData((prev) =>
+                      prev
+                        ? {
+                            ...prev,
+                            technologies: [
+                              ...prev.technologies,
+                              customTech.trim(),
+                            ],
+                          }
+                        : prev,
+                    );
+                    setCustomTech("");
+                  }
+                }}
+                className="px-3 py-1.5 text-sm bg-accent text-foreground rounded-lg border border-border hover:border-primary transition-colors"
+              >
+                + Ajouter
+              </button>
+            </div>
             <div className="flex flex-wrap gap-2">
               {technologyOptions.map((tech) => (
                 <button

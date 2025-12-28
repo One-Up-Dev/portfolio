@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "../../../../../../db";
-import { projects } from "../../../../../../db/schema";
-import { eq } from "drizzle-orm";
+import { projects, pageViews } from "../../../../../../db/schema";
+import { eq, like } from "drizzle-orm";
 
 // Check if the request has a valid admin session
 function isAuthenticated(request: NextRequest): boolean {
@@ -175,6 +175,10 @@ export async function DELETE(
 
     // Delete the project
     await db.delete(projects).where(eq(projects.id, id));
+
+    // Clean up page views for this project
+    const projectPath = `/projets/${existing.slug}`;
+    await db.delete(pageViews).where(eq(pageViews.pagePath, projectPath));
 
     return NextResponse.json({
       success: true,

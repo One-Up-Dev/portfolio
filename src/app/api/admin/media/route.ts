@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "../../../../../db";
 import { mediaLibrary } from "../../../../../db/schema";
 import { desc, eq } from "drizzle-orm";
-import { writeFile, mkdir } from "fs/promises";
+import { writeFile, mkdir, unlink } from "fs/promises";
 import path from "path";
 
 // Allowed image MIME types
@@ -256,6 +256,19 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Media ID required" }, { status: 400 });
     }
 
+    // First, get the media to find the file path
+    const mediaToDelete = await db
+      .select()
+      .from(mediaLibrary)
+      .where(eq(mediaLibrary.id, id))
+      .limit(1);
+
+    if (mediaToDelete.length === 0) {
+      return NextResponse.json({ error: "Media not found" }, { status: 404 });
+    }
+
+    const media = mediaToDelete[0];
+
     // Delete from database
     const deleted = await db
       .delete(mediaLibrary)
@@ -266,7 +279,16 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Media not found" }, { status: 404 });
     }
 
-    // Note: For production, you'd also delete the file from disk or blob storage
+    // Delete the file from disk if it's a local upload
+    if (media.url && media.url.startsWith("/uploads/")) {
+      try {
+        const filePath = path.join(process.cwd(), "public", media.url);
+        await unlink(filePath);
+      } catch (fileError) {
+        // Log but don't fail if file deletion fails (file might not exist)
+        console.warn("Could not delete file from disk:", fileError);
+      }
+    }
 
     return NextResponse.json({
       success: true,
