@@ -369,18 +369,26 @@
 - N-Feedback: Blog save shows success notification
 
 ### Current Status:
-- 81/276 tests passing (29.3%)
+- 84/276 tests passing (30.4%)
 - Public blog page now reads from localStorage (combines demo + user posts)
 - Blog detail page reads from localStorage
 - Search and tag filter functionality working on blog page
 - Complete blog creation workflow tested end-to-end
 - Both projects and blog CRUD working with localStorage
+- Draft articles correctly hidden from public blog list
+- Draft articles return 404 when accessed by direct URL
+- Blog search functionality working
 - Dev server running on port 3000
+
+### Additional Tests Verified (Session 9 continued):
+- C-RealData: Draft blog posts do NOT appear in public blog list
+- C-RealData: Search blog returns real matching results
+- H-URLAccess: Cannot access draft article by direct URL
 
 ### Next Steps for Future Sessions:
 1. Add project edit functionality at /admin/projets/[id]/edit
 2. Add blog edit functionality at /admin/blog/[id]/edit
 3. Implement delete project/blog flow with public page updates
-4. Test draft articles don't appear in public blog list
+4. Test blog filter by tag functionality
 5. Add sidebar collapse state persistence
 6. Test more form validation scenarios
