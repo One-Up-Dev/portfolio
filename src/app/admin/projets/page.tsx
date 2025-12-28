@@ -86,6 +86,69 @@ export default function AdminProjectsPage() {
     loadProjects();
   }, []);
 
+  const handleDuplicate = (project: Project) => {
+    try {
+      // Create a duplicate project with new ID and modified title/slug
+      const newProject = {
+        ...project,
+        id: `dup_${Date.now()}`,
+        title: `${project.title} (Copie)`,
+        slug: `${project.slug}-copie-${Date.now()}`,
+        createdAt: new Date().toISOString().split("T")[0],
+        views: 0,
+      };
+
+      // Get existing projects from localStorage
+      const savedProjects = localStorage.getItem("demo_projects");
+      const existingProjects = savedProjects ? JSON.parse(savedProjects) : [];
+
+      // Add the duplicate
+      const updatedProjects = [...existingProjects, newProject];
+      localStorage.setItem("demo_projects", JSON.stringify(updatedProjects));
+
+      // Update state
+      setProjects([...demoProjects, ...updatedProjects]);
+      setSuccessMessage("Projet dupliqué avec succès!");
+      setTimeout(() => setSuccessMessage(""), 3000);
+    } catch (error) {
+      console.error("Error duplicating project:", error);
+    }
+  };
+
+  const handleToggleVisibility = (project: Project) => {
+    // Check if it's a demo project (IDs 1-4 are demo)
+    const isDemoProject = ["1", "2", "3", "4"].includes(project.id);
+
+    if (isDemoProject) {
+      // Demo projects can't be modified
+      setSuccessMessage("Les projets de démo ne peuvent pas être modifiés.");
+      setTimeout(() => setSuccessMessage(""), 3000);
+      return;
+    }
+
+    try {
+      const savedProjects = localStorage.getItem("demo_projects");
+      if (savedProjects) {
+        const parsed = JSON.parse(savedProjects);
+        const updated = parsed.map((p: Project) =>
+          p.id === project.id ? { ...p, visible: !p.visible } : p,
+        );
+        localStorage.setItem("demo_projects", JSON.stringify(updated));
+
+        // Update state
+        setProjects([...demoProjects, ...updated]);
+        setSuccessMessage(
+          project.visible
+            ? "Projet masqué avec succès!"
+            : "Projet rendu visible avec succès!",
+        );
+        setTimeout(() => setSuccessMessage(""), 3000);
+      }
+    } catch (error) {
+      console.error("Error toggling visibility:", error);
+    }
+  };
+
   const handleDelete = (id: string) => {
     // Check if it's a demo project (IDs 1-4 are demo)
     const isDemoProject = ["1", "2", "3", "4"].includes(id);
@@ -209,15 +272,21 @@ export default function AdminProjectsPage() {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span
-                      className={`inline-flex items-center gap-1 text-sm ${
+                    <button
+                      onClick={() => handleToggleVisibility(project)}
+                      className={`inline-flex items-center gap-1 text-sm px-2 py-1 rounded transition-colors ${
                         project.visible
-                          ? "text-green-500"
-                          : "text-muted-foreground"
+                          ? "text-green-500 hover:bg-green-500/10"
+                          : "text-muted-foreground hover:bg-accent"
                       }`}
+                      title={
+                        project.visible
+                          ? "Cliquer pour masquer"
+                          : "Cliquer pour rendre visible"
+                      }
                     >
                       {project.visible ? "✓ Oui" : "✗ Non"}
-                    </span>
+                    </button>
                   </td>
                   <td className="px-6 py-4 text-muted-foreground">
                     {project.views}
@@ -231,6 +300,13 @@ export default function AdminProjectsPage() {
                       >
                         ✏️
                       </Link>
+                      <button
+                        onClick={() => handleDuplicate(project)}
+                        className="p-2 text-muted-foreground hover:text-primary hover:bg-accent rounded transition-colors"
+                        title="Dupliquer"
+                      >
+                        📋
+                      </button>
                       <button
                         onClick={() => setShowDeleteModal(project.id)}
                         className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded transition-colors"
