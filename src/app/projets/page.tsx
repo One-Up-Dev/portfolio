@@ -25,17 +25,35 @@ const statusLabels = {
   abandonne: { label: "Abandonné", className: "bg-red-500/20 text-red-400" },
 };
 
+type SortOption = "newest" | "oldest" | "projectDate";
+
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTech, setSelectedTech] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<SortOption>("newest");
 
-  // Load projects from API on mount
+  // Load projects from API on mount or when sort changes
   useEffect(() => {
     const loadProjects = async () => {
       try {
-        const response = await fetch("/api/projects");
+        setIsLoading(true);
+        // Build URL with sort params
+        const params = new URLSearchParams();
+        if (sortBy === "oldest") {
+          params.set("sortBy", "createdAt");
+          params.set("sortOrder", "asc");
+        } else if (sortBy === "projectDate") {
+          params.set("sortBy", "projectDate");
+          params.set("sortOrder", "desc");
+        } else {
+          // newest (default)
+          params.set("sortBy", "createdAt");
+          params.set("sortOrder", "desc");
+        }
+
+        const response = await fetch(`/api/projects?${params.toString()}`);
         const result = await response.json();
 
         if (result.success && result.data) {
@@ -52,7 +70,7 @@ export default function ProjectsPage() {
     };
 
     loadProjects();
-  }, []);
+  }, [sortBy]);
 
   // Get all unique technologies for filtering
   const allTechnologies = Array.from(
@@ -100,17 +118,39 @@ export default function ProjectsPage() {
           </p>
         </div>
 
-        {/* Search and Filter */}
-        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          {/* Search */}
-          <div className="relative flex-1 max-w-md">
-            <input
-              type="text"
-              placeholder="Rechercher un projet..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-lg border border-border bg-background px-4 py-2 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-            />
+        {/* Search, Sort and Filter */}
+        <div className="mb-8 space-y-4">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            {/* Search */}
+            <div className="relative flex-1 max-w-md">
+              <input
+                type="text"
+                placeholder="Rechercher un projet..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full rounded-lg border border-border bg-background px-4 py-2 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+            </div>
+
+            {/* Sort Dropdown */}
+            <div className="flex items-center gap-2">
+              <label
+                htmlFor="sort-select"
+                className="text-sm text-muted-foreground"
+              >
+                Trier par:
+              </label>
+              <select
+                id="sort-select"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as SortOption)}
+                className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              >
+                <option value="newest">Plus récents</option>
+                <option value="oldest">Plus anciens</option>
+                <option value="projectDate">Date du projet</option>
+              </select>
+            </div>
           </div>
 
           {/* Technology Filter */}

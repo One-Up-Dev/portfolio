@@ -1375,3 +1375,78 @@ Many remaining failing tests require features not yet implemented:
 4. Implement pagination on blog/projects pages
 5. Add auto-save functionality for blog editor
 6. Implement filter persistence in URL query params
+
+## Session 30 (2024-12-28)
+- **Completed: Media upload file type validation and project sort by date**
+- Started dev server (pnpm dev) - running on port 3000
+- Verified admin login and dashboard working correctly
+
+### Changes Made:
+
+1. **Media Upload with File Type Validation**:
+   - Updated `/api/admin/media/route.ts` to use real SQLite database
+   - Implemented server-side file type validation:
+     - ALLOWED_IMAGE_TYPES: JPEG, PNG, GIF, WebP, SVG
+     - FORBIDDEN_EXTENSIONS: .exe, .js, .ts, .php, .py, .sh, etc.
+     - Maximum file size: 5MB
+   - Files saved to `/public/uploads/` directory
+   - Records stored in `media_library` table
+   - Validation error messages displayed for:
+     - Invalid file types (e.g., .js, .exe)
+     - Files exceeding size limit
+     - Extension/MIME type mismatches
+
+2. **Updated Media Frontend** (`/admin/medias/page.tsx`):
+   - Changed from demo data to real API fetch
+   - Client-side validation matching server rules
+   - Proper error messages in French
+   - File upload progress indicator
+   - Success/error notifications
+   - Delete functionality with confirmation
+   - Copy URL to clipboard feature
+   - Image preview in modal
+
+3. **Project Sort by Date**:
+   - Updated `/api/projects/route.ts` to accept sortBy and sortOrder params
+   - Options: sortBy=createdAt or sortBy=projectDate
+   - Options: sortOrder=asc or sortOrder=desc
+   - Updated `/projets/page.tsx` with sort dropdown:
+     - "Plus récents" (newest first - default)
+     - "Plus anciens" (oldest first)
+     - "Date du projet" (by project date)
+   - Sort changes trigger API refetch with correct params
+
+### Verification Tests Performed:
+- Uploaded .js file → REJECTED: "File type not allowed: .js. Only image files are permitted."
+- Uploaded .exe file → REJECTED: "File type not allowed: .exe. Only image files are permitted."
+- Uploaded 6MB file → REJECTED: "File size (6.00MB) exceeds maximum allowed size of 5MB."
+- Uploaded valid PNG → SUCCESS: File saved to database and appears in media grid
+- Sort dropdown visible on /projets page with all three options
+- Selecting "Plus anciens" triggers reload with oldest projects first
+
+### New Tests Now Passing (Session 30):
+- A-Security: File upload validates file type (only images allowed)
+- C-RealData: Uploaded media appears in media library
+- E-ErrorHandling: Media upload shows error for file too large
+- F-UIBackend: Project sort by date returns correctly ordered data
+
+### Current Status:
+- 200/277 tests passing (72.2%)
+- Media upload with real database storage working
+- File type validation (both client and server side)
+- File size validation (5MB limit)
+- Project sorting by date implemented with UI dropdown
+- Dev server running on port 3000
+
+### Code Files Created/Modified:
+- MODIFIED: src/app/api/admin/media/route.ts (real DB, file validation)
+- MODIFIED: src/app/admin/medias/page.tsx (API fetch, validation UI)
+- MODIFIED: src/app/api/projects/route.ts (sortBy, sortOrder params)
+- MODIFIED: src/app/projets/page.tsx (sort dropdown UI)
+
+### Next Steps for Future Sessions:
+1. Update admin skills (competences) page to use real database
+2. Implement pagination on blog/projects pages
+3. Add auto-save functionality for blog editor
+4. Implement filter persistence in URL query params
+5. Add timeline component to About page
