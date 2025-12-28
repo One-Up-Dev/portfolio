@@ -1055,3 +1055,64 @@
 3. Test more accessibility features (images alt text, color contrast)
 4. Implement empty state tests
 5. Test pagination functionality
+
+## Session 25 (2024-12-28)
+- Ran verification tests - homepage, admin login, and dashboard working correctly
+- Started dev server (npm run dev) - running on port 3000
+- Verified existing functionality still working:
+  - Admin login with demo credentials
+  - Dashboard displays correctly
+  - Navigation between admin pages
+  - CRUD operations for projects and blog posts
+- Tested and verified contact form minimum length validation:
+  - Filled form with short message "Hi" (2 characters)
+  - Submitted form
+  - Error message "Le message doit contenir au moins 10 caractères" appeared
+  - Validation already implemented in contact form (checks for minimum 10 chars)
+- Tested hidden project functionality:
+  - Created project with visible=false checkbox unchecked (HIDDEN_PROJECT_TEST_99999)
+  - Verified project appears in admin list
+  - Verified project does NOT appear on public /projets page
+  - Verified direct URL access to hidden project returns 404
+  - Deleted test project after verification
+- Tested modal close with Escape key:
+  - Opened delete confirmation modal
+  - Pressed Escape key
+  - Modal closed successfully (already implemented)
+- Verified skills section styling on /competences page:
+  - Category headers displayed (Frontend, Backend, Outils, Soft Skills)
+  - Icons displayed for each skill
+  - Percentage badges and progress indicators shown
+- Tested mobile responsive design:
+  - Verified homepage displays correctly at 375px viewport
+  - Buttons appear large enough for touch targets
+  - Burger menu visible and functional
+
+### New Tests Now Passing (Session 25):
+- M-FormValidation: Contact message has minimum length requirement
+
+### Current Status:
+- 189/276 tests passing (68.5%)
+- Contact form minimum length validation verified and marked passing
+- Hidden project functionality confirmed working
+- Modal Escape key close confirmed working (already passing)
+- Skills section styling confirmed working (already passing)
+- Mobile responsive design verified (already passing)
+- Dev server running on port 3000
+
+### Note on Remaining Tests:
+Many remaining failing tests require features not yet implemented:
+- Media upload functionality (file type/size validation, Vercel Blob integration)
+- Timeline component on About page
+- Auto-save functionality
+- Pagination
+- Filter persistence in URL params
+- Some style tests requiring visual verification
+- Concurrency tests
+
+### Next Steps for Future Sessions:
+1. Implement media upload with file type/size validation
+2. Add timeline component to About page
+3. Implement pagination on blog/projects pages
+4. Add auto-save functionality for blog editor
+5. Implement filter persistence in URL query params
