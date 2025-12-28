@@ -1514,3 +1514,50 @@ Many remaining failing tests require features not yet implemented:
 3. Implement pagination for blog/projects pages
 4. Add auto-save functionality for blog editor
 5. Implement filter persistence after viewing detail and returning
+
+## Session 32 (2024-12-28)
+- **Completed: Media upload and use in project workflow test**
+- Started dev server (pnpm dev) - running on port 3000
+- Verified existing features and login working correctly
+
+### Changes Verified:
+
+1. **Media Upload Workflow**:
+   - Login as admin
+   - Navigate to /admin/medias
+   - Media library shows uploaded images
+   - Click on image shows detail modal with "Copy URL" button
+   - Copy URL button copies full URL to clipboard with success message
+
+2. **Project Edit Image URL**:
+   - Navigate to /admin/projets/[id]/edit
+   - Main Image URL field accepts local URLs like /uploads/image.png
+   - Image preview shows when URL is entered
+   - Form submission works and saves the image URL to database
+
+3. **End-to-End Workflow Verified**:
+   - Uploaded test image visible in media library
+   - Copied URL from media library
+   - Pasted URL in project edit form's mainImageUrl field
+   - Image preview displayed in form
+   - Submitted form successfully (PUT request returned 200)
+   - Verified saved image URL via API: /uploads/test-image-1766926851145.png
+   - Public project page shows the image
+
+### Test Verified:
+- D-Workflow: Media upload and use in project workflow
+
+### Current Status:
+- 209/277 tests passing (75.5%)
+- Media upload to local storage working
+- Copy URL feature working
+- Project edit with image URL working
+- Full workflow from upload to display verified
+- Dev server running on port 3000
+
+### Next Steps for Future Sessions:
+1. Implement pagination for blog/projects pages
+2. Add auto-save functionality for blog editor
+3. Add Hero section Miyazaki GIF background
+4. Implement pixel art button styling
+5. Add project card hover glitch effect
