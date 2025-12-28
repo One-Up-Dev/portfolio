@@ -31,9 +31,14 @@ export default function AdminLoginPage() {
           email: "admin@oneup.dev",
           name: "Admin ONEUP",
         },
+        isAuthenticated: true,
         expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 days
       };
       localStorage.setItem("admin_session", JSON.stringify(session));
+
+      // Also set a cookie for API route authentication
+      document.cookie = `admin_session=${encodeURIComponent(JSON.stringify(session))}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
+
       router.push("/admin");
     } else {
       setError("Email ou mot de passe incorrect");

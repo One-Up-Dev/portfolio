@@ -4,78 +4,6 @@ import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { useState, useEffect } from "react";
 
-// Demo projects data (same as in projects page for reference)
-const demoProjects = [
-  {
-    id: "1",
-    title: "Portfolio ONEUP",
-    slug: "portfolio-oneup",
-    shortDescription: "Portfolio personnel avec thème rétro gaming",
-    longDescription:
-      "Un portfolio développeur avec thème rétro gaming années 80-90, effets CRT et sons 8-bit.",
-    status: "termine",
-    visible: true,
-    technologies: ["Next.js", "TypeScript", "Tailwind CSS"],
-    githubUrl: "https://github.com/oneup/portfolio",
-    demoUrl: "https://oneup.dev",
-    projectDate: "2024-12-20",
-    views: 342,
-    createdAt: "2024-12-20T10:00:00Z",
-    updatedAt: "2024-12-20T10:00:00Z",
-  },
-  {
-    id: "2",
-    title: "App de gestion",
-    slug: "app-gestion",
-    shortDescription: "Application de gestion de tâches",
-    longDescription:
-      "Application complète de gestion de tâches avec authentification et synchronisation temps réel.",
-    status: "en_cours",
-    visible: true,
-    technologies: ["React", "Node.js", "PostgreSQL"],
-    githubUrl: "https://github.com/oneup/task-app",
-    demoUrl: "",
-    projectDate: "2024-12-15",
-    views: 256,
-    createdAt: "2024-12-15T10:00:00Z",
-    updatedAt: "2024-12-15T10:00:00Z",
-  },
-  {
-    id: "3",
-    title: "Bot Discord",
-    slug: "bot-discord",
-    shortDescription: "Bot Discord multi-fonctions",
-    longDescription:
-      "Un bot Discord avec commandes de modération, musique et jeux intégrés.",
-    status: "termine",
-    visible: true,
-    technologies: ["Python", "Discord.py"],
-    githubUrl: "https://github.com/oneup/discord-bot",
-    demoUrl: "",
-    projectDate: "2024-12-10",
-    views: 189,
-    createdAt: "2024-12-10T10:00:00Z",
-    updatedAt: "2024-12-10T10:00:00Z",
-  },
-  {
-    id: "4",
-    title: "API REST",
-    slug: "api-rest",
-    shortDescription: "API REST pour applications mobiles",
-    longDescription:
-      "API REST complète avec authentification JWT et documentation OpenAPI.",
-    status: "abandonne",
-    visible: false,
-    technologies: ["Node.js", "Express"],
-    githubUrl: "https://github.com/oneup/rest-api",
-    demoUrl: "",
-    projectDate: "2024-11-28",
-    views: 45,
-    createdAt: "2024-11-28T10:00:00Z",
-    updatedAt: "2024-11-28T10:00:00Z",
-  },
-];
-
 // Technology options for multi-select
 const technologyOptions = [
   "React",
@@ -114,7 +42,7 @@ interface ProjectFormData {
   status: string;
   projectDate: string;
   visible: boolean;
-  views: number;
+  viewCount: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -129,58 +57,48 @@ export default function EditProjectPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [successMessage, setSuccessMessage] = useState("");
   const [notFound, setNotFound] = useState(false);
-  const [isDemoProject, setIsDemoProject] = useState(false);
 
   // Form data
   const [formData, setFormData] = useState<ProjectFormData | null>(null);
 
-  // Load project data on mount
+  // Load project data from API on mount
   useEffect(() => {
-    const loadProject = () => {
+    const loadProject = async () => {
       try {
-        // First check demo projects
-        const demoProject = demoProjects.find((p) => p.id === projectId);
-        if (demoProject) {
+        setIsLoading(true);
+        const response = await fetch(`/api/admin/projects/${projectId}`, {
+          credentials: "include",
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const project = data.data;
           setFormData({
-            ...demoProject,
-            shortDescription: demoProject.shortDescription || "",
-            longDescription: demoProject.longDescription || "",
-            githubUrl: demoProject.githubUrl || "",
-            demoUrl: demoProject.demoUrl || "",
+            id: project.id,
+            title: project.title || "",
+            slug: project.slug || "",
+            shortDescription: project.shortDescription || "",
+            longDescription: project.longDescription || "",
+            technologies: project.technologies || [],
+            githubUrl: project.githubUrl || "",
+            demoUrl: project.demoUrl || "",
+            status: project.status || "en_cours",
+            projectDate: project.projectDate || "",
+            visible: project.visible ?? true,
+            viewCount: project.viewCount || 0,
+            createdAt: project.createdAt || "",
+            updatedAt: project.updatedAt || "",
           });
-          setIsDemoProject(true);
-          setIsLoading(false);
-          return;
+        } else if (response.status === 404) {
+          setNotFound(true);
+        } else {
+          console.error("Failed to load project");
+          setNotFound(true);
         }
-
-        // Then check localStorage
-        const savedProjects = localStorage.getItem("demo_projects");
-        if (savedProjects) {
-          const parsed = JSON.parse(savedProjects);
-          const project = parsed.find(
-            (p: ProjectFormData) => p.id === projectId,
-          );
-          if (project) {
-            setFormData({
-              ...project,
-              shortDescription: project.shortDescription || "",
-              longDescription: project.longDescription || "",
-              githubUrl: project.githubUrl || "",
-              demoUrl: project.demoUrl || "",
-              technologies: project.technologies || [],
-            });
-            setIsDemoProject(false);
-            setIsLoading(false);
-            return;
-          }
-        }
-
-        // Project not found
-        setNotFound(true);
-        setIsLoading(false);
       } catch (error) {
         console.error("Error loading project:", error);
         setNotFound(true);
+      } finally {
         setIsLoading(false);
       }
     };
@@ -284,43 +202,41 @@ export default function EditProjectPage() {
     setIsSubmitting(true);
 
     try {
-      if (isDemoProject) {
-        // Demo projects can't be edited in demo mode - just show success
-        setSuccessMessage(
-          "Modifications enregistrées! (Mode démo: les changements ne sont pas persistés pour les projets de démonstration)",
-        );
-        setTimeout(() => {
-          router.push("/admin/projets");
-        }, 2000);
-        return;
-      }
-
-      // Get existing projects from localStorage
-      const existingProjects = JSON.parse(
-        localStorage.getItem("demo_projects") || "[]",
-      );
-
-      // Update the project
-      const updatedProjects = existingProjects.map((p: ProjectFormData) => {
-        if (p.id === projectId) {
-          return {
-            ...formData,
-            updatedAt: new Date().toISOString(),
-          };
-        }
-        return p;
+      const response = await fetch(`/api/admin/projects/${projectId}`, {
+        method: "PUT",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: formData.title,
+          slug: formData.slug,
+          shortDescription: formData.shortDescription,
+          longDescription: formData.longDescription,
+          technologies: formData.technologies,
+          githubUrl: formData.githubUrl || null,
+          demoUrl: formData.demoUrl || null,
+          status: formData.status,
+          projectDate: formData.projectDate,
+          visible: formData.visible,
+        }),
       });
 
-      // Save to localStorage
-      localStorage.setItem("demo_projects", JSON.stringify(updatedProjects));
-
-      // Show success message
-      setSuccessMessage("Projet modifié avec succès!");
-
-      // Redirect after delay
-      setTimeout(() => {
-        router.push("/admin/projets");
-      }, 1500);
+      if (response.ok) {
+        setSuccessMessage("Projet modifié avec succès!");
+        setTimeout(() => {
+          router.push("/admin/projets");
+        }, 1500);
+      } else {
+        const data = await response.json();
+        if (data.message === "Ce slug existe déjà") {
+          setErrors({ slug: "Ce slug existe déjà" });
+        } else {
+          setErrors({
+            form: data.message || "Erreur lors de la modification du projet",
+          });
+        }
+      }
     } catch (error) {
       console.error("Error updating project:", error);
       setErrors({ form: "Erreur lors de la modification du projet" });
@@ -382,17 +298,6 @@ export default function EditProjectPage() {
           </p>
         </div>
       </div>
-
-      {/* Demo Project Notice */}
-      {isDemoProject && (
-        <div className="bg-yellow-500/20 border border-yellow-500/50 text-yellow-500 rounded-lg p-4">
-          <p className="text-sm">
-            <strong>Projet de démonstration:</strong> Les modifications
-            apportées à ce projet ne seront pas persistées. Créez un nouveau
-            projet pour tester les fonctionnalités d&apos;édition.
-          </p>
-        </div>
-      )}
 
       {/* Success Message */}
       {successMessage && (
@@ -686,22 +591,28 @@ export default function EditProjectPage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
               <div>
                 <p className="text-muted-foreground">ID</p>
-                <p className="text-foreground font-mono">{formData.id}</p>
+                <p className="text-foreground font-mono text-xs truncate">
+                  {formData.id}
+                </p>
               </div>
               <div>
                 <p className="text-muted-foreground">Vues</p>
-                <p className="text-foreground">{formData.views}</p>
+                <p className="text-foreground">{formData.viewCount}</p>
               </div>
               <div>
                 <p className="text-muted-foreground">Créé le</p>
                 <p className="text-foreground">
-                  {new Date(formData.createdAt).toLocaleDateString("fr-FR")}
+                  {formData.createdAt
+                    ? new Date(formData.createdAt).toLocaleDateString("fr-FR")
+                    : "-"}
                 </p>
               </div>
               <div>
                 <p className="text-muted-foreground">Modifié le</p>
                 <p className="text-foreground">
-                  {new Date(formData.updatedAt).toLocaleDateString("fr-FR")}
+                  {formData.updatedAt
+                    ? new Date(formData.updatedAt).toLocaleDateString("fr-FR")
+                    : "-"}
                 </p>
               </div>
             </div>
@@ -735,14 +646,6 @@ export default function EditProjectPage() {
           </button>
         </div>
       </form>
-
-      {/* Demo Notice */}
-      <div className="bg-accent/20 border border-accent/50 rounded-lg p-4">
-        <p className="text-sm text-muted-foreground text-center">
-          <strong className="text-foreground">Mode démo:</strong> Les
-          modifications seront sauvegardées dans le localStorage du navigateur.
-        </p>
-      </div>
     </div>
   );
 }

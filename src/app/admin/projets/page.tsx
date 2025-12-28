@@ -3,50 +3,6 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 
-// Demo projects data
-const demoProjects = [
-  {
-    id: "1",
-    title: "Portfolio ONEUP",
-    slug: "portfolio-oneup",
-    status: "termine",
-    visible: true,
-    technologies: ["Next.js", "TypeScript", "Tailwind"],
-    createdAt: "2024-12-20",
-    views: 342,
-  },
-  {
-    id: "2",
-    title: "App de gestion",
-    slug: "app-gestion",
-    status: "en_cours",
-    visible: true,
-    technologies: ["React", "Node.js", "PostgreSQL"],
-    createdAt: "2024-12-15",
-    views: 256,
-  },
-  {
-    id: "3",
-    title: "Bot Discord",
-    slug: "bot-discord",
-    status: "termine",
-    visible: true,
-    technologies: ["Python", "Discord.py"],
-    createdAt: "2024-12-10",
-    views: 189,
-  },
-  {
-    id: "4",
-    title: "API REST",
-    slug: "api-rest",
-    status: "abandonne",
-    visible: false,
-    technologies: ["Node.js", "Express"],
-    createdAt: "2024-11-28",
-    views: 45,
-  },
-];
-
 interface Project {
   id: string;
   title: string;
@@ -55,7 +11,7 @@ interface Project {
   visible: boolean;
   technologies: string[];
   createdAt: string;
-  views: number;
+  viewCount: number;
 }
 
 const statusLabels: Record<string, { label: string; color: string }> = {
@@ -65,107 +21,96 @@ const statusLabels: Record<string, { label: string; color: string }> = {
 };
 
 export default function AdminProjectsPage() {
-  const [projects, setProjects] = useState<Project[]>(demoProjects);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [showDeleteModal, setShowDeleteModal] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState("");
+  const [loading, setLoading] = useState(true);
 
-  // Load projects from localStorage on mount
+  // Load projects from API on mount
   useEffect(() => {
-    const loadProjects = () => {
+    const loadProjects = async () => {
       try {
-        // Load view counts from localStorage
-        const viewCountsStr = localStorage.getItem("project_view_counts");
-        const viewCounts: Record<string, number> = viewCountsStr
-          ? JSON.parse(viewCountsStr)
-          : {};
-
-        // Apply real view counts to demo projects
-        const demoWithViews = demoProjects.map((p) => ({
-          ...p,
-          views: viewCounts[p.id] !== undefined ? viewCounts[p.id] : p.views,
-        }));
-
-        const savedProjects = localStorage.getItem("demo_projects");
-        if (savedProjects) {
-          const parsed = JSON.parse(savedProjects);
-          // Apply real view counts to saved projects too
-          const savedWithViews = parsed.map((p: Project) => ({
-            ...p,
-            views:
-              viewCounts[p.id] !== undefined ? viewCounts[p.id] : p.views || 0,
-          }));
-          // Combine demo projects with saved projects
-          setProjects([...demoWithViews, ...savedWithViews]);
+        setLoading(true);
+        const response = await fetch("/api/admin/projects", {
+          credentials: "include",
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setProjects(data.data || []);
         } else {
-          setProjects(demoWithViews);
+          console.error("Failed to load projects");
         }
       } catch (error) {
         console.error("Error loading projects:", error);
+      } finally {
+        setLoading(false);
       }
     };
     loadProjects();
   }, []);
 
-  const handleDuplicate = (project: Project) => {
+  const handleDuplicate = async (project: Project) => {
     try {
-      // Create a duplicate project with new ID and modified title/slug
-      const newProject = {
-        ...project,
-        id: `dup_${Date.now()}`,
-        title: `${project.title} (Copie)`,
-        slug: `${project.slug}-copie-${Date.now()}`,
-        createdAt: new Date().toISOString().split("T")[0],
-        views: 0,
-      };
+      const response = await fetch(
+        `/api/admin/projects/${project.id}/duplicate`,
+        {
+          method: "POST",
+          credentials: "include",
+        },
+      );
 
-      // Get existing projects from localStorage
-      const savedProjects = localStorage.getItem("demo_projects");
-      const existingProjects = savedProjects ? JSON.parse(savedProjects) : [];
-
-      // Add the duplicate
-      const updatedProjects = [...existingProjects, newProject];
-      localStorage.setItem("demo_projects", JSON.stringify(updatedProjects));
-
-      // Update state
-      setProjects([...demoProjects, ...updatedProjects]);
-      setSuccessMessage("Projet dupliqué avec succès!");
-      setTimeout(() => setSuccessMessage(""), 3000);
+      if (response.ok) {
+        const data = await response.json();
+        // Add the duplicated project to the list
+        setProjects([...projects, data.data]);
+        setSuccessMessage("Projet dupliqué avec succès!");
+        setTimeout(() => setSuccessMessage(""), 3000);
+      } else {
+        setSuccessMessage("Erreur lors de la duplication du projet");
+        setTimeout(() => setSuccessMessage(""), 3000);
+      }
     } catch (error) {
       console.error("Error duplicating project:", error);
+      setSuccessMessage("Erreur lors de la duplication du projet");
+      setTimeout(() => setSuccessMessage(""), 3000);
     }
   };
 
-  const handleToggleVisibility = (project: Project) => {
-    // Check if it's a demo project (IDs 1-4 are demo)
-    const isDemoProject = ["1", "2", "3", "4"].includes(project.id);
-
-    if (isDemoProject) {
-      // Demo projects can't be modified
-      setSuccessMessage("Les projets de démo ne peuvent pas être modifiés.");
-      setTimeout(() => setSuccessMessage(""), 3000);
-      return;
-    }
-
+  const handleToggleVisibility = async (project: Project) => {
     try {
-      const savedProjects = localStorage.getItem("demo_projects");
-      if (savedProjects) {
-        const parsed = JSON.parse(savedProjects);
-        const updated = parsed.map((p: Project) =>
-          p.id === project.id ? { ...p, visible: !p.visible } : p,
-        );
-        localStorage.setItem("demo_projects", JSON.stringify(updated));
+      const response = await fetch(
+        `/api/admin/projects/${project.id}/visibility`,
+        {
+          method: "PATCH",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ visible: !project.visible }),
+        },
+      );
 
-        // Update state
-        setProjects([...demoProjects, ...updated]);
+      if (response.ok) {
+        // Update local state
+        setProjects(
+          projects.map((p) =>
+            p.id === project.id ? { ...p, visible: !p.visible } : p,
+          ),
+        );
         setSuccessMessage(
           project.visible
             ? "Projet masqué avec succès!"
             : "Projet rendu visible avec succès!",
         );
         setTimeout(() => setSuccessMessage(""), 3000);
+      } else {
+        setSuccessMessage("Erreur lors de la modification de la visibilité");
+        setTimeout(() => setSuccessMessage(""), 3000);
       }
     } catch (error) {
       console.error("Error toggling visibility:", error);
+      setSuccessMessage("Erreur lors de la modification de la visibilité");
+      setTimeout(() => setSuccessMessage(""), 3000);
     }
   };
 
@@ -183,35 +128,41 @@ export default function AdminProjectsPage() {
     }
   }, [showDeleteModal]);
 
-  const handleDelete = (id: string) => {
-    // Check if it's a demo project (IDs 1-4 are demo)
-    const isDemoProject = ["1", "2", "3", "4"].includes(id);
-
-    if (isDemoProject) {
-      // For demo projects, just close the modal (don't actually delete)
-      setShowDeleteModal(null);
-      return;
-    }
-
-    // Delete from localStorage
+  const handleDelete = async (id: string) => {
     try {
-      const savedProjects = localStorage.getItem("demo_projects");
-      if (savedProjects) {
-        const parsed = JSON.parse(savedProjects);
-        const filtered = parsed.filter((p: Project) => p.id !== id);
-        localStorage.setItem("demo_projects", JSON.stringify(filtered));
+      const response = await fetch(`/api/admin/projects/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
 
+      if (response.ok) {
         // Update state
-        setProjects([...demoProjects, ...filtered]);
+        setProjects(projects.filter((p) => p.id !== id));
         setSuccessMessage("Projet supprimé avec succès!");
+        setTimeout(() => setSuccessMessage(""), 3000);
+      } else {
+        setSuccessMessage("Erreur lors de la suppression du projet");
         setTimeout(() => setSuccessMessage(""), 3000);
       }
     } catch (error) {
       console.error("Error deleting project:", error);
+      setSuccessMessage("Erreur lors de la suppression du projet");
+      setTimeout(() => setSuccessMessage(""), 3000);
     }
 
     setShowDeleteModal(null);
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="inline-block animate-spin text-4xl mb-4">⏳</div>
+          <p className="text-muted-foreground">Chargement des projets...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -269,101 +220,106 @@ export default function AdminProjectsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {projects.map((project) => (
-                <tr
-                  key={project.id}
-                  className="hover:bg-accent/30 transition-colors"
-                >
-                  <td className="px-6 py-4">
-                    <div>
-                      <p className="font-medium text-foreground">
-                        {project.title}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        /{project.slug}
-                      </p>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`inline-flex px-2 py-1 text-xs font-medium rounded ${
-                        statusLabels[project.status]?.color
-                      }`}
-                    >
-                      {statusLabels[project.status]?.label}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex flex-wrap gap-1">
-                      {project.technologies.slice(0, 3).map((tech) => (
-                        <span
-                          key={tech}
-                          className="inline-flex px-2 py-0.5 text-xs bg-accent text-muted-foreground rounded"
-                        >
-                          {tech}
-                        </span>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <button
-                      onClick={() => handleToggleVisibility(project)}
-                      className={`inline-flex items-center gap-1 text-sm px-2 py-1 rounded transition-colors ${
-                        project.visible
-                          ? "text-green-500 hover:bg-green-500/10"
-                          : "text-muted-foreground hover:bg-accent"
-                      }`}
-                      title={
-                        project.visible
-                          ? "Cliquer pour masquer"
-                          : "Cliquer pour rendre visible"
-                      }
-                    >
-                      {project.visible ? "✓ Oui" : "✗ Non"}
-                    </button>
-                  </td>
-                  <td className="px-6 py-4 text-muted-foreground">
-                    {project.views}
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <Link
-                        href={`/admin/projets/${project.id}/edit`}
-                        className="p-2 text-muted-foreground hover:text-primary hover:bg-accent rounded transition-colors"
-                        title="Modifier"
-                      >
-                        ✏️
-                      </Link>
-                      <button
-                        onClick={() => handleDuplicate(project)}
-                        className="p-2 text-muted-foreground hover:text-primary hover:bg-accent rounded transition-colors"
-                        title="Dupliquer"
-                      >
-                        📋
-                      </button>
-                      <button
-                        onClick={() => setShowDeleteModal(project.id)}
-                        className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded transition-colors"
-                        title="Supprimer"
-                      >
-                        🗑️
-                      </button>
-                    </div>
+              {projects.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={6}
+                    className="px-6 py-12 text-center text-muted-foreground"
+                  >
+                    Aucun projet pour le moment. Créez votre premier projet !
                   </td>
                 </tr>
-              ))}
+              ) : (
+                projects.map((project) => (
+                  <tr
+                    key={project.id}
+                    className="hover:bg-accent/30 transition-colors"
+                  >
+                    <td className="px-6 py-4">
+                      <div>
+                        <p className="font-medium text-foreground">
+                          {project.title}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          /{project.slug}
+                        </p>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-medium rounded ${
+                          statusLabels[project.status]?.color ||
+                          "bg-gray-500/20 text-gray-500"
+                        }`}
+                      >
+                        {statusLabels[project.status]?.label || project.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-wrap gap-1">
+                        {(project.technologies || [])
+                          .slice(0, 3)
+                          .map((tech) => (
+                            <span
+                              key={tech}
+                              className="inline-flex px-2 py-0.5 text-xs bg-accent text-muted-foreground rounded"
+                            >
+                              {tech}
+                            </span>
+                          ))}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <button
+                        onClick={() => handleToggleVisibility(project)}
+                        className={`inline-flex items-center gap-1 text-sm px-2 py-1 rounded transition-colors ${
+                          project.visible
+                            ? "text-green-500 hover:bg-green-500/10"
+                            : "text-muted-foreground hover:bg-accent"
+                        }`}
+                        title={
+                          project.visible
+                            ? "Cliquer pour masquer"
+                            : "Cliquer pour rendre visible"
+                        }
+                      >
+                        {project.visible ? "✓ Oui" : "✗ Non"}
+                      </button>
+                    </td>
+                    <td className="px-6 py-4 text-muted-foreground">
+                      {project.viewCount || 0}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <Link
+                          href={`/admin/projets/${project.id}/edit`}
+                          className="p-2 text-muted-foreground hover:text-primary hover:bg-accent rounded transition-colors"
+                          title="Modifier"
+                        >
+                          ✏️
+                        </Link>
+                        <button
+                          onClick={() => handleDuplicate(project)}
+                          className="p-2 text-muted-foreground hover:text-primary hover:bg-accent rounded transition-colors"
+                          title="Dupliquer"
+                        >
+                          📋
+                        </button>
+                        <button
+                          onClick={() => setShowDeleteModal(project.id)}
+                          className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded transition-colors"
+                          title="Supprimer"
+                        >
+                          🗑️
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
-      </div>
-
-      {/* Demo Notice */}
-      <div className="bg-accent/20 border border-accent/50 rounded-lg p-4">
-        <p className="text-sm text-muted-foreground text-center">
-          <strong className="text-foreground">Mode démo:</strong> Les projets
-          affichés sont des exemples. Connectez une base de données pour gérer
-          vos vrais projets.
-        </p>
       </div>
 
       {/* Delete Confirmation Modal */}
