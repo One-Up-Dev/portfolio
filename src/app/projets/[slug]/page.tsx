@@ -16,6 +16,7 @@ interface Project {
   projectDate?: string;
   githubUrl?: string;
   demoUrl?: string;
+  mainImageUrl?: string;
   visible: boolean;
 }
 
@@ -34,6 +35,17 @@ export default function ProjectDetailPage() {
   const [project, setProject] = useState<Project | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [notFoundState, setNotFoundState] = useState(false);
+
+  // Build back URL preserving filter params from referrer
+  const [backUrl, setBackUrl] = useState("/projets");
+
+  useEffect(() => {
+    // Check if there are stored filter params in sessionStorage
+    const storedParams = sessionStorage.getItem("projetsFilterParams");
+    if (storedParams) {
+      setBackUrl(`/projets?${storedParams}`);
+    }
+  }, []);
 
   useEffect(() => {
     const loadProject = async () => {
@@ -88,7 +100,7 @@ export default function ProjectDetailPage() {
       <div className="container mx-auto max-w-4xl px-4">
         {/* Back link */}
         <Link
-          href="/projets"
+          href={backUrl}
           className="mb-8 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -97,9 +109,25 @@ export default function ProjectDetailPage() {
 
         {/* Project Image */}
         <div className="mb-8 aspect-video w-full overflow-hidden rounded-lg bg-gradient-to-br from-retro-dark to-retro-purple">
-          <div className="flex h-full items-center justify-center text-8xl">
-            🎮
-          </div>
+          {project.mainImageUrl ? (
+            <img
+              src={project.mainImageUrl}
+              alt={project.title}
+              className="h-full w-full object-cover"
+              onError={(e) => {
+                // Fallback to emoji if image fails to load
+                const parent = (e.target as HTMLImageElement).parentElement;
+                if (parent) {
+                  parent.innerHTML =
+                    '<div class="flex h-full items-center justify-center text-8xl">🎮</div>';
+                }
+              }}
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center text-8xl">
+              🎮
+            </div>
+          )}
         </div>
 
         {/* Header */}

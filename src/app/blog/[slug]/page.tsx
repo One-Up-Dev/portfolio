@@ -25,6 +25,17 @@ export default function BlogPostPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [notFoundState, setNotFoundState] = useState(false);
 
+  // Build back URL preserving filter params from referrer
+  const [backUrl, setBackUrl] = useState("/blog");
+
+  useEffect(() => {
+    // Check if there are stored filter params in sessionStorage
+    const storedParams = sessionStorage.getItem("blogFilterParams");
+    if (storedParams) {
+      setBackUrl(`/blog?${storedParams}`);
+    }
+  }, []);
+
   useEffect(() => {
     const loadPost = async () => {
       setIsLoading(true);
@@ -79,7 +90,7 @@ export default function BlogPostPage() {
       <div className="container mx-auto max-w-3xl px-4">
         {/* Back link */}
         <Link
-          href="/blog"
+          href={backUrl}
           className="mb-8 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -133,7 +144,7 @@ export default function BlogPostPage() {
         {/* Share / Navigation */}
         <footer className="mt-12 border-t border-border pt-8">
           <Link
-            href="/blog"
+            href={backUrl}
             className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary"
           >
             <ArrowLeft className="h-4 w-4" />

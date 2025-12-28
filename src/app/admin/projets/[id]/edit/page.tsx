@@ -41,6 +41,7 @@ interface ProjectFormData {
   demoUrl: string;
   status: string;
   projectDate: string;
+  mainImageUrl: string;
   visible: boolean;
   viewCount: number;
   createdAt: string;
@@ -84,6 +85,7 @@ export default function EditProjectPage() {
             demoUrl: project.demoUrl || "",
             status: project.status || "en_cours",
             projectDate: project.projectDate || "",
+            mainImageUrl: project.mainImageUrl || "",
             visible: project.visible ?? true,
             viewCount: project.viewCount || 0,
             createdAt: project.createdAt || "",
@@ -218,6 +220,7 @@ export default function EditProjectPage() {
           demoUrl: formData.demoUrl || null,
           status: formData.status,
           projectDate: formData.projectDate,
+          mainImageUrl: formData.mainImageUrl || null,
           visible: formData.visible,
         }),
       });
@@ -525,6 +528,42 @@ export default function EditProjectPage() {
                 </p>
               )}
             </div>
+          </div>
+
+          {/* Main Image URL */}
+          <div>
+            <label
+              htmlFor="mainImageUrl"
+              className="block text-sm font-medium text-foreground mb-2"
+            >
+              Image principale (URL)
+            </label>
+            <input
+              type="url"
+              id="mainImageUrl"
+              name="mainImageUrl"
+              value={formData.mainImageUrl}
+              onChange={handleChange}
+              placeholder="https://example.com/image.jpg ou /uploads/image.png"
+              className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+            <p className="mt-1 text-xs text-muted-foreground">
+              Collez l&apos;URL d&apos;une image depuis la bibliothèque de
+              médias ou une URL externe
+            </p>
+            {formData.mainImageUrl && (
+              <div className="mt-2 p-2 border border-border rounded-lg bg-accent/20">
+                <p className="text-xs text-muted-foreground mb-2">Aperçu:</p>
+                <img
+                  src={formData.mainImageUrl}
+                  alt="Aperçu de l'image principale"
+                  className="max-h-32 rounded object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = "none";
+                  }}
+                />
+              </div>
+            )}
           </div>
 
           {/* Status and Date */}

@@ -32,14 +32,22 @@ export default function BlogPage() {
     searchParams.get("q") || "",
   );
 
-  // Update URL when filters change
+  // Update URL when filters change and store in sessionStorage for back navigation
   useEffect(() => {
     const params = new URLSearchParams();
     if (selectedTag) params.set("tag", selectedTag);
     if (debouncedSearch) params.set("q", debouncedSearch);
 
-    const newUrl = params.toString() ? `/blog?${params.toString()}` : "/blog";
+    const paramsString = params.toString();
+    const newUrl = paramsString ? `/blog?${paramsString}` : "/blog";
     router.replace(newUrl, { scroll: false });
+
+    // Store filter params in sessionStorage for back navigation from detail pages
+    if (paramsString) {
+      sessionStorage.setItem("blogFilterParams", paramsString);
+    } else {
+      sessionStorage.removeItem("blogFilterParams");
+    }
   }, [selectedTag, debouncedSearch, router]);
 
   // Debounce search query

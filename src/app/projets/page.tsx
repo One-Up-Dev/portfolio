@@ -47,17 +47,23 @@ export default function ProjectsPage() {
     searchParams.get("q") || "",
   );
 
-  // Update URL when filters change
+  // Update URL when filters change and store in sessionStorage for back navigation
   useEffect(() => {
     const params = new URLSearchParams();
     if (selectedTech) params.set("tech", selectedTech);
     if (debouncedSearch) params.set("q", debouncedSearch);
     if (sortBy !== "newest") params.set("sort", sortBy);
 
-    const newUrl = params.toString()
-      ? `/projets?${params.toString()}`
-      : "/projets";
+    const paramsString = params.toString();
+    const newUrl = paramsString ? `/projets?${paramsString}` : "/projets";
     router.replace(newUrl, { scroll: false });
+
+    // Store filter params in sessionStorage for back navigation from detail pages
+    if (paramsString) {
+      sessionStorage.setItem("projetsFilterParams", paramsString);
+    } else {
+      sessionStorage.removeItem("projetsFilterParams");
+    }
   }, [selectedTech, debouncedSearch, sortBy, router]);
 
   // Debounce search query
