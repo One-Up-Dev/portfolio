@@ -973,3 +973,50 @@
 3. Test password requirements validation
 4. Test media upload functionality
 5. Implement empty state tests (require removing demo data)
+
+## Session 23 (2024-12-28)
+- Ran verification tests - homepage, admin login, and dashboard working correctly
+- Started dev server (npm run dev) - running on port 3000
+- Implemented password change functionality with validation:
+  - Added validatePassword function to check password requirements
+  - Password must be at least 8 characters
+  - Password must have uppercase, lowercase, and digit
+  - Real-time visual feedback showing which requirements are met
+  - Error message displayed when trying to save weak password
+  - Success message when password changed successfully
+  - New password stored in localStorage for demo mode
+  - Login page updated to check for changed password
+- Tested complete password change workflow:
+  - Navigate to /admin/parametres
+  - Go to Compte tab
+  - Enter current password (Admin123!)
+  - Enter new password meeting requirements (NewAdmin456!)
+  - Confirm new password
+  - Save - success message appeared
+  - Logout
+  - Login with new password - successful!
+  - Reset password back to Admin123! for consistency
+- Verified read time calculation:
+  - Created test article with ~200 words
+  - Read time displayed as "Temps de lecture estimé: 1 min" while editing
+  - Read time saved and displayed on public blog page as "1 min de lecture"
+  - Using 200 words per minute formula
+
+### New Tests Now Passing (Session 23):
+- A-Security: Password must meet minimum requirements (8 chars, uppercase, lowercase, number)
+- D-Workflow: Change admin password workflow
+- F-UIBackend: Read time calculated correctly from content length
+
+### Current Status:
+- 183/276 tests passing (66.3%)
+- Password validation with visual feedback implemented
+- Complete password change workflow working
+- Read time calculation verified
+- Dev server running on port 3000
+
+### Next Steps for Future Sessions:
+1. Fix blog article markdown rendering
+2. Test file upload type validation
+3. Test more accessibility features
+4. Implement empty state tests (require removing demo data)
+5. Test pagination functionality
