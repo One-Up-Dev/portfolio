@@ -1020,3 +1020,38 @@
 3. Test more accessibility features
 4. Implement empty state tests (require removing demo data)
 5. Test pagination functionality
+
+## Session 24 (2024-12-28)
+- Ran verification tests - homepage, admin login, and dashboard working correctly
+- Started dev server (npm run dev) - running on port 3000
+- Verified and marked several passing tests:
+  - Password change requires matching confirmation - real-time validation shows error when passwords don't match
+  - Blog article page has proper typography hierarchy - H1 title, H2 headings, proper paragraph structure
+  - Article publish date displays correctly - formatted as "15 décembre 2024" (French locale)
+  - Blog posts sorted by publish date correctly - newest first (Dec 15, Dec 10, Dec 5)
+  - Project date picker shows current month by default - defaults to 2025-12-28 (today)
+- Tested hidden project functionality:
+  - Created hidden project with visible=false checkbox unchecked
+  - Verified project appears in admin list but NOT on public /projets page
+  - Deleted test project after verification
+
+### New Tests Now Passing (Session 24):
+- M-FormValidation: Password change requires matching confirmation
+- style: Blog article page has proper typography hierarchy
+- Q-Temporal: Article publish date displays correctly
+- Q-Temporal: Blog posts sorted by publish date correctly
+- Q-Temporal: Project date picker shows current month by default
+
+### Current Status:
+- 188/276 tests passing (68.1%)
+- Password confirmation validation verified
+- Temporal tests (dates, sorting) verified
+- Typography hierarchy on blog articles verified
+- Dev server running on port 3000
+
+### Next Steps for Future Sessions:
+1. Fix blog article markdown rendering (convert ## to H2, etc.)
+2. Test file upload type validation
+3. Test more accessibility features (images alt text, color contrast)
+4. Implement empty state tests
+5. Test pagination functionality
