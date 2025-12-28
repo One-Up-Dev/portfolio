@@ -270,12 +270,14 @@ export default function BlogPage() {
                 </div>
 
                 {/* Title */}
-                <h2 className="mb-2 text-xl font-semibold text-foreground group-hover:text-primary">
+                <h2 className="mb-2 text-xl font-semibold text-foreground group-hover:text-primary line-clamp-2">
                   {post.title}
                 </h2>
 
                 {/* Excerpt */}
-                <p className="mb-4 text-muted-foreground">{post.excerpt}</p>
+                <p className="mb-4 text-muted-foreground line-clamp-3">
+                  {post.excerpt}
+                </p>
 
                 {/* Meta */}
                 <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">

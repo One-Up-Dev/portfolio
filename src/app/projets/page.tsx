@@ -326,14 +326,14 @@ export default function ProjectsPage() {
                     </div>
 
                     {/* Title */}
-                    <h2 className="mb-2 text-lg font-semibold text-foreground group-hover:text-primary">
+                    <h2 className="mb-2 text-lg font-semibold text-foreground group-hover:text-primary line-clamp-2">
                       <Link href={`/projets/${project.slug}`}>
                         {project.title}
                       </Link>
                     </h2>
 
                     {/* Description */}
-                    <p className="mb-4 flex-1 text-sm text-muted-foreground">
+                    <p className="mb-4 flex-1 text-sm text-muted-foreground line-clamp-3">
                       {project.shortDescription}
                     </p>
 
