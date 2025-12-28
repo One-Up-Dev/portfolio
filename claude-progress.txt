@@ -880,3 +880,57 @@
 3. Test media upload functionality
 4. Implement remaining style tests
 5. Test pagination functionality
+
+## Session 21 (2024-12-28)
+- Ran verification tests - homepage, admin login, and dashboard working correctly
+- Started dev server (npm run dev) - running on port 3000
+- Verified existing functionality still working:
+  - Admin login with demo credentials
+  - Dashboard displays with correct project count (6)
+  - Navigation between admin pages
+  - Form validation for URL and slug fields
+- Tested and verified several form validation features:
+  - URL field validation: Invalid URLs ("not-a-url") blocked by browser native validation
+  - URL field accepts valid URLs (https://github.com/test/repo) and form submits
+  - Slug auto-sanitization: Spaces and special chars converted to hyphens
+  - Whitespace-only input rejected for required fields (shows "Le titre est requis")
+  - Error messages are specific (not generic "Invalid" or "Error")
+  - Errors clear automatically when user fixes the issue
+- Tested admin security:
+  - Bookmark admin page requires re-authentication (cleared session, accessed /admin/projets, redirected to login)
+- Tested style features:
+  - Form inputs have visible blue/primary focus ring when focused
+  - Error states use pink/destructive color for error messages
+  - Mobile menu drawer opens correctly at 375px viewport
+  - Mobile menu shows all navigation links, properly styled
+
+### New Tests Now Passing (Session 21):
+- M-FormValidation: URL fields validate proper URL format
+- M-FormValidation: URL fields accept valid URLs
+- M-FormValidation: Slug field validates no spaces or special chars
+- M-FormValidation: Whitespace-only input rejected for required fields
+- M-FormValidation: Error messages are specific not generic
+- M-FormValidation: Errors clear when user fixes the issue
+- H-URLAccess: Bookmark admin page requires re-authentication
+- style: Form inputs have proper focus states
+- style: Error states use red/destructive color
+- style: Mobile menu drawer styled correctly
+
+### Current Status:
+- 178/276 tests passing (64.5%)
+- Form validation features verified and working
+- URL and slug validation complete
+- Mobile responsive design verified
+- Focus states and error styling verified
+- Dev server running on port 3000
+
+### Bug Found:
+- Blog article page shows raw markdown instead of rendered HTML (## headings, **bold** visible as text)
+- This prevents "Blog article page has proper typography hierarchy" test from passing
+
+### Next Steps for Future Sessions:
+1. Fix blog article markdown rendering
+2. Test more accessibility features (images alt text, color contrast)
+3. Test password requirements validation
+4. Test media upload functionality
+5. Implement remaining style tests
