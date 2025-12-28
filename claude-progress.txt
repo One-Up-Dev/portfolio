@@ -1090,9 +1090,10 @@
 
 ### New Tests Now Passing (Session 25):
 - M-FormValidation: Contact message has minimum length requirement
+- style: ONEUP logo displays correctly with pixel art style
 
 ### Current Status:
-- 189/276 tests passing (68.5%)
+- 190/276 tests passing (68.8%)
 - Contact form minimum length validation verified and marked passing
 - Hidden project functionality confirmed working
 - Modal Escape key close confirmed working (already passing)
