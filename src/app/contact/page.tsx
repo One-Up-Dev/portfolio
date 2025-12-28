@@ -10,6 +10,13 @@ import {
   AlertCircle,
 } from "lucide-react";
 
+interface FormErrors {
+  name?: string;
+  email?: string;
+  subject?: string;
+  message?: string;
+}
+
 export default function ContactPage() {
   const [formData, setFormData] = useState({
     name: "",
@@ -17,12 +24,50 @@ export default function ContactPage() {
     subject: "",
     message: "",
   });
+  const [errors, setErrors] = useState<FormErrors>({});
   const [status, setStatus] = useState<
     "idle" | "loading" | "success" | "error"
   >("idle");
 
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: FormErrors = {};
+
+    if (!formData.name.trim()) {
+      newErrors.name = "Le nom est requis";
+    }
+
+    if (!formData.email.trim()) {
+      newErrors.email = "L'email est requis";
+    } else if (!validateEmail(formData.email)) {
+      newErrors.email = "Format d'email invalide";
+    }
+
+    if (!formData.subject.trim()) {
+      newErrors.subject = "Le sujet est requis";
+    }
+
+    if (!formData.message.trim()) {
+      newErrors.message = "Le message est requis";
+    } else if (formData.message.trim().length < 10) {
+      newErrors.message = "Le message doit contenir au moins 10 caractères";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!validateForm()) {
+      return;
+    }
+
     setStatus("loading");
 
     // Simulate form submission (will be replaced with real API call)
@@ -31,15 +76,25 @@ export default function ContactPage() {
     // For demo, always succeed
     setStatus("success");
     setFormData({ name: "", email: "", subject: "", message: "" });
+    setErrors({});
   };
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
+    const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value,
+      [name]: value,
     }));
+
+    // Clear error when user starts typing
+    if (errors[name as keyof FormErrors]) {
+      setErrors((prev) => ({
+        ...prev,
+        [name]: undefined,
+      }));
+    }
   };
 
   return (
@@ -62,7 +117,7 @@ export default function ContactPage() {
               Envoyez-moi un message
             </h2>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4" noValidate>
               {/* Name */}
               <div>
                 <label
@@ -77,10 +132,20 @@ export default function ContactPage() {
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
-                  required
-                  className="w-full rounded-lg border border-border bg-background px-4 py-2 text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  aria-invalid={!!errors.name}
+                  aria-describedby={errors.name ? "name-error" : undefined}
+                  className={`w-full rounded-lg border ${errors.name ? "border-red-500" : "border-border"} bg-background px-4 py-2 text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary`}
                   placeholder="Votre nom"
                 />
+                {errors.name && (
+                  <p
+                    id="name-error"
+                    role="alert"
+                    className="mt-1 text-sm text-red-500"
+                  >
+                    {errors.name}
+                  </p>
+                )}
               </div>
 
               {/* Email */}
@@ -97,10 +162,20 @@ export default function ContactPage() {
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  required
-                  className="w-full rounded-lg border border-border bg-background px-4 py-2 text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  aria-invalid={!!errors.email}
+                  aria-describedby={errors.email ? "email-error" : undefined}
+                  className={`w-full rounded-lg border ${errors.email ? "border-red-500" : "border-border"} bg-background px-4 py-2 text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary`}
                   placeholder="votre@email.com"
                 />
+                {errors.email && (
+                  <p
+                    id="email-error"
+                    role="alert"
+                    className="mt-1 text-sm text-red-500"
+                  >
+                    {errors.email}
+                  </p>
+                )}
               </div>
 
               {/* Subject */}
@@ -117,10 +192,22 @@ export default function ContactPage() {
                   name="subject"
                   value={formData.subject}
                   onChange={handleChange}
-                  required
-                  className="w-full rounded-lg border border-border bg-background px-4 py-2 text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  aria-invalid={!!errors.subject}
+                  aria-describedby={
+                    errors.subject ? "subject-error" : undefined
+                  }
+                  className={`w-full rounded-lg border ${errors.subject ? "border-red-500" : "border-border"} bg-background px-4 py-2 text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary`}
                   placeholder="Sujet de votre message"
                 />
+                {errors.subject && (
+                  <p
+                    id="subject-error"
+                    role="alert"
+                    className="mt-1 text-sm text-red-500"
+                  >
+                    {errors.subject}
+                  </p>
+                )}
               </div>
 
               {/* Message */}
@@ -136,11 +223,23 @@ export default function ContactPage() {
                   name="message"
                   value={formData.message}
                   onChange={handleChange}
-                  required
                   rows={5}
-                  className="w-full resize-none rounded-lg border border-border bg-background px-4 py-2 text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  aria-invalid={!!errors.message}
+                  aria-describedby={
+                    errors.message ? "message-error" : undefined
+                  }
+                  className={`w-full resize-none rounded-lg border ${errors.message ? "border-red-500" : "border-border"} bg-background px-4 py-2 text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary`}
                   placeholder="Votre message..."
                 />
+                {errors.message && (
+                  <p
+                    id="message-error"
+                    role="alert"
+                    className="mt-1 text-sm text-red-500"
+                  >
+                    {errors.message}
+                  </p>
+                )}
               </div>
 
               {/* Submit Button */}
