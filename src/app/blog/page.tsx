@@ -44,6 +44,7 @@ export default function BlogPage() {
   // Initialize state from URL params
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [allTags, setAllTags] = useState<string[]>([]);
+  const [tagCounts, setTagCounts] = useState<Record<string, number>>({});
   const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
   const [selectedTag, setSelectedTag] = useState<string | null>(
     searchParams.get("tag") || null,
@@ -100,16 +101,23 @@ export default function BlogPage() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // Load all tags on mount (for filter buttons)
+  // Load all tags on mount (for filter buttons) with counts
   useEffect(() => {
     const loadTags = async () => {
       try {
         const response = await fetch("/api/blog");
         const result = await response.json();
         if (result.success && result.data) {
-          const tags = Array.from(
-            new Set(result.data.flatMap((p: BlogPost) => p.tags || [])),
-          ).sort() as string[];
+          // Count occurrences of each tag
+          const counts: Record<string, number> = {};
+          result.data.forEach((p: BlogPost) => {
+            (p.tags || []).forEach((tag: string) => {
+              counts[tag] = (counts[tag] || 0) + 1;
+            });
+          });
+          setTagCounts(counts);
+
+          const tags = Object.keys(counts).sort();
           setAllTags(tags);
         }
       } catch (error) {
@@ -232,6 +240,9 @@ export default function BlogPage() {
                 }`}
               >
                 {tag}
+                {tagCounts[tag] > 0 && (
+                  <span className="ml-1 opacity-70">({tagCounts[tag]})</span>
+                )}
               </button>
             ))}
           </div>

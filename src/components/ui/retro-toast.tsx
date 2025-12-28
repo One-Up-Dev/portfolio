@@ -40,9 +40,14 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   const addToast = useCallback(
-    (message: string, type: ToastType = "info", duration = 4000) => {
+    (message: string, type: ToastType = "info", duration?: number) => {
+      // Error notifications stay longer (6 seconds) so users have time to read them
+      // Other notifications use 4 seconds default
+      const defaultDuration = type === "error" ? 6000 : 4000;
+      const finalDuration = duration ?? defaultDuration;
+
       const id = `toast-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      const newToast: Toast = { id, message, type, duration };
+      const newToast: Toast = { id, message, type, duration: finalDuration };
       setToasts((prev) => [...prev, newToast]);
     },
     [],

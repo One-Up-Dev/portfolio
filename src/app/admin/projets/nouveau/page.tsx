@@ -137,11 +137,13 @@ export default function NewProjectPage() {
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    // Title is required
+    // Title is required and has max length
     if (!formData.title.trim()) {
       newErrors.title = "Le titre est requis";
     } else if (formData.title.trim().length < 3) {
       newErrors.title = "Le titre doit contenir au moins 3 caractères";
+    } else if (formData.title.length > 100) {
+      newErrors.title = "Le titre ne peut pas dépasser 100 caractères";
     }
 
     // Slug is required
@@ -282,12 +284,16 @@ export default function NewProjectPage() {
               value={formData.title}
               onChange={handleChange}
               placeholder="Nom du projet"
+              maxLength={100}
               className={`w-full px-4 py-2 bg-background border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
                 errors.title ? "border-destructive" : "border-border"
               }`}
               aria-invalid={!!errors.title}
               aria-describedby={errors.title ? "title-error" : undefined}
             />
+            <p className="mt-1 text-xs text-muted-foreground">
+              {formData.title.length}/100 caractères
+            </p>
             {errors.title && (
               <p
                 id="title-error"
