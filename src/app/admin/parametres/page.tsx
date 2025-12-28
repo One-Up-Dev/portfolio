@@ -4,6 +4,50 @@ import { useState } from "react";
 
 export default function AdminSettingsPage() {
   const [activeTab, setActiveTab] = useState("general");
+  const [exportSuccess, setExportSuccess] = useState(false);
+
+  // Export all content to JSON
+  const handleExport = () => {
+    try {
+      // Get all data from localStorage
+      const projects = JSON.parse(
+        localStorage.getItem("demo_projects") || "[]",
+      );
+      const blogPosts = JSON.parse(
+        localStorage.getItem("demo_blog_posts") || "[]",
+      );
+      const skills = JSON.parse(localStorage.getItem("demo_skills") || "[]");
+
+      // Create export object
+      const exportData = {
+        exportDate: new Date().toISOString(),
+        version: "1.0",
+        data: {
+          projects,
+          blogPosts,
+          skills,
+        },
+      };
+
+      // Create blob and download
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `oneup-portfolio-export-${new Date().toISOString().split("T")[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      setExportSuccess(true);
+      setTimeout(() => setExportSuccess(false), 3000);
+    } catch (error) {
+      console.error("Error exporting data:", error);
+    }
+  };
 
   const tabs = [
     { id: "general", label: "Général", icon: "⚙️" },
@@ -189,6 +233,14 @@ export default function AdminSettingsPage() {
             <h3 className="text-lg font-semibold text-foreground">
               Sauvegardes et Export
             </h3>
+            {exportSuccess && (
+              <div
+                className="bg-green-500/20 border border-green-500/50 text-green-500 rounded-lg p-4"
+                role="alert"
+              >
+                Export réussi! Le fichier JSON a été téléchargé.
+              </div>
+            )}
             <div className="grid gap-6 max-w-xl">
               <div className="p-4 border border-border rounded-lg">
                 <h4 className="font-medium text-foreground mb-2">
@@ -198,7 +250,10 @@ export default function AdminSettingsPage() {
                   Téléchargez une copie de tous vos projets, articles et
                   compétences au format JSON.
                 </p>
-                <button className="px-4 py-2 bg-accent text-foreground rounded-lg hover:bg-accent/80 transition-colors">
+                <button
+                  onClick={handleExport}
+                  className="px-4 py-2 bg-accent text-foreground rounded-lg hover:bg-accent/80 transition-colors"
+                >
                   📥 Exporter JSON
                 </button>
               </div>
