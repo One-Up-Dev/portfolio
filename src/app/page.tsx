@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight, Code2, Cpu, Zap } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -51,11 +52,20 @@ export default function HomePage() {
         </div>
 
         <div className="container mx-auto max-w-4xl text-center">
-          {/* Logo/Icon */}
-          <div className="mb-8 text-7xl">🎮</div>
+          {/* Logo */}
+          <div className="mb-8 flex justify-center">
+            <Image
+              src="/logo-oneup.png"
+              alt="ONEUP Logo"
+              width={120}
+              height={120}
+              className="h-32 w-32 drop-shadow-lg"
+              priority
+            />
+          </div>
 
           {/* Main heading */}
-          <h1 className="mb-6 font-pixel text-3xl text-primary md:text-4xl lg:text-5xl">
+          <h1 className="mb-6 font-pixel text-4xl text-primary md:text-5xl lg:text-6xl">
             ONEUP
           </h1>
 
