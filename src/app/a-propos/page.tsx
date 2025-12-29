@@ -1,14 +1,111 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Download, Calendar, MapPin, Heart } from "lucide-react";
 
-export const metadata = {
-  title: "À propos - ONEUP Portfolio",
-  description:
-    "Découvrez mon parcours de reconversion professionnelle, de la restauration au développement full-stack.",
+interface AboutContent {
+  myJourney: string;
+  myStory: string;
+  whyDevelopment: string;
+  mySpecialties: string;
+  dateOfBirth: string;
+}
+
+const defaultContent: AboutContent = {
+  myJourney: `Plus de 20 ans d'expérience dans la restauration. Apprentissage de la gestion du stress, du travail en équipe et de la persévérance. Premiers pas en autodidacte en 2020, exploration de HTML, CSS, JavaScript. Formation intensive en 2023 avec React, Next.js, TypeScript. Découverte de n8n et des outils d'automatisation. Adoption de Claude Code et du vibe coding en 2024. Début de la reconversion professionnelle officielle.`,
+  myStory: `Après plus de 20 ans dans la restauration, j'ai décidé de suivre ma passion pour la technologie et le développement. Cette reconversion professionnelle représente un nouveau chapitre passionnant de ma vie.\n\nMon expérience de vie m'a appris la persévérance, la gestion du stress et le travail en équipe - des compétences essentielles que j'apporte aujourd'hui dans mes projets de développement.`,
+  whyDevelopment: `La programmation a toujours été une passion cachée. Autodidacte depuis des années, j'ai finalement décidé d'en faire mon métier. L'arrivée de l'IA et des outils comme Claude Code m'ont convaincu que c'était le bon moment.\n\nJe suis particulièrement attiré par l'automatisation avec n8n, le développement assisté par IA, et la création d'interfaces utilisateur modernes et intuitives.`,
+  mySpecialties: `n8n Automation - Création de workflows automatisés\nClaude Code - Développement assisté par IA\nReact & Next.js - Applications web modernes\nTypeScript - Code typé et maintenable\nVibe Coding - Approche créative du développement`,
+  dateOfBirth: "1978-06-15",
 };
 
+// Calculate age from date of birth
+function calculateAge(dateOfBirth: string): number {
+  if (!dateOfBirth) return 46;
+  const today = new Date();
+  const birthDate = new Date(dateOfBirth);
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  if (
+    monthDiff < 0 ||
+    (monthDiff === 0 && today.getDate() < birthDate.getDate())
+  ) {
+    age--;
+  }
+  return age;
+}
+
+// Parse specialties string into array
+function parseSpecialties(
+  specialtiesStr: string,
+): { name: string; description: string }[] {
+  return specialtiesStr
+    .split("\n")
+    .filter((line) => line.trim())
+    .map((line) => {
+      const parts = line.split(" - ");
+      return {
+        name: parts[0]?.trim() || "",
+        description: parts[1]?.trim() || "",
+      };
+    });
+}
+
 export default function AboutPage() {
+  const [content, setContent] = useState<AboutContent>(defaultContent);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadContent = async () => {
+      try {
+        const response = await fetch("/api/settings");
+        if (response.ok) {
+          const data = await response.json();
+          if (data.data) {
+            setContent({
+              myJourney: data.data.aboutMyJourney || defaultContent.myJourney,
+              myStory: data.data.aboutMyStory || defaultContent.myStory,
+              whyDevelopment:
+                data.data.aboutWhyDevelopment || defaultContent.whyDevelopment,
+              mySpecialties:
+                data.data.aboutMySpecialties || defaultContent.mySpecialties,
+              dateOfBirth:
+                data.data.aboutDateOfBirth || defaultContent.dateOfBirth,
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Error loading content:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadContent();
+  }, []);
+
+  const age = calculateAge(content.dateOfBirth);
+  const specialties = parseSpecialties(content.mySpecialties);
+
+  // Split story into paragraphs
+  const storyParagraphs = content.myStory.split("\n").filter((p) => p.trim());
+  const whyDevParagraphs = content.whyDevelopment
+    .split("\n")
+    .filter((p) => p.trim());
+
+  if (loading) {
+    return (
+      <div className="py-20">
+        <div className="container mx-auto max-w-4xl px-4">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-muted-foreground">Chargement...</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="py-20">
       <div className="container mx-auto max-w-4xl px-4">
@@ -45,7 +142,7 @@ export default function AboutPage() {
             <Calendar className="h-5 w-5 text-primary" />
             <div>
               <p className="text-sm text-muted-foreground">Âge</p>
-              <p className="font-medium">46 ans</p>
+              <p className="font-medium">{age} ans</p>
             </div>
           </div>
           <div className="flex items-center gap-3 rounded-lg border border-border bg-card p-4">
@@ -194,35 +291,22 @@ export default function AboutPage() {
             <h2 className="mb-4 text-xl font-semibold text-foreground">
               Mon histoire
             </h2>
-            <p className="mb-4 text-muted-foreground">
-              Après plus de 20 ans dans la restauration, j&apos;ai décidé de
-              suivre ma passion pour la technologie et le développement. Cette
-              reconversion professionnelle représente un nouveau chapitre
-              passionnant de ma vie.
-            </p>
-            <p className="text-muted-foreground">
-              Mon expérience de vie m&apos;a appris la persévérance, la gestion
-              du stress et le travail en équipe - des compétences essentielles
-              que j&apos;apporte aujourd&apos;hui dans mes projets de
-              développement.
-            </p>
+            {storyParagraphs.map((paragraph, index) => (
+              <p key={index} className="mb-4 text-muted-foreground">
+                {paragraph}
+              </p>
+            ))}
           </section>
 
           <section className="mb-12">
             <h2 className="mb-4 text-xl font-semibold text-foreground">
               Pourquoi le développement ?
             </h2>
-            <p className="mb-4 text-muted-foreground">
-              La programmation a toujours été une passion cachée. Autodidacte
-              depuis des années, j&apos;ai finalement décidé d&apos;en faire mon
-              métier. L&apos;arrivée de l&apos;IA et des outils comme Claude
-              Code m&apos;ont convaincu que c&apos;était le bon moment.
-            </p>
-            <p className="text-muted-foreground">
-              Je suis particulièrement attiré par l&apos;automatisation avec
-              n8n, le développement assisté par IA, et la création
-              d&apos;interfaces utilisateur modernes et intuitives.
-            </p>
+            {whyDevParagraphs.map((paragraph, index) => (
+              <p key={index} className="mb-4 text-muted-foreground">
+                {paragraph}
+              </p>
+            ))}
           </section>
 
           <section className="mb-12">
@@ -230,26 +314,12 @@ export default function AboutPage() {
               Mes spécialités
             </h2>
             <ul className="list-inside list-disc space-y-2 text-muted-foreground">
-              <li>
-                <strong className="text-foreground">n8n Automation</strong> -
-                Création de workflows automatisés
-              </li>
-              <li>
-                <strong className="text-foreground">Claude Code</strong> -
-                Développement assisté par IA
-              </li>
-              <li>
-                <strong className="text-foreground">React & Next.js</strong> -
-                Applications web modernes
-              </li>
-              <li>
-                <strong className="text-foreground">TypeScript</strong> - Code
-                typé et maintenable
-              </li>
-              <li>
-                <strong className="text-foreground">Vibe Coding</strong> -
-                Approche créative du développement
-              </li>
+              {specialties.map((specialty, index) => (
+                <li key={index}>
+                  <strong className="text-foreground">{specialty.name}</strong>
+                  {specialty.description && ` - ${specialty.description}`}
+                </li>
+              ))}
             </ul>
           </section>
 
@@ -259,7 +329,7 @@ export default function AboutPage() {
             </h2>
             <blockquote className="border-l-4 border-primary bg-card p-4 italic text-muted-foreground">
               &quot;Il n&apos;est jamais trop tard pour apprendre et se
-              réinventer. À 46 ans, j&apos;en suis la preuve vivante.&quot;
+              réinventer. À {age} ans, j&apos;en suis la preuve vivante.&quot;
             </blockquote>
           </section>
         </div>

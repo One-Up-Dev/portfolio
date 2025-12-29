@@ -17,6 +17,7 @@ interface Session {
 // Admin sidebar navigation items
 const navItems = [
   { name: "Dashboard", href: "/admin", icon: "📊" },
+  { name: "Contenu", href: "/admin/contenu", icon: "📄" },
   { name: "Projets", href: "/admin/projets", icon: "🚀" },
   { name: "Blog", href: "/admin/blog", icon: "📝" },
   { name: "Compétences", href: "/admin/competences", icon: "⚡" },

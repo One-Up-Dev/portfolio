@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ArrowLeft, Calendar, Clock, Tag } from "lucide-react";
 import { useParams, notFound } from "next/navigation";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import DOMPurify from "dompurify";
 
 interface BlogPost {

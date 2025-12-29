@@ -28,7 +28,6 @@ const SOUNDS = {
 
 export function SoundProvider({ children }: { children: React.ReactNode }) {
   const [soundEnabled, setSoundEnabled] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Load preference from localStorage on mount
   useEffect(() => {

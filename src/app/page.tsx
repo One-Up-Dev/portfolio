@@ -5,23 +5,65 @@ import Image from "next/image";
 import { ArrowRight, Code2, Cpu, Zap } from "lucide-react";
 import { useEffect, useState } from "react";
 
+interface HomeContent {
+  heroGifUrl: string;
+  logoUrl: string;
+  heroPhrase: string;
+  specialty1Title: string;
+  specialty1Description: string;
+  specialty2Title: string;
+  specialty2Description: string;
+  specialty3Title: string;
+  specialty3Description: string;
+}
+
+const defaultContent: HomeContent = {
+  heroGifUrl: "/images/miyazaki-nature.gif",
+  logoUrl: "/logo-oneup.png",
+  heroPhrase: "Développeur Full-Stack en Reconversion",
+  specialty1Title: "Automatisation n8n",
+  specialty1Description:
+    "Création de workflows automatisés pour optimiser les processus métier et gagner en productivité.",
+  specialty2Title: "Claude Code",
+  specialty2Description:
+    "Développement assisté par IA avec Claude pour un code de qualité et une productivité décuplée.",
+  specialty3Title: "Vibe Coding",
+  specialty3Description:
+    "Approche créative du développement alliant passion, intuition et bonnes pratiques techniques.",
+};
+
 export default function HomePage() {
   const [scrollY, setScrollY] = useState(0);
-  const [heroGifUrl, setHeroGifUrl] = useState("/images/miyazaki-nature.gif");
-  const [logoUrl, setLogoUrl] = useState("/logo-oneup.png");
+  const [content, setContent] = useState<HomeContent>(defaultContent);
 
-  // Load appearance settings
+  // Load appearance and content settings
   useEffect(() => {
     const loadSettings = async () => {
       try {
         const response = await fetch("/api/settings");
         if (response.ok) {
           const data = await response.json();
-          if (data.data?.heroGifUrl) {
-            setHeroGifUrl(data.data.heroGifUrl);
-          }
-          if (data.data?.logoUrl) {
-            setLogoUrl(data.data.logoUrl);
+          if (data.data) {
+            setContent({
+              heroGifUrl: data.data.heroGifUrl || defaultContent.heroGifUrl,
+              logoUrl: data.data.logoUrl || defaultContent.logoUrl,
+              heroPhrase: data.data.homeHeroPhrase || defaultContent.heroPhrase,
+              specialty1Title:
+                data.data.homeSpecialty1Title || defaultContent.specialty1Title,
+              specialty1Description:
+                data.data.homeSpecialty1Description ||
+                defaultContent.specialty1Description,
+              specialty2Title:
+                data.data.homeSpecialty2Title || defaultContent.specialty2Title,
+              specialty2Description:
+                data.data.homeSpecialty2Description ||
+                defaultContent.specialty2Description,
+              specialty3Title:
+                data.data.homeSpecialty3Title || defaultContent.specialty3Title,
+              specialty3Description:
+                data.data.homeSpecialty3Description ||
+                defaultContent.specialty3Description,
+            });
           }
         }
       } catch (error) {
@@ -55,7 +97,7 @@ export default function HomePage() {
           <div
             className="absolute inset-0 bg-cover bg-center bg-no-repeat"
             style={{
-              backgroundImage: `url('${heroGifUrl}')`,
+              backgroundImage: `url('${content.heroGifUrl}')`,
               filter: "brightness(0.6) saturate(0.8)",
             }}
           />
@@ -78,7 +120,7 @@ export default function HomePage() {
           {/* Logo */}
           <div className="mb-8 flex justify-center">
             <Image
-              src={logoUrl}
+              src={content.logoUrl}
               alt="ONEUP Logo"
               width={120}
               height={120}
@@ -95,7 +137,7 @@ export default function HomePage() {
 
           {/* Subtitle */}
           <p className="mb-4 text-xl font-medium text-foreground md:text-2xl">
-            Développeur Full-Stack en Reconversion
+            {content.heroPhrase}
           </p>
 
           {/* Tagline */}
@@ -149,10 +191,11 @@ export default function HomePage() {
               <div className="mb-4 inline-flex rounded-lg bg-primary/10 p-3 text-primary">
                 <Cpu className="h-6 w-6" />
               </div>
-              <h3 className="mb-2 text-lg font-semibold">Automatisation n8n</h3>
+              <h3 className="mb-2 text-lg font-semibold">
+                {content.specialty1Title}
+              </h3>
               <p className="text-sm text-muted-foreground">
-                Création de workflows automatisés pour optimiser les processus
-                métier et gagner en productivité.
+                {content.specialty1Description}
               </p>
             </div>
 
@@ -161,10 +204,11 @@ export default function HomePage() {
               <div className="mb-4 inline-flex rounded-lg bg-primary/10 p-3 text-primary">
                 <Code2 className="h-6 w-6" />
               </div>
-              <h3 className="mb-2 text-lg font-semibold">Claude Code</h3>
+              <h3 className="mb-2 text-lg font-semibold">
+                {content.specialty2Title}
+              </h3>
               <p className="text-sm text-muted-foreground">
-                Développement assisté par IA avec Claude pour un code de qualité
-                et une productivité décuplée.
+                {content.specialty2Description}
               </p>
             </div>
 
@@ -173,10 +217,11 @@ export default function HomePage() {
               <div className="mb-4 inline-flex rounded-lg bg-primary/10 p-3 text-primary">
                 <Zap className="h-6 w-6" />
               </div>
-              <h3 className="mb-2 text-lg font-semibold">Vibe Coding</h3>
+              <h3 className="mb-2 text-lg font-semibold">
+                {content.specialty3Title}
+              </h3>
               <p className="text-sm text-muted-foreground">
-                Approche créative du développement alliant passion, intuition et
-                bonnes pratiques techniques.
+                {content.specialty3Description}
               </p>
             </div>
           </div>

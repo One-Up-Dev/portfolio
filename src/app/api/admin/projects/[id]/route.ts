@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "../../../../../../db";
 import { projects, pageViews } from "../../../../../../db/schema";
-import { eq, like } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 // Check if the request has a valid admin session
 function isAuthenticated(request: NextRequest): boolean {
