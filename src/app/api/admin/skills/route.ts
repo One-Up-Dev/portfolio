@@ -144,7 +144,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PUT /api/admin/skills - Reorder skills (bulk update)
+// PUT /api/admin/skills - Reorder skills or update proficiency (bulk update)
 export async function PUT(request: NextRequest) {
   if (!isAuthenticated(request)) {
     return NextResponse.json(
@@ -156,7 +156,7 @@ export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
 
-    // Expecting an array of { id, orderIndex } objects
+    // Expecting an array of { id, orderIndex, proficiency? } objects
     if (!Array.isArray(body.skills)) {
       return NextResponse.json(
         { error: "Bad Request", message: "Skills array is required" },
@@ -164,27 +164,44 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Update each skill's orderIndex
+    // Update each skill's orderIndex and/or proficiency
     for (const skillUpdate of body.skills) {
-      if (skillUpdate.id && typeof skillUpdate.orderIndex === "number") {
+      if (skillUpdate.id) {
+        const updateData: {
+          orderIndex?: number;
+          proficiency?: number;
+          updatedAt: string;
+        } = {
+          updatedAt: new Date().toISOString(),
+        };
+
+        if (typeof skillUpdate.orderIndex === "number") {
+          updateData.orderIndex = skillUpdate.orderIndex;
+        }
+
+        if (typeof skillUpdate.proficiency === "number") {
+          // Clamp proficiency between 0 and 100
+          updateData.proficiency = Math.max(
+            0,
+            Math.min(100, skillUpdate.proficiency),
+          );
+        }
+
         await db
           .update(skills)
-          .set({
-            orderIndex: skillUpdate.orderIndex,
-            updatedAt: new Date().toISOString(),
-          })
+          .set(updateData)
           .where(eq(skills.id, skillUpdate.id));
       }
     }
 
     return NextResponse.json({
       success: true,
-      message: "Skills reordered successfully",
+      message: "Skills updated successfully",
     });
   } catch (error) {
-    console.error("Error reordering skills:", error);
+    console.error("Error updating skills:", error);
     return NextResponse.json(
-      { error: "Internal Server Error", message: "Failed to reorder skills" },
+      { error: "Internal Server Error", message: "Failed to update skills" },
       { status: 500 },
     );
   }

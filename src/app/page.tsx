@@ -9,32 +9,68 @@ interface HomeContent {
   heroGifUrl: string;
   logoUrl: string;
   heroPhrase: string;
-  specialty1Title: string;
-  specialty1Description: string;
-  specialty2Title: string;
-  specialty2Description: string;
-  specialty3Title: string;
-  specialty3Description: string;
+}
+
+interface SpecialtyFrame {
+  id: string;
+  title: string;
+  description: string;
+  icon: string | null;
+  orderIndex: number;
 }
 
 const defaultContent: HomeContent = {
   heroGifUrl: "",
   logoUrl: "/logo-oneup.png",
   heroPhrase: "Développeur Full-Stack en Reconversion",
-  specialty1Title: "Automatisation n8n",
-  specialty1Description:
-    "Création de workflows automatisés pour optimiser les processus métier et gagner en productivité.",
-  specialty2Title: "Claude Code",
-  specialty2Description:
-    "Développement assisté par IA avec Claude pour un code de qualité et une productivité décuplée.",
-  specialty3Title: "Vibe Coding",
-  specialty3Description:
-    "Approche créative du développement alliant passion, intuition et bonnes pratiques techniques.",
+};
+
+// Default specialty frames (used when database is empty)
+const defaultSpecialties: SpecialtyFrame[] = [
+  {
+    id: "default-1",
+    title: "Automatisation n8n",
+    description:
+      "Création de workflows automatisés pour optimiser les processus métier et gagner en productivité.",
+    icon: "🤖",
+    orderIndex: 0,
+  },
+  {
+    id: "default-2",
+    title: "Claude Code",
+    description:
+      "Développement assisté par IA avec Claude pour un code de qualité et une productivité décuplée.",
+    icon: "💻",
+    orderIndex: 1,
+  },
+  {
+    id: "default-3",
+    title: "Vibe Coding",
+    description:
+      "Approche créative du développement alliant passion, intuition et bonnes pratiques techniques.",
+    icon: "⚡",
+    orderIndex: 2,
+  },
+];
+
+// Map icon emoji to lucide icons for fallback
+const getIconComponent = (icon: string | null, index: number) => {
+  // If we have an emoji icon, return it as text
+  if (icon) {
+    return <span className="text-2xl">{icon}</span>;
+  }
+  // Fallback to lucide icons based on index
+  const icons = [Cpu, Code2, Zap];
+  const IconComponent = icons[index % icons.length];
+  return <IconComponent className="h-6 w-6" />;
 };
 
 export default function HomePage() {
   const [scrollY, setScrollY] = useState(0);
   const [content, setContent] = useState<HomeContent>(defaultContent);
+  const [specialties, setSpecialties] =
+    useState<SpecialtyFrame[]>(defaultSpecialties);
+  const [specialtiesLoaded, setSpecialtiesLoaded] = useState(false);
 
   // Load appearance and content settings
   useEffect(() => {
@@ -48,21 +84,6 @@ export default function HomePage() {
               heroGifUrl: data.data.heroGifUrl || defaultContent.heroGifUrl,
               logoUrl: data.data.logoUrl || defaultContent.logoUrl,
               heroPhrase: data.data.homeHeroPhrase || defaultContent.heroPhrase,
-              specialty1Title:
-                data.data.homeSpecialty1Title || defaultContent.specialty1Title,
-              specialty1Description:
-                data.data.homeSpecialty1Description ||
-                defaultContent.specialty1Description,
-              specialty2Title:
-                data.data.homeSpecialty2Title || defaultContent.specialty2Title,
-              specialty2Description:
-                data.data.homeSpecialty2Description ||
-                defaultContent.specialty2Description,
-              specialty3Title:
-                data.data.homeSpecialty3Title || defaultContent.specialty3Title,
-              specialty3Description:
-                data.data.homeSpecialty3Description ||
-                defaultContent.specialty3Description,
             });
           }
         }
@@ -71,6 +92,27 @@ export default function HomePage() {
       }
     };
     loadSettings();
+  }, []);
+
+  // Load specialty frames from database
+  useEffect(() => {
+    const loadSpecialties = async () => {
+      try {
+        const response = await fetch("/api/specialty-frames");
+        if (response.ok) {
+          const data = await response.json();
+          if (data.data && data.data.length > 0) {
+            setSpecialties(data.data);
+          }
+          // If no data in DB, keep using defaultSpecialties
+        }
+      } catch (error) {
+        console.error("Error loading specialties:", error);
+      } finally {
+        setSpecialtiesLoaded(true);
+      }
+    };
+    loadSpecialties();
   }, []);
 
   // Parallax effect on scroll
@@ -142,7 +184,7 @@ export default function HomePage() {
 
           {/* Tagline */}
           <p className="mb-8 text-lg text-muted-foreground">
-            n8n • claude-code • automatisation • vibe coding
+            n8n &bull; claude-code &bull; automatisation &bull; vibe coding
           </p>
 
           {/* CTA Buttons - Pixel Art Style */}
@@ -175,7 +217,7 @@ export default function HomePage() {
         </a>
       </section>
 
-      {/* Features Section */}
+      {/* Features Section - Dynamic 3-column grid */}
       <section
         id="specialites"
         className="border-t border-border bg-card py-20"
@@ -185,45 +227,24 @@ export default function HomePage() {
             Spécialités
           </h2>
 
-          <div className="grid gap-8 md:grid-cols-3">
-            {/* Feature 1 */}
-            <div className="group rounded-lg border border-border bg-background p-6 transition-all hover:border-primary/50">
-              <div className="mb-4 inline-flex rounded-lg bg-primary/10 p-3 text-primary">
-                <Cpu className="h-6 w-6" />
+          {/* Dynamic grid - 1 col mobile, 2 cols tablet, 3 cols desktop */}
+          <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-3">
+            {specialties.map((specialty, index) => (
+              <div
+                key={specialty.id}
+                className="group rounded-lg border border-border bg-background p-6 transition-all hover:border-primary/50"
+              >
+                <div className="mb-4 inline-flex rounded-lg bg-primary/10 p-3 text-primary">
+                  {getIconComponent(specialty.icon, index)}
+                </div>
+                <h3 className="mb-2 text-lg font-semibold">
+                  {specialty.title}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {specialty.description}
+                </p>
               </div>
-              <h3 className="mb-2 text-lg font-semibold">
-                {content.specialty1Title}
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                {content.specialty1Description}
-              </p>
-            </div>
-
-            {/* Feature 2 */}
-            <div className="group rounded-lg border border-border bg-background p-6 transition-all hover:border-primary/50">
-              <div className="mb-4 inline-flex rounded-lg bg-primary/10 p-3 text-primary">
-                <Code2 className="h-6 w-6" />
-              </div>
-              <h3 className="mb-2 text-lg font-semibold">
-                {content.specialty2Title}
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                {content.specialty2Description}
-              </p>
-            </div>
-
-            {/* Feature 3 */}
-            <div className="group rounded-lg border border-border bg-background p-6 transition-all hover:border-primary/50">
-              <div className="mb-4 inline-flex rounded-lg bg-primary/10 p-3 text-primary">
-                <Zap className="h-6 w-6" />
-              </div>
-              <h3 className="mb-2 text-lg font-semibold">
-                {content.specialty3Title}
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                {content.specialty3Description}
-              </p>
-            </div>
+            ))}
           </div>
         </div>
       </section>

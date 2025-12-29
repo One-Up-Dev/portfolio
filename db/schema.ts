@@ -94,6 +94,7 @@ export const skills = sqliteTable("skills", {
     enum: ["frontend", "backend", "outils", "soft_skills"],
   }).notNull(),
   iconUrl: text("icon_url"),
+  proficiency: integer("proficiency").default(75).notNull(), // Proficiency percentage (0-100)
   orderIndex: integer("order_index").default(0),
   createdAt: text("created_at")
     .default(sql`(datetime('now'))`)
@@ -199,6 +200,23 @@ export const timelineEntries = sqliteTable("timeline_entries", {
     .notNull(),
 });
 
+// Specialty frames table for Home page
+export const specialtyFrames = sqliteTable("specialty_frames", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => generateUUID()),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  icon: text("icon").default("⚡"), // Emoji or icon reference
+  orderIndex: integer("order_index").default(0).notNull(),
+  createdAt: text("created_at")
+    .default(sql`(datetime('now'))`)
+    .notNull(),
+  updatedAt: text("updated_at")
+    .default(sql`(datetime('now'))`)
+    .notNull(),
+});
+
 // Type exports for use in application
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
@@ -229,3 +247,6 @@ export type NewSiteSetting = typeof siteSettings.$inferInsert;
 
 export type TimelineEntry = typeof timelineEntries.$inferSelect;
 export type NewTimelineEntry = typeof timelineEntries.$inferInsert;
+
+export type SpecialtyFrame = typeof specialtyFrames.$inferSelect;
+export type NewSpecialtyFrame = typeof specialtyFrames.$inferInsert;
