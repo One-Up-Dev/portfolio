@@ -107,8 +107,6 @@ export default function HomePage() {
         }
       } catch (error) {
         console.error("Error loading specialties:", error);
-      } finally {
-        setSpecialtiesLoaded(true);
       }
     };
     loadSpecialties();

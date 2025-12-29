@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -55,7 +56,7 @@ function highlightMatch(text: string, query: string): React.ReactNode {
   );
 }
 
-export default function BlogPage() {
+function BlogPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -402,5 +403,13 @@ export default function BlogPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function BlogPage() {
+  return (
+    <Suspense>
+      <BlogPageContent />
+    </Suspense>
   );
 }
