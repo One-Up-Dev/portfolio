@@ -1,7 +1,20 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Save, FileText, Home, User } from "lucide-react";
+import {
+  Save,
+  FileText,
+  Home,
+  User,
+  Plus,
+  Trash2,
+  Edit3,
+  X,
+  MapPin,
+  Briefcase,
+  Calendar,
+  Code,
+} from "lucide-react";
 
 interface ContentState {
   // About page content
@@ -19,6 +32,18 @@ interface ContentState {
   homeSpecialty2Description: string;
   homeSpecialty3Title: string;
   homeSpecialty3Description: string;
+}
+
+interface TimelineEntry {
+  id: string;
+  period: string;
+  title: string;
+  description: string;
+  location: string | null;
+  skills: string | null;
+  orderIndex: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 const defaultContent: ContentState = {
@@ -40,13 +65,37 @@ const defaultContent: ContentState = {
     "Approche créative du développement alliant passion, intuition et bonnes pratiques techniques.",
 };
 
+const emptyTimelineEntry: Omit<
+  TimelineEntry,
+  "id" | "createdAt" | "updatedAt" | "orderIndex"
+> = {
+  period: "",
+  title: "",
+  description: "",
+  location: "",
+  skills: "",
+};
+
 export default function ContentManagementPage() {
-  const [activeTab, setActiveTab] = useState<"about" | "home">("about");
+  const [activeTab, setActiveTab] = useState<"about" | "home" | "timeline">(
+    "about",
+  );
   const [content, setContent] = useState<ContentState>(defaultContent);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Timeline state
+  const [timelineEntries, setTimelineEntries] = useState<TimelineEntry[]>([]);
+  const [editingEntry, setEditingEntry] = useState<TimelineEntry | null>(null);
+  const [newEntry, setNewEntry] =
+    useState<
+      Omit<TimelineEntry, "id" | "createdAt" | "updatedAt" | "orderIndex">
+    >(emptyTimelineEntry);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [timelineLoading, setTimelineLoading] = useState(false);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   // Load content on mount
   useEffect(() => {
@@ -103,6 +152,26 @@ export default function ContentManagementPage() {
     loadContent();
   }, []);
 
+  // Load timeline entries
+  useEffect(() => {
+    const loadTimeline = async () => {
+      try {
+        const response = await fetch("/api/admin/timeline", {
+          credentials: "include",
+        });
+        if (response.ok) {
+          const data = await response.json();
+          if (data.data) {
+            setTimelineEntries(data.data);
+          }
+        }
+      } catch (err) {
+        console.error("Error loading timeline:", err);
+      }
+    };
+    loadTimeline();
+  }, []);
+
   // Calculate age from date of birth
   const calculateAge = (dateOfBirth: string): number => {
     if (!dateOfBirth) return 46;
@@ -152,6 +221,115 @@ export default function ContentManagementPage() {
     setContent((prev) => ({ ...prev, [key]: value }));
   };
 
+  // Timeline CRUD operations
+  const handleAddTimelineEntry = async () => {
+    if (!newEntry.period || !newEntry.title || !newEntry.description) {
+      setError("Période, titre et description sont requis");
+      return;
+    }
+
+    setTimelineLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/admin/timeline", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(newEntry),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setTimelineEntries((prev) => [...prev, data.data]);
+        setNewEntry(emptyTimelineEntry);
+        setShowAddForm(false);
+        setSuccess(true);
+        setTimeout(() => setSuccess(false), 3000);
+      } else {
+        const errorData = await response.json();
+        setError(errorData.message || "Erreur lors de l'ajout");
+      }
+    } catch (err) {
+      console.error("Error adding timeline entry:", err);
+      setError("Erreur lors de l'ajout de l'entrée");
+    } finally {
+      setTimelineLoading(false);
+    }
+  };
+
+  const handleUpdateTimelineEntry = async () => {
+    if (!editingEntry) return;
+
+    if (
+      !editingEntry.period ||
+      !editingEntry.title ||
+      !editingEntry.description
+    ) {
+      setError("Période, titre et description sont requis");
+      return;
+    }
+
+    setTimelineLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/admin/timeline", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(editingEntry),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setTimelineEntries((prev) =>
+          prev.map((entry) =>
+            entry.id === editingEntry.id ? data.data : entry,
+          ),
+        );
+        setEditingEntry(null);
+        setSuccess(true);
+        setTimeout(() => setSuccess(false), 3000);
+      } else {
+        const errorData = await response.json();
+        setError(errorData.message || "Erreur lors de la mise à jour");
+      }
+    } catch (err) {
+      console.error("Error updating timeline entry:", err);
+      setError("Erreur lors de la mise à jour de l'entrée");
+    } finally {
+      setTimelineLoading(false);
+    }
+  };
+
+  const handleDeleteTimelineEntry = async (id: string) => {
+    setTimelineLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/admin/timeline?id=${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        setTimelineEntries((prev) => prev.filter((entry) => entry.id !== id));
+        setDeleteConfirmId(null);
+        setSuccess(true);
+        setTimeout(() => setSuccess(false), 3000);
+      } else {
+        const errorData = await response.json();
+        setError(errorData.message || "Erreur lors de la suppression");
+      }
+    } catch (err) {
+      console.error("Error deleting timeline entry:", err);
+      setError("Erreur lors de la suppression de l'entrée");
+    } finally {
+      setTimelineLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -172,14 +350,16 @@ export default function ContentManagementPage() {
             Modifiez le contenu des pages publiques
           </p>
         </div>
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="inline-flex items-center gap-2 px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
-        >
-          <Save className="h-4 w-4" />
-          {saving ? "Sauvegarde..." : "Sauvegarder tout"}
-        </button>
+        {activeTab !== "timeline" && (
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="inline-flex items-center gap-2 px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
+          >
+            <Save className="h-4 w-4" />
+            {saving ? "Sauvegarde..." : "Sauvegarder tout"}
+          </button>
+        )}
       </div>
 
       {/* Success/Error messages */}
@@ -225,6 +405,17 @@ export default function ContentManagementPage() {
           >
             <Home className="h-4 w-4" />
             Page Accueil
+          </button>
+          <button
+            onClick={() => setActiveTab("timeline")}
+            className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === "timeline"
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Calendar className="h-4 w-4" />
+            Mon Parcours (Timeline)
           </button>
         </nav>
       </div>
@@ -512,19 +703,419 @@ export default function ContentManagementPage() {
             </div>
           </div>
         )}
+
+        {activeTab === "timeline" && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-primary" />
+                Mon Parcours (Timeline)
+              </h3>
+              <button
+                onClick={() => setShowAddForm(true)}
+                disabled={showAddForm}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
+              >
+                <Plus className="h-4 w-4" />
+                Ajouter une entrée
+              </button>
+            </div>
+
+            <p className="text-sm text-muted-foreground">
+              Gérez les entrées de votre timeline professionnelle. Chaque entrée
+              comprend 5 champs : Période, Titre, Description, Localisation et
+              Compétences.
+            </p>
+
+            {/* Add new entry form */}
+            {showAddForm && (
+              <div className="p-6 border-2 border-dashed border-primary/50 rounded-lg bg-primary/5">
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="font-semibold text-foreground flex items-center gap-2">
+                    <Plus className="h-4 w-4 text-primary" />
+                    Nouvelle entrée timeline
+                  </h4>
+                  <button
+                    onClick={() => {
+                      setShowAddForm(false);
+                      setNewEntry(emptyTimelineEntry);
+                    }}
+                    className="p-1 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  {/* Period */}
+                  <div>
+                    <label className="flex items-center gap-2 text-sm font-medium text-foreground mb-2">
+                      <Calendar className="h-4 w-4 text-primary" />
+                      Période *
+                    </label>
+                    <input
+                      type="text"
+                      value={newEntry.period}
+                      onChange={(e) =>
+                        setNewEntry((prev) => ({
+                          ...prev,
+                          period: e.target.value,
+                        }))
+                      }
+                      className="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground"
+                      placeholder="Ex: 2020-2022 ou Jan 2020 - Mar 2022"
+                    />
+                  </div>
+
+                  {/* Title */}
+                  <div>
+                    <label className="flex items-center gap-2 text-sm font-medium text-foreground mb-2">
+                      <Briefcase className="h-4 w-4 text-primary" />
+                      Titre *
+                    </label>
+                    <input
+                      type="text"
+                      value={newEntry.title}
+                      onChange={(e) =>
+                        setNewEntry((prev) => ({
+                          ...prev,
+                          title: e.target.value,
+                        }))
+                      }
+                      className="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground"
+                      placeholder="Ex: Senior Developer at TechCorp"
+                    />
+                  </div>
+
+                  {/* Description */}
+                  <div className="md:col-span-2">
+                    <label className="flex items-center gap-2 text-sm font-medium text-foreground mb-2">
+                      <FileText className="h-4 w-4 text-primary" />
+                      Description *
+                    </label>
+                    <textarea
+                      value={newEntry.description}
+                      onChange={(e) =>
+                        setNewEntry((prev) => ({
+                          ...prev,
+                          description: e.target.value,
+                        }))
+                      }
+                      rows={3}
+                      className="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground resize-none"
+                      placeholder="Ex: Led frontend team, built React applications"
+                    />
+                  </div>
+
+                  {/* Location */}
+                  <div>
+                    <label className="flex items-center gap-2 text-sm font-medium text-foreground mb-2">
+                      <MapPin className="h-4 w-4 text-primary" />
+                      Localisation
+                    </label>
+                    <input
+                      type="text"
+                      value={newEntry.location || ""}
+                      onChange={(e) =>
+                        setNewEntry((prev) => ({
+                          ...prev,
+                          location: e.target.value,
+                        }))
+                      }
+                      className="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground"
+                      placeholder="Ex: Remote / Paris, France"
+                    />
+                  </div>
+
+                  {/* Skills */}
+                  <div>
+                    <label className="flex items-center gap-2 text-sm font-medium text-foreground mb-2">
+                      <Code className="h-4 w-4 text-primary" />
+                      Compétences
+                    </label>
+                    <input
+                      type="text"
+                      value={newEntry.skills || ""}
+                      onChange={(e) =>
+                        setNewEntry((prev) => ({
+                          ...prev,
+                          skills: e.target.value,
+                        }))
+                      }
+                      className="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground"
+                      placeholder="Ex: React, Node.js, TypeScript"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 mt-4">
+                  <button
+                    onClick={() => {
+                      setShowAddForm(false);
+                      setNewEntry(emptyTimelineEntry);
+                    }}
+                    className="px-4 py-2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    onClick={handleAddTimelineEntry}
+                    disabled={timelineLoading}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
+                  >
+                    <Save className="h-4 w-4" />
+                    {timelineLoading ? "Ajout..." : "Ajouter"}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Timeline entries list */}
+            <div className="space-y-4">
+              {timelineEntries.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Aucune entrée dans la timeline.</p>
+                  <p className="text-sm">
+                    Cliquez sur &quot;Ajouter une entrée&quot; pour commencer.
+                  </p>
+                </div>
+              ) : (
+                timelineEntries.map((entry, index) => (
+                  <div
+                    key={entry.id}
+                    className="p-4 border border-border rounded-lg bg-background"
+                  >
+                    {editingEntry?.id === entry.id ? (
+                      // Edit mode
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium text-primary">
+                            Modification en cours
+                          </span>
+                          <button
+                            onClick={() => setEditingEntry(null)}
+                            className="p-1 text-muted-foreground hover:text-foreground"
+                          >
+                            <X className="h-5 w-5" />
+                          </button>
+                        </div>
+
+                        <div className="grid gap-4 md:grid-cols-2">
+                          {/* Period */}
+                          <div>
+                            <label className="flex items-center gap-2 text-sm font-medium text-foreground mb-2">
+                              <Calendar className="h-4 w-4 text-primary" />
+                              Période *
+                            </label>
+                            <input
+                              type="text"
+                              value={editingEntry.period}
+                              onChange={(e) =>
+                                setEditingEntry((prev) =>
+                                  prev
+                                    ? { ...prev, period: e.target.value }
+                                    : null,
+                                )
+                              }
+                              className="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground"
+                            />
+                          </div>
+
+                          {/* Title */}
+                          <div>
+                            <label className="flex items-center gap-2 text-sm font-medium text-foreground mb-2">
+                              <Briefcase className="h-4 w-4 text-primary" />
+                              Titre *
+                            </label>
+                            <input
+                              type="text"
+                              value={editingEntry.title}
+                              onChange={(e) =>
+                                setEditingEntry((prev) =>
+                                  prev
+                                    ? { ...prev, title: e.target.value }
+                                    : null,
+                                )
+                              }
+                              className="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground"
+                            />
+                          </div>
+
+                          {/* Description */}
+                          <div className="md:col-span-2">
+                            <label className="flex items-center gap-2 text-sm font-medium text-foreground mb-2">
+                              <FileText className="h-4 w-4 text-primary" />
+                              Description *
+                            </label>
+                            <textarea
+                              value={editingEntry.description}
+                              onChange={(e) =>
+                                setEditingEntry((prev) =>
+                                  prev
+                                    ? { ...prev, description: e.target.value }
+                                    : null,
+                                )
+                              }
+                              rows={3}
+                              className="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground resize-none"
+                            />
+                          </div>
+
+                          {/* Location */}
+                          <div>
+                            <label className="flex items-center gap-2 text-sm font-medium text-foreground mb-2">
+                              <MapPin className="h-4 w-4 text-primary" />
+                              Localisation
+                            </label>
+                            <input
+                              type="text"
+                              value={editingEntry.location || ""}
+                              onChange={(e) =>
+                                setEditingEntry((prev) =>
+                                  prev
+                                    ? { ...prev, location: e.target.value }
+                                    : null,
+                                )
+                              }
+                              className="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground"
+                            />
+                          </div>
+
+                          {/* Skills */}
+                          <div>
+                            <label className="flex items-center gap-2 text-sm font-medium text-foreground mb-2">
+                              <Code className="h-4 w-4 text-primary" />
+                              Compétences
+                            </label>
+                            <input
+                              type="text"
+                              value={editingEntry.skills || ""}
+                              onChange={(e) =>
+                                setEditingEntry((prev) =>
+                                  prev
+                                    ? { ...prev, skills: e.target.value }
+                                    : null,
+                                )
+                              }
+                              className="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex justify-end gap-3">
+                          <button
+                            onClick={() => setEditingEntry(null)}
+                            className="px-4 py-2 text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            Annuler
+                          </button>
+                          <button
+                            onClick={handleUpdateTimelineEntry}
+                            disabled={timelineLoading}
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
+                          >
+                            <Save className="h-4 w-4" />
+                            {timelineLoading ? "Sauvegarde..." : "Sauvegarder"}
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      // View mode
+                      <>
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-primary font-bold">
+                              {index + 1}
+                            </div>
+                            <div>
+                              <h4 className="font-semibold text-foreground">
+                                {entry.title}
+                              </h4>
+                              <p className="text-sm text-primary">
+                                {entry.period}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => setEditingEntry(entry)}
+                              className="p-2 text-muted-foreground hover:text-primary transition-colors"
+                              title="Modifier"
+                            >
+                              <Edit3 className="h-4 w-4" />
+                            </button>
+                            {deleteConfirmId === entry.id ? (
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() =>
+                                    handleDeleteTimelineEntry(entry.id)
+                                  }
+                                  disabled={timelineLoading}
+                                  className="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600 transition-colors disabled:opacity-50"
+                                >
+                                  Confirmer
+                                </button>
+                                <button
+                                  onClick={() => setDeleteConfirmId(null)}
+                                  className="px-2 py-1 text-xs border border-border rounded hover:bg-accent transition-colors"
+                                >
+                                  Annuler
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => setDeleteConfirmId(entry.id)}
+                                className="p-2 text-muted-foreground hover:text-red-500 transition-colors"
+                                title="Supprimer"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        <p className="mt-3 text-sm text-muted-foreground">
+                          {entry.description}
+                        </p>
+
+                        <div className="mt-3 flex flex-wrap gap-4 text-sm">
+                          {entry.location && (
+                            <div className="flex items-center gap-1 text-muted-foreground">
+                              <MapPin className="h-3 w-3" />
+                              {entry.location}
+                            </div>
+                          )}
+                          {entry.skills && (
+                            <div className="flex items-center gap-1 text-muted-foreground">
+                              <Code className="h-3 w-3" />
+                              {entry.skills}
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Save button at bottom */}
-      <div className="flex justify-end">
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="inline-flex items-center gap-2 px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
-        >
-          <Save className="h-4 w-4" />
-          {saving ? "Sauvegarde..." : "Sauvegarder tout"}
-        </button>
-      </div>
+      {activeTab !== "timeline" && (
+        <div className="flex justify-end">
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="inline-flex items-center gap-2 px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
+          >
+            <Save className="h-4 w-4" />
+            {saving ? "Sauvegarde..." : "Sauvegarder tout"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

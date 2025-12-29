@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Download, Calendar, MapPin, Heart } from "lucide-react";
+import { Download, Calendar, MapPin, Heart, Code } from "lucide-react";
 
 interface AboutContent {
   myJourney: string;
@@ -13,6 +13,16 @@ interface AboutContent {
   dateOfBirth: string;
 }
 
+interface TimelineEntry {
+  id: string;
+  period: string;
+  title: string;
+  description: string;
+  location: string | null;
+  skills: string | null;
+  orderIndex: number;
+}
+
 const defaultContent: AboutContent = {
   myJourney: `Plus de 20 ans d'expérience dans la restauration. Apprentissage de la gestion du stress, du travail en équipe et de la persévérance. Premiers pas en autodidacte en 2020, exploration de HTML, CSS, JavaScript. Formation intensive en 2023 avec React, Next.js, TypeScript. Découverte de n8n et des outils d'automatisation. Adoption de Claude Code et du vibe coding en 2024. Début de la reconversion professionnelle officielle.`,
   myStory: `Après plus de 20 ans dans la restauration, j'ai décidé de suivre ma passion pour la technologie et le développement. Cette reconversion professionnelle représente un nouveau chapitre passionnant de ma vie.\n\nMon expérience de vie m'a appris la persévérance, la gestion du stress et le travail en équipe - des compétences essentielles que j'apporte aujourd'hui dans mes projets de développement.`,
@@ -20,6 +30,60 @@ const defaultContent: AboutContent = {
   mySpecialties: `n8n Automation - Création de workflows automatisés\nClaude Code - Développement assisté par IA\nReact & Next.js - Applications web modernes\nTypeScript - Code typé et maintenable\nVibe Coding - Approche créative du développement`,
   dateOfBirth: "1978-06-15",
 };
+
+// Default static timeline entries (used as fallback when no dynamic entries exist)
+const defaultTimelineEntries: TimelineEntry[] = [
+  {
+    id: "default-1",
+    period: "2000 - 2020",
+    title: "Restauration",
+    description:
+      "Plus de 20 ans d'expérience dans la restauration. Apprentissage de la gestion du stress, du travail en équipe et de la persévérance.",
+    location: "France",
+    skills: "Gestion, Leadership, Service client",
+    orderIndex: 0,
+  },
+  {
+    id: "default-2",
+    period: "2020",
+    title: "Découverte du code",
+    description:
+      "Premiers pas en autodidacte. Exploration de HTML, CSS, JavaScript. La passion se confirme.",
+    location: "France",
+    skills: "HTML, CSS, JavaScript",
+    orderIndex: 1,
+  },
+  {
+    id: "default-3",
+    period: "2023",
+    title: "Formation intensive",
+    description:
+      "Apprentissage de React, Next.js, TypeScript. Découverte de n8n et des outils d'automatisation.",
+    location: "France",
+    skills: "React, Next.js, TypeScript, n8n",
+    orderIndex: 2,
+  },
+  {
+    id: "default-4",
+    period: "2024",
+    title: "IA & Reconversion",
+    description:
+      "Adoption de Claude Code et du vibe coding. Début de la reconversion professionnelle officielle.",
+    location: "France",
+    skills: "Claude Code, AI, Automatisation",
+    orderIndex: 3,
+  },
+  {
+    id: "default-5",
+    period: "2025",
+    title: "Développeur Full-Stack",
+    description:
+      "Spécialisé en automatisation n8n, développement assisté par IA (Claude Code), et création d'interfaces modernes. Prêt pour de nouveaux défis !",
+    location: "France",
+    skills: "Full-Stack, n8n, Claude Code, React",
+    orderIndex: 4,
+  },
+];
 
 // Calculate age from date of birth
 function calculateAge(dateOfBirth: string): number {
@@ -53,16 +117,50 @@ function parseSpecialties(
     });
 }
 
+// Color palette for timeline entries
+const timelineColors = [
+  { border: "border-primary", bg: "bg-primary/20", text: "text-primary" },
+  {
+    border: "border-retro-cyan",
+    bg: "bg-retro-cyan/20",
+    text: "text-retro-cyan",
+  },
+  {
+    border: "border-retro-magenta",
+    bg: "bg-retro-magenta/20",
+    text: "text-retro-magenta",
+  },
+  {
+    border: "border-retro-yellow",
+    bg: "bg-retro-yellow/20",
+    text: "text-retro-yellow",
+  },
+  { border: "border-green-500", bg: "bg-green-500/20", text: "text-green-500" },
+  { border: "border-blue-500", bg: "bg-blue-500/20", text: "text-blue-500" },
+  {
+    border: "border-purple-500",
+    bg: "bg-purple-500/20",
+    text: "text-purple-500",
+  },
+  {
+    border: "border-orange-500",
+    bg: "bg-orange-500/20",
+    text: "text-orange-500",
+  },
+];
+
 export default function AboutPage() {
   const [content, setContent] = useState<AboutContent>(defaultContent);
+  const [timelineEntries, setTimelineEntries] = useState<TimelineEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadContent = async () => {
+    const loadData = async () => {
       try {
-        const response = await fetch("/api/settings");
-        if (response.ok) {
-          const data = await response.json();
+        // Load content settings
+        const contentResponse = await fetch("/api/settings");
+        if (contentResponse.ok) {
+          const data = await contentResponse.json();
           if (data.data) {
             setContent({
               myJourney: data.data.aboutMyJourney || defaultContent.myJourney,
@@ -76,13 +174,28 @@ export default function AboutPage() {
             });
           }
         }
+
+        // Load timeline entries
+        const timelineResponse = await fetch("/api/timeline");
+        if (timelineResponse.ok) {
+          const timelineData = await timelineResponse.json();
+          if (timelineData.data && timelineData.data.length > 0) {
+            setTimelineEntries(timelineData.data);
+          } else {
+            // Use default entries if no dynamic entries exist
+            setTimelineEntries(defaultTimelineEntries);
+          }
+        } else {
+          setTimelineEntries(defaultTimelineEntries);
+        }
       } catch (error) {
         console.error("Error loading content:", error);
+        setTimelineEntries(defaultTimelineEntries);
       } finally {
         setLoading(false);
       }
     };
-    loadContent();
+    loadData();
   }, []);
 
   const age = calculateAge(content.dateOfBirth);
@@ -170,117 +283,74 @@ export default function AboutPage() {
             {/* Timeline line */}
             <div className="absolute left-4 top-0 h-full w-0.5 bg-gradient-to-b from-primary via-retro-cyan to-retro-magenta md:left-1/2 md:-translate-x-1/2" />
 
-            {/* Timeline items */}
+            {/* Timeline items - Dynamic */}
             <div className="space-y-8">
-              {/* 2000-2020: Restauration */}
-              <div className="relative flex items-start gap-4 md:gap-8">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-primary bg-background text-sm font-bold text-primary md:absolute md:left-1/2 md:-translate-x-1/2">
-                  1
-                </div>
-                <div className="flex-1 rounded-lg border border-border bg-card p-4 md:w-[calc(50%-2rem)] md:mr-auto md:ml-0">
-                  <div className="mb-2 flex items-center gap-2">
-                    <span className="rounded bg-primary/20 px-2 py-0.5 text-xs font-medium text-primary">
-                      2000 - 2020
-                    </span>
-                  </div>
-                  <h3 className="mb-1 font-semibold text-foreground">
-                    Restauration
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Plus de 20 ans d&apos;expérience dans la restauration.
-                    Apprentissage de la gestion du stress, du travail en équipe
-                    et de la persévérance.
-                  </p>
-                </div>
-              </div>
+              {timelineEntries.map((entry, index) => {
+                const colorIndex = index % timelineColors.length;
+                const color = timelineColors[colorIndex];
+                const isLast = index === timelineEntries.length - 1;
+                const isEven = index % 2 === 0;
 
-              {/* 2020: Découverte du code */}
-              <div className="relative flex items-start gap-4 md:gap-8">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-retro-cyan bg-background text-sm font-bold text-retro-cyan md:absolute md:left-1/2 md:-translate-x-1/2">
-                  2
-                </div>
-                <div className="flex-1 rounded-lg border border-border bg-card p-4 md:w-[calc(50%-2rem)] md:ml-auto md:mr-0">
-                  <div className="mb-2 flex items-center gap-2">
-                    <span className="rounded bg-retro-cyan/20 px-2 py-0.5 text-xs font-medium text-retro-cyan">
-                      2020
-                    </span>
-                  </div>
-                  <h3 className="mb-1 font-semibold text-foreground">
-                    Découverte du code
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Premiers pas en autodidacte. Exploration de HTML, CSS,
-                    JavaScript. La passion se confirme.
-                  </p>
-                </div>
-              </div>
+                return (
+                  <div
+                    key={entry.id}
+                    className="relative flex items-start gap-4 md:gap-8"
+                  >
+                    {/* Timeline dot */}
+                    <div
+                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 ${color.border} ${isLast ? "bg-green-500 text-white" : "bg-background"} text-sm font-bold ${isLast ? "" : color.text} md:absolute md:left-1/2 md:-translate-x-1/2`}
+                    >
+                      {index + 1}
+                    </div>
 
-              {/* 2023: Formation intensive */}
-              <div className="relative flex items-start gap-4 md:gap-8">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-retro-magenta bg-background text-sm font-bold text-retro-magenta md:absolute md:left-1/2 md:-translate-x-1/2">
-                  3
-                </div>
-                <div className="flex-1 rounded-lg border border-border bg-card p-4 md:w-[calc(50%-2rem)] md:mr-auto md:ml-0">
-                  <div className="mb-2 flex items-center gap-2">
-                    <span className="rounded bg-retro-magenta/20 px-2 py-0.5 text-xs font-medium text-retro-magenta">
-                      2023
-                    </span>
-                  </div>
-                  <h3 className="mb-1 font-semibold text-foreground">
-                    Formation intensive
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Apprentissage de React, Next.js, TypeScript. Découverte de
-                    n8n et des outils d&apos;automatisation.
-                  </p>
-                </div>
-              </div>
+                    {/* Content card */}
+                    <div
+                      className={`flex-1 rounded-lg border ${isLast ? "border-green-500/50 bg-green-500/10" : "border-border bg-card"} p-4 ${
+                        isEven
+                          ? "md:w-[calc(50%-2rem)] md:mr-auto md:ml-0"
+                          : "md:w-[calc(50%-2rem)] md:ml-auto md:mr-0"
+                      }`}
+                    >
+                      <div className="mb-2 flex flex-wrap items-center gap-2">
+                        <span
+                          className={`rounded ${color.bg} px-2 py-0.5 text-xs font-medium ${color.text}`}
+                        >
+                          {entry.period}
+                        </span>
+                        {isLast && (
+                          <span className="animate-pulse rounded bg-green-500 px-2 py-0.5 text-xs font-medium text-white">
+                            Aujourd&apos;hui
+                          </span>
+                        )}
+                      </div>
+                      <h3 className="mb-1 font-semibold text-foreground">
+                        {entry.title}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        {entry.description}
+                      </p>
 
-              {/* 2024: IA & Reconversion */}
-              <div className="relative flex items-start gap-4 md:gap-8">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-retro-yellow bg-background text-sm font-bold text-retro-yellow md:absolute md:left-1/2 md:-translate-x-1/2">
-                  4
-                </div>
-                <div className="flex-1 rounded-lg border border-border bg-card p-4 md:w-[calc(50%-2rem)] md:ml-auto md:mr-0">
-                  <div className="mb-2 flex items-center gap-2">
-                    <span className="rounded bg-retro-yellow/20 px-2 py-0.5 text-xs font-medium text-retro-yellow">
-                      2024
-                    </span>
+                      {/* Location and Skills */}
+                      {(entry.location || entry.skills) && (
+                        <div className="mt-3 flex flex-wrap gap-3 text-xs">
+                          {entry.location && (
+                            <div className="flex items-center gap-1 text-muted-foreground">
+                              <MapPin className="h-3 w-3" />
+                              {entry.location}
+                            </div>
+                          )}
+                          {entry.skills && (
+                            <div className="flex items-center gap-1 text-muted-foreground">
+                              <Code className="h-3 w-3" />
+                              {entry.skills}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <h3 className="mb-1 font-semibold text-foreground">
-                    IA & Reconversion
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Adoption de Claude Code et du vibe coding. Début de la
-                    reconversion professionnelle officielle.
-                  </p>
-                </div>
-              </div>
-
-              {/* 2025: Aujourd'hui */}
-              <div className="relative flex items-start gap-4 md:gap-8">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-green-500 bg-green-500 text-sm font-bold text-white md:absolute md:left-1/2 md:-translate-x-1/2">
-                  5
-                </div>
-                <div className="flex-1 rounded-lg border border-green-500/50 bg-green-500/10 p-4 md:w-[calc(50%-2rem)] md:mr-auto md:ml-0">
-                  <div className="mb-2 flex items-center gap-2">
-                    <span className="rounded bg-green-500/20 px-2 py-0.5 text-xs font-medium text-green-500">
-                      2025
-                    </span>
-                    <span className="animate-pulse rounded bg-green-500 px-2 py-0.5 text-xs font-medium text-white">
-                      Aujourd&apos;hui
-                    </span>
-                  </div>
-                  <h3 className="mb-1 font-semibold text-foreground">
-                    Développeur Full-Stack
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Spécialisé en automatisation n8n, développement assisté par
-                    IA (Claude Code), et création d&apos;interfaces modernes.
-                    Prêt pour de nouveaux défis !
-                  </p>
-                </div>
-              </div>
+                );
+              })}
             </div>
           </div>
         </section>
