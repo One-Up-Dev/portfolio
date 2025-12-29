@@ -102,7 +102,7 @@ export default function AdminSettingsPage() {
       const formData = new FormData();
       formData.append("file", file);
 
-      const uploadResponse = await fetch("/api/admin/media/upload", {
+      const uploadResponse = await fetch("/api/admin/media", {
         method: "POST",
         credentials: "include",
         body: formData,
@@ -150,7 +150,7 @@ export default function AdminSettingsPage() {
       const formData = new FormData();
       formData.append("file", file);
 
-      const uploadResponse = await fetch("/api/admin/media/upload", {
+      const uploadResponse = await fetch("/api/admin/media", {
         method: "POST",
         credentials: "include",
         body: formData,
@@ -180,20 +180,28 @@ export default function AdminSettingsPage() {
 
     try {
       // Save hero GIF URL
-      await fetch("/api/admin/settings", {
+      const gifResponse = await fetch("/api/admin/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({ key: "heroGifUrl", value: heroGifUrl }),
       });
 
+      if (!gifResponse.ok) {
+        throw new Error("Erreur lors de la sauvegarde du GIF");
+      }
+
       // Save logo URL
-      await fetch("/api/admin/settings", {
+      const logoResponse = await fetch("/api/admin/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({ key: "logoUrl", value: logoUrl }),
       });
+
+      if (!logoResponse.ok) {
+        throw new Error("Erreur lors de la sauvegarde du logo");
+      }
 
       setAppearanceSuccess(true);
       setTimeout(() => setAppearanceSuccess(false), 3000);
@@ -921,14 +929,6 @@ export default function AdminSettingsPage() {
             </div>
           </div>
         )}
-      </div>
-
-      {/* Demo Notice */}
-      <div className="bg-accent/20 border border-accent/50 rounded-lg p-4">
-        <p className="text-sm text-muted-foreground text-center">
-          <strong className="text-foreground">Mode démo:</strong> Les
-          modifications ne seront pas persistées.
-        </p>
       </div>
     </div>
   );
