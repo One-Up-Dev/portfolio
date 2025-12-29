@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import { Menu, X, Volume2, VolumeX, Monitor, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useSounds } from "@/lib/sound-context";
 
 const navItems = [
   { href: "/", label: "Accueil" },
@@ -17,18 +18,35 @@ const navItems = [
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [soundEnabled, setSoundEnabled] = useState(false);
   const [crtEnabled, setCrtEnabled] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [logoUrl, setLogoUrl] = useState("/logo-oneup.png");
 
-  // Check authentication and load preferences from localStorage on mount
+  // Use sound context for sound management
+  const { soundEnabled, toggleSound, playSound } = useSounds();
+
+  // Load logo from settings
   useEffect(() => {
-    const savedSound = localStorage.getItem("oneup-sound-enabled");
+    const loadSettings = async () => {
+      try {
+        const response = await fetch("/api/settings");
+        if (response.ok) {
+          const data = await response.json();
+          if (data.data?.logoUrl) {
+            setLogoUrl(data.data.logoUrl);
+          }
+        }
+      } catch (error) {
+        console.error("Error loading settings:", error);
+      }
+    };
+    loadSettings();
+  }, []);
+
+  // Check authentication and load CRT preference from localStorage on mount
+  useEffect(() => {
     const savedCrt = localStorage.getItem("oneup-crt-enabled");
 
-    if (savedSound !== null) {
-      setSoundEnabled(savedSound === "true");
-    }
     if (savedCrt !== null) {
       setCrtEnabled(savedCrt === "true");
     }
@@ -66,15 +84,25 @@ export function Header() {
     return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
-  // Save sound preference to localStorage
-  const toggleSound = () => {
-    const newValue = !soundEnabled;
-    setSoundEnabled(newValue);
-    localStorage.setItem("oneup-sound-enabled", String(newValue));
+  // Handle sound toggle with sound effect
+  const handleToggleSound = () => {
+    // Play sound before toggling (if currently enabled, it will play)
+    if (!soundEnabled) {
+      // If enabling sound, play sound after a short delay to let the state update
+      toggleSound();
+      setTimeout(() => {
+        const audio = new Audio("/sounds/coin_c_02-102844.mp3");
+        audio.volume = 0.5;
+        audio.play().catch(() => {});
+      }, 50);
+    } else {
+      toggleSound();
+    }
   };
 
   // Save CRT preference to localStorage and toggle body class
-  const toggleCrt = () => {
+  const handleToggleCrt = () => {
+    playSound("coin"); // Play sound on CRT toggle
     const newValue = !crtEnabled;
     setCrtEnabled(newValue);
     localStorage.setItem("oneup-crt-enabled", String(newValue));
@@ -106,12 +134,13 @@ export function Header() {
           className="flex items-center gap-2 transition-opacity hover:opacity-80"
         >
           <Image
-            src="/logo-oneup.png"
+            src={logoUrl}
             alt="ONEUP Logo"
             width={40}
             height={40}
             className="h-10 w-10"
             priority
+            unoptimized
           />
           <span className="font-pixel text-sm text-primary uppercase tracking-wider hidden sm:inline">
             ONEUP
@@ -135,7 +164,7 @@ export function Header() {
         <div className="flex items-center gap-2">
           {/* Sound Toggle */}
           <button
-            onClick={toggleSound}
+            onClick={handleToggleSound}
             className="rounded-md p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
             aria-label={soundEnabled ? "Désactiver le son" : "Activer le son"}
           >
@@ -148,7 +177,7 @@ export function Header() {
 
           {/* CRT Toggle */}
           <button
-            onClick={toggleCrt}
+            onClick={handleToggleCrt}
             className={cn(
               "rounded-md p-2 min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors hover:bg-accent hover:text-accent-foreground",
               crtEnabled ? "text-primary" : "text-muted-foreground",

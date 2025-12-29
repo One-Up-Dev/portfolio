@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import Image from "next/image";
 
 // Password validation function
 function validatePassword(password: string): {
@@ -42,6 +43,330 @@ export default function AdminSettingsPage() {
     valid: boolean;
     errors: string[];
   }>({ valid: true, errors: [] });
+
+  // General settings state
+  const [siteTitle, setSiteTitle] = useState("ONEUP Portfolio");
+  const [siteDescription, setSiteDescription] = useState(
+    "Portfolio de développeur full-stack en reconversion professionnelle.",
+  );
+  const [contactEmail, setContactEmail] = useState("contact@oneup.dev");
+  const [generalSaving, setGeneralSaving] = useState(false);
+  const [generalSuccess, setGeneralSuccess] = useState(false);
+  const [generalError, setGeneralError] = useState<string | null>(null);
+
+  // Appearance settings state
+  const [heroGifUrl, setHeroGifUrl] = useState("/images/miyazaki-nature.gif");
+  const [logoUrl, setLogoUrl] = useState("/logo-oneup.png");
+  const [appearanceSaving, setAppearanceSaving] = useState(false);
+  const [appearanceSuccess, setAppearanceSuccess] = useState(false);
+  const [appearanceError, setAppearanceError] = useState<string | null>(null);
+  const heroGifInputRef = useRef<HTMLInputElement>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+
+  // Integration settings state
+  const [claudeApiKey, setClaudeApiKey] = useState("");
+  const [claudeApiKeyMasked, setClaudeApiKeyMasked] = useState("");
+  const [resendApiKey, setResendApiKey] = useState("");
+  const [resendApiKeyMasked, setResendApiKeyMasked] = useState("");
+  const [integrationSaving, setIntegrationSaving] = useState(false);
+  const [integrationSuccess, setIntegrationSuccess] = useState(false);
+  const [integrationError, setIntegrationError] = useState<string | null>(null);
+
+  // Account settings state
+  const [adminEmail, setAdminEmail] = useState("admin@oneup.dev");
+  const [emailSaving, setEmailSaving] = useState(false);
+  const [emailSuccess, setEmailSuccess] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
+
+  // Load all settings on mount
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const response = await fetch("/api/admin/settings", {
+          credentials: "include",
+        });
+        if (response.ok) {
+          const data = await response.json();
+          // General settings
+          if (data.data?.siteTitle) {
+            setSiteTitle(data.data.siteTitle);
+          }
+          if (data.data?.siteDescription) {
+            setSiteDescription(data.data.siteDescription);
+          }
+          if (data.data?.contactEmail) {
+            setContactEmail(data.data.contactEmail);
+          }
+          // Appearance settings
+          if (data.data?.heroGifUrl) {
+            setHeroGifUrl(data.data.heroGifUrl);
+          }
+          if (data.data?.logoUrl) {
+            setLogoUrl(data.data.logoUrl);
+          }
+          // Integration settings (masked)
+          if (data.data?.claudeApiKey) {
+            setClaudeApiKeyMasked("••••••••••••••••");
+          }
+          if (data.data?.resendApiKey) {
+            setResendApiKeyMasked("••••••••••••••••");
+          }
+          // Account settings
+          if (data.data?.adminEmail) {
+            setAdminEmail(data.data.adminEmail);
+          }
+        }
+      } catch (error) {
+        console.error("Error loading settings:", error);
+      }
+    };
+    loadSettings();
+  }, []);
+
+  // Save general settings
+  const handleSaveGeneral = async () => {
+    setGeneralSaving(true);
+    setGeneralError(null);
+    setGeneralSuccess(false);
+
+    try {
+      // Save site title
+      await fetch("/api/admin/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ key: "siteTitle", value: siteTitle }),
+      });
+
+      // Save site description
+      await fetch("/api/admin/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          key: "siteDescription",
+          value: siteDescription,
+        }),
+      });
+
+      // Save contact email
+      await fetch("/api/admin/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ key: "contactEmail", value: contactEmail }),
+      });
+
+      setGeneralSuccess(true);
+      setTimeout(() => setGeneralSuccess(false), 3000);
+    } catch (error) {
+      console.error("Error saving general settings:", error);
+      setGeneralError("Erreur lors de la sauvegarde");
+    } finally {
+      setGeneralSaving(false);
+    }
+  };
+
+  // Save integration settings
+  const handleSaveIntegrations = async () => {
+    setIntegrationSaving(true);
+    setIntegrationError(null);
+    setIntegrationSuccess(false);
+
+    try {
+      // Only save if a new key was entered (not masked)
+      if (claudeApiKey && !claudeApiKey.startsWith("••")) {
+        await fetch("/api/admin/settings", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ key: "claudeApiKey", value: claudeApiKey }),
+        });
+        setClaudeApiKeyMasked("••••••••••••••••");
+        setClaudeApiKey("");
+      }
+
+      if (resendApiKey && !resendApiKey.startsWith("••")) {
+        await fetch("/api/admin/settings", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ key: "resendApiKey", value: resendApiKey }),
+        });
+        setResendApiKeyMasked("••••••••••••••••");
+        setResendApiKey("");
+      }
+
+      setIntegrationSuccess(true);
+      setTimeout(() => setIntegrationSuccess(false), 3000);
+    } catch (error) {
+      console.error("Error saving integration settings:", error);
+      setIntegrationError("Erreur lors de la sauvegarde");
+    } finally {
+      setIntegrationSaving(false);
+    }
+  };
+
+  // Save admin email
+  const handleSaveEmail = async () => {
+    setEmailSaving(true);
+    setEmailError(null);
+    setEmailSuccess(false);
+
+    try {
+      await fetch("/api/admin/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ key: "adminEmail", value: adminEmail }),
+      });
+
+      setEmailSuccess(true);
+      setTimeout(() => setEmailSuccess(false), 3000);
+    } catch (error) {
+      console.error("Error saving email:", error);
+      setEmailError("Erreur lors de la sauvegarde");
+    } finally {
+      setEmailSaving(false);
+    }
+  };
+
+  // Handle hero GIF upload
+  const handleHeroGifUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      setAppearanceError("Veuillez sélectionner un fichier image");
+      return;
+    }
+
+    // Validate file size (max 10MB for GIFs)
+    if (file.size > 10 * 1024 * 1024) {
+      setAppearanceError("Le fichier ne doit pas dépasser 10MB");
+      return;
+    }
+
+    setAppearanceError(null);
+
+    try {
+      // Upload file to media library
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const uploadResponse = await fetch("/api/admin/media", {
+        method: "POST",
+        credentials: "include",
+        body: formData,
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error("Erreur lors de l'upload");
+      }
+
+      const uploadData = await uploadResponse.json();
+      const newUrl = uploadData.data?.url || uploadData.url;
+
+      if (newUrl) {
+        setHeroGifUrl(newUrl);
+      }
+    } catch (error) {
+      console.error("Error uploading hero GIF:", error);
+      setAppearanceError("Erreur lors de l'upload du GIF");
+    }
+  };
+
+  // Handle logo upload
+  const handleLogoUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      setAppearanceError("Veuillez sélectionner un fichier image");
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setAppearanceError("Le fichier ne doit pas dépasser 5MB");
+      return;
+    }
+
+    setAppearanceError(null);
+
+    try {
+      // Upload file to media library
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const uploadResponse = await fetch("/api/admin/media", {
+        method: "POST",
+        credentials: "include",
+        body: formData,
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error("Erreur lors de l'upload");
+      }
+
+      const uploadData = await uploadResponse.json();
+      const newUrl = uploadData.data?.url || uploadData.url;
+
+      if (newUrl) {
+        setLogoUrl(newUrl);
+      }
+    } catch (error) {
+      console.error("Error uploading logo:", error);
+      setAppearanceError("Erreur lors de l'upload du logo");
+    }
+  };
+
+  // Save appearance settings
+  const handleSaveAppearance = async () => {
+    setAppearanceSaving(true);
+    setAppearanceError(null);
+    setAppearanceSuccess(false);
+
+    try {
+      // Save hero GIF URL
+      const gifResponse = await fetch("/api/admin/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ key: "heroGifUrl", value: heroGifUrl }),
+      });
+
+      if (!gifResponse.ok) {
+        throw new Error("Erreur lors de la sauvegarde du GIF");
+      }
+
+      // Save logo URL
+      const logoResponse = await fetch("/api/admin/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ key: "logoUrl", value: logoUrl }),
+      });
+
+      if (!logoResponse.ok) {
+        throw new Error("Erreur lors de la sauvegarde du logo");
+      }
+
+      setAppearanceSuccess(true);
+      setTimeout(() => setAppearanceSuccess(false), 3000);
+    } catch (error) {
+      console.error("Error saving appearance settings:", error);
+      setAppearanceError("Erreur lors de la sauvegarde");
+    } finally {
+      setAppearanceSaving(false);
+    }
+  };
 
   // Handle password change
   const handlePasswordChange = () => {
@@ -99,26 +424,30 @@ export default function AdminSettingsPage() {
     }
   };
 
-  // Export all content to JSON
-  const handleExport = () => {
+  // Export all content to JSON from real database
+  const handleExport = async () => {
     try {
-      // Get all data from localStorage
-      const projects = JSON.parse(
-        localStorage.getItem("demo_projects") || "[]",
-      );
-      const blogPosts = JSON.parse(
-        localStorage.getItem("demo_blog_posts") || "[]",
-      );
-      const skills = JSON.parse(localStorage.getItem("demo_skills") || "[]");
+      // Fetch all data from API
+      const [projectsRes, blogRes, skillsRes] = await Promise.all([
+        fetch("/api/admin/projects", { credentials: "include" }),
+        fetch("/api/admin/blog", { credentials: "include" }),
+        fetch("/api/admin/skills", { credentials: "include" }),
+      ]);
 
-      // Create export object
+      const projectsData = projectsRes.ok
+        ? await projectsRes.json()
+        : { data: [] };
+      const blogData = blogRes.ok ? await blogRes.json() : { data: [] };
+      const skillsData = skillsRes.ok ? await skillsRes.json() : { all: [] };
+
+      // Create export object with real data
       const exportData = {
         exportDate: new Date().toISOString(),
         version: "1.0",
         data: {
-          projects,
-          blogPosts,
-          skills,
+          projects: projectsData.data || [],
+          blogPosts: blogData.data || [],
+          skills: skillsData.all || [],
         },
       };
 
@@ -142,7 +471,7 @@ export default function AdminSettingsPage() {
     }
   };
 
-  // Import content from JSON file
+  // Import content from JSON file to real database
   const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -151,7 +480,7 @@ export default function AdminSettingsPage() {
     setImportSuccess(false);
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
         const content = e.target?.result as string;
         const importData = JSON.parse(content);
@@ -161,61 +490,88 @@ export default function AdminSettingsPage() {
           throw new Error("Format de fichier invalide: données manquantes");
         }
 
-        // Import projects
+        let importedCount = 0;
+
+        // Import projects to database
         if (
           importData.data.projects &&
           Array.isArray(importData.data.projects)
         ) {
-          const existingProjects = JSON.parse(
-            localStorage.getItem("demo_projects") || "[]",
-          );
-          const importedIds = new Set(
-            existingProjects.map((p: { id: string }) => p.id),
-          );
-
-          // Add new projects that don't exist
-          const newProjects = importData.data.projects.filter(
-            (p: { id: string }) => !importedIds.has(p.id),
-          );
-          const mergedProjects = [...existingProjects, ...newProjects];
-          localStorage.setItem("demo_projects", JSON.stringify(mergedProjects));
+          for (const project of importData.data.projects) {
+            try {
+              // Try to create project via API (will fail if already exists)
+              const res = await fetch("/api/admin/projects", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({
+                  title: project.title,
+                  slug: project.slug,
+                  shortDescription: project.shortDescription,
+                  longDescription: project.longDescription,
+                  technologies: project.technologies,
+                  githubUrl: project.githubUrl,
+                  demoUrl: project.demoUrl,
+                  imageUrl: project.imageUrl,
+                  status: project.status,
+                  visible: project.visible,
+                }),
+              });
+              if (res.ok) importedCount++;
+            } catch {
+              // Skip if project already exists
+            }
+          }
         }
 
-        // Import blog posts
+        // Import blog posts to database
         if (
           importData.data.blogPosts &&
           Array.isArray(importData.data.blogPosts)
         ) {
-          const existingPosts = JSON.parse(
-            localStorage.getItem("demo_blog_posts") || "[]",
-          );
-          const importedIds = new Set(
-            existingPosts.map((p: { id: string }) => p.id),
-          );
-
-          // Add new posts that don't exist
-          const newPosts = importData.data.blogPosts.filter(
-            (p: { id: string }) => !importedIds.has(p.id),
-          );
-          const mergedPosts = [...existingPosts, ...newPosts];
-          localStorage.setItem("demo_blog_posts", JSON.stringify(mergedPosts));
+          for (const post of importData.data.blogPosts) {
+            try {
+              const res = await fetch("/api/admin/blog", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({
+                  title: post.title,
+                  slug: post.slug,
+                  excerpt: post.excerpt,
+                  content: post.content,
+                  tags: post.tags,
+                  coverImage: post.coverImage,
+                  status: post.status,
+                }),
+              });
+              if (res.ok) importedCount++;
+            } catch {
+              // Skip if post already exists
+            }
+          }
         }
 
-        // Import skills
+        // Import skills to database
         if (importData.data.skills && Array.isArray(importData.data.skills)) {
-          const existingSkills = JSON.parse(
-            localStorage.getItem("demo_skills") || "[]",
-          );
-          const importedIds = new Set(
-            existingSkills.map((s: { id: string }) => s.id),
-          );
-
-          // Add new skills that don't exist
-          const newSkills = importData.data.skills.filter(
-            (s: { id: string }) => !importedIds.has(s.id),
-          );
-          const mergedSkills = [...existingSkills, ...newSkills];
-          localStorage.setItem("demo_skills", JSON.stringify(mergedSkills));
+          for (const skill of importData.data.skills) {
+            try {
+              const res = await fetch("/api/admin/skills", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({
+                  name: skill.name,
+                  category: skill.category,
+                  iconUrl: skill.iconUrl,
+                  orderIndex: skill.orderIndex,
+                }),
+              });
+              if (res.ok) importedCount++;
+            } catch {
+              // Skip if skill already exists
+            }
+          }
         }
 
         setImportSuccess(true);
@@ -242,6 +598,7 @@ export default function AdminSettingsPage() {
 
   const tabs = [
     { id: "general", label: "Général", icon: "⚙️" },
+    { id: "apparence", label: "Apparence", icon: "🎨" },
     { id: "compte", label: "Compte", icon: "👤" },
     { id: "integrations", label: "Intégrations", icon: "🔌" },
     { id: "sauvegardes", label: "Sauvegardes", icon: "💾" },
@@ -256,13 +613,13 @@ export default function AdminSettingsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-border">
+      <div className="border-b border-border overflow-x-auto">
         <nav className="flex gap-4">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+              className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                 activeTab === tab.id
                   ? "border-primary text-primary"
                   : "border-transparent text-muted-foreground hover:text-foreground"
@@ -282,6 +639,27 @@ export default function AdminSettingsPage() {
             <h3 className="text-lg font-semibold text-foreground">
               Paramètres généraux
             </h3>
+
+            {/* Success message */}
+            {generalSuccess && (
+              <div
+                className="bg-green-500/20 border border-green-500/50 text-green-500 rounded-lg p-4"
+                role="alert"
+              >
+                Paramètres généraux sauvegardés avec succès!
+              </div>
+            )}
+
+            {/* Error message */}
+            {generalError && (
+              <div
+                className="bg-red-500/20 border border-red-500/50 text-red-500 rounded-lg p-4"
+                role="alert"
+              >
+                {generalError}
+              </div>
+            )}
+
             <div className="grid gap-6 max-w-xl">
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
@@ -289,7 +667,8 @@ export default function AdminSettingsPage() {
                 </label>
                 <input
                   type="text"
-                  defaultValue="ONEUP Portfolio"
+                  value={siteTitle}
+                  onChange={(e) => setSiteTitle(e.target.value)}
                   className="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground"
                 />
               </div>
@@ -299,7 +678,8 @@ export default function AdminSettingsPage() {
                 </label>
                 <textarea
                   rows={3}
-                  defaultValue="Portfolio de développeur full-stack en reconversion professionnelle."
+                  value={siteDescription}
+                  onChange={(e) => setSiteDescription(e.target.value)}
                   className="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground resize-none"
                 />
               </div>
@@ -309,12 +689,196 @@ export default function AdminSettingsPage() {
                 </label>
                 <input
                   type="email"
-                  defaultValue="contact@oneup.dev"
+                  value={contactEmail}
+                  onChange={(e) => setContactEmail(e.target.value)}
                   className="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground"
                 />
               </div>
-              <button className="w-fit px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors">
-                Sauvegarder
+              <button
+                onClick={handleSaveGeneral}
+                disabled={generalSaving}
+                className="w-fit px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
+              >
+                {generalSaving ? "Sauvegarde..." : "Sauvegarder"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "apparence" && (
+          <div className="space-y-6">
+            <h3 className="text-lg font-semibold text-foreground">
+              Personnalisation de l&apos;apparence
+            </h3>
+
+            {/* Success message */}
+            {appearanceSuccess && (
+              <div
+                className="bg-green-500/20 border border-green-500/50 text-green-500 rounded-lg p-4"
+                role="alert"
+              >
+                Paramètres d&apos;apparence sauvegardés avec succès!
+              </div>
+            )}
+
+            {/* Error message */}
+            {appearanceError && (
+              <div
+                className="bg-red-500/20 border border-red-500/50 text-red-500 rounded-lg p-4"
+                role="alert"
+              >
+                {appearanceError}
+              </div>
+            )}
+
+            <div className="grid gap-8">
+              {/* Hero GIF Section */}
+              <div className="p-4 border border-border rounded-lg">
+                <h4 className="font-medium text-foreground mb-2">
+                  GIF d&apos;arrière-plan (Hero)
+                </h4>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Le GIF animé affiché en arrière-plan de la section héro sur la
+                  page d&apos;accueil.
+                </p>
+
+                <div className="flex flex-col md:flex-row gap-6">
+                  {/* Preview */}
+                  <div className="relative w-full md:w-64 h-40 rounded-lg overflow-hidden border border-border bg-background">
+                    {heroGifUrl ? (
+                      <Image
+                        src={heroGifUrl}
+                        alt="Hero GIF Preview"
+                        fill
+                        className="object-cover"
+                        unoptimized
+                      />
+                    ) : (
+                      <div className="flex items-center justify-center h-full text-muted-foreground">
+                        Aucun GIF
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Upload controls */}
+                  <div className="flex-1 space-y-4">
+                    <div>
+                      <label className="block text-sm text-muted-foreground mb-2">
+                        URL du GIF
+                      </label>
+                      <input
+                        type="text"
+                        value={heroGifUrl}
+                        onChange={(e) => setHeroGifUrl(e.target.value)}
+                        placeholder="/images/miyazaki-nature.gif"
+                        className="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground"
+                      />
+                    </div>
+                    <div>
+                      <input
+                        ref={heroGifInputRef}
+                        type="file"
+                        accept="image/gif,image/*"
+                        onChange={handleHeroGifUpload}
+                        className="hidden"
+                        id="hero-gif-upload"
+                      />
+                      <label
+                        htmlFor="hero-gif-upload"
+                        className="inline-block px-4 py-2 bg-accent text-foreground rounded-lg hover:bg-accent/80 transition-colors cursor-pointer"
+                      >
+                        📤 Uploader un nouveau GIF
+                      </label>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Format recommandé: GIF, max 10MB
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Logo Section */}
+              <div className="p-4 border border-border rounded-lg">
+                <h4 className="font-medium text-foreground mb-2">
+                  Logo / Avatar
+                </h4>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Le logo ONEUP affiché dans le header et sur la page
+                  d&apos;accueil.
+                </p>
+
+                <div className="flex flex-col md:flex-row gap-6">
+                  {/* Preview */}
+                  <div className="relative w-32 h-32 rounded-lg overflow-hidden border border-border bg-background flex items-center justify-center">
+                    {logoUrl ? (
+                      <Image
+                        src={logoUrl}
+                        alt="Logo Preview"
+                        width={120}
+                        height={120}
+                        className="object-contain"
+                      />
+                    ) : (
+                      <div className="text-muted-foreground text-center text-sm">
+                        Aucun logo
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Upload controls */}
+                  <div className="flex-1 space-y-4">
+                    <div>
+                      <label className="block text-sm text-muted-foreground mb-2">
+                        URL du logo
+                      </label>
+                      <input
+                        type="text"
+                        value={logoUrl}
+                        onChange={(e) => setLogoUrl(e.target.value)}
+                        placeholder="/logo-oneup.png"
+                        className="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground"
+                      />
+                    </div>
+                    <div>
+                      <input
+                        ref={logoInputRef}
+                        type="file"
+                        accept="image/png,image/svg+xml,image/*"
+                        onChange={handleLogoUpload}
+                        className="hidden"
+                        id="logo-upload"
+                      />
+                      <label
+                        htmlFor="logo-upload"
+                        className="inline-block px-4 py-2 bg-accent text-foreground rounded-lg hover:bg-accent/80 transition-colors cursor-pointer"
+                      >
+                        📤 Uploader un nouveau logo
+                      </label>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Format recommandé: PNG ou SVG, max 5MB
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Save button */}
+              <button
+                onClick={handleSaveAppearance}
+                disabled={appearanceSaving}
+                className="w-fit px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {appearanceSaving ? (
+                  <>
+                    <span className="animate-spin">⏳</span>
+                    <span>Sauvegarde...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>💾</span>
+                    <span>Sauvegarder les modifications</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -326,7 +890,27 @@ export default function AdminSettingsPage() {
               Compte administrateur
             </h3>
 
-            {/* Success message */}
+            {/* Email success message */}
+            {emailSuccess && (
+              <div
+                className="bg-green-500/20 border border-green-500/50 text-green-500 rounded-lg p-4"
+                role="alert"
+              >
+                Email mis à jour avec succès!
+              </div>
+            )}
+
+            {/* Email error message */}
+            {emailError && (
+              <div
+                className="bg-red-500/20 border border-red-500/50 text-red-500 rounded-lg p-4"
+                role="alert"
+              >
+                {emailError}
+              </div>
+            )}
+
+            {/* Password success message */}
             {passwordSuccess && (
               <div
                 className="bg-green-500/20 border border-green-500/50 text-green-500 rounded-lg p-4"
@@ -336,7 +920,7 @@ export default function AdminSettingsPage() {
               </div>
             )}
 
-            {/* Error message */}
+            {/* Password error message */}
             {passwordError && (
               <div
                 className="bg-red-500/20 border border-red-500/50 text-red-500 rounded-lg p-4"
@@ -353,9 +937,17 @@ export default function AdminSettingsPage() {
                 </label>
                 <input
                   type="email"
-                  defaultValue="admin@oneup.dev"
+                  value={adminEmail}
+                  onChange={(e) => setAdminEmail(e.target.value)}
                   className="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground"
                 />
+                <button
+                  onClick={handleSaveEmail}
+                  disabled={emailSaving}
+                  className="mt-2 px-4 py-2 bg-accent text-foreground rounded-lg hover:bg-accent/80 transition-colors disabled:opacity-50 text-sm"
+                >
+                  {emailSaving ? "Sauvegarde..." : "Mettre à jour l'email"}
+                </button>
               </div>
               <div className="pt-4 border-t border-border">
                 <h4 className="text-sm font-medium text-foreground mb-4">
@@ -474,6 +1066,27 @@ export default function AdminSettingsPage() {
             <h3 className="text-lg font-semibold text-foreground">
               Intégrations API
             </h3>
+
+            {/* Success message */}
+            {integrationSuccess && (
+              <div
+                className="bg-green-500/20 border border-green-500/50 text-green-500 rounded-lg p-4"
+                role="alert"
+              >
+                Clés API sauvegardées avec succès!
+              </div>
+            )}
+
+            {/* Error message */}
+            {integrationError && (
+              <div
+                className="bg-red-500/20 border border-red-500/50 text-red-500 rounded-lg p-4"
+                role="alert"
+              >
+                {integrationError}
+              </div>
+            )}
+
             <div className="grid gap-6 max-w-xl">
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
@@ -481,11 +1094,18 @@ export default function AdminSettingsPage() {
                 </label>
                 <input
                   type="password"
-                  placeholder="sk-ant-..."
+                  value={claudeApiKey}
+                  onChange={(e) => setClaudeApiKey(e.target.value)}
+                  placeholder={claudeApiKeyMasked || "sk-ant-..."}
                   className="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
                   Pour la génération de contenu IA
+                  {claudeApiKeyMasked && (
+                    <span className="text-green-500 ml-2">
+                      ✓ Clé configurée
+                    </span>
+                  )}
                 </p>
               </div>
               <div>
@@ -494,15 +1114,26 @@ export default function AdminSettingsPage() {
                 </label>
                 <input
                   type="password"
-                  placeholder="re_..."
+                  value={resendApiKey}
+                  onChange={(e) => setResendApiKey(e.target.value)}
+                  placeholder={resendApiKeyMasked || "re_..."}
                   className="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
                   Pour l&apos;envoi d&apos;emails
+                  {resendApiKeyMasked && (
+                    <span className="text-green-500 ml-2">
+                      ✓ Clé configurée
+                    </span>
+                  )}
                 </p>
               </div>
-              <button className="w-fit px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors">
-                Sauvegarder
+              <button
+                onClick={handleSaveIntegrations}
+                disabled={integrationSaving}
+                className="w-fit px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
+              >
+                {integrationSaving ? "Sauvegarde..." : "Sauvegarder"}
               </button>
             </div>
           </div>
@@ -579,14 +1210,6 @@ export default function AdminSettingsPage() {
             </div>
           </div>
         )}
-      </div>
-
-      {/* Demo Notice */}
-      <div className="bg-accent/20 border border-accent/50 rounded-lg p-4">
-        <p className="text-sm text-muted-foreground text-center">
-          <strong className="text-foreground">Mode démo:</strong> Les
-          modifications ne seront pas persistées.
-        </p>
       </div>
     </div>
   );

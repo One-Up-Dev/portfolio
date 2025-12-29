@@ -7,6 +7,29 @@ import { useEffect, useState } from "react";
 
 export default function HomePage() {
   const [scrollY, setScrollY] = useState(0);
+  const [heroGifUrl, setHeroGifUrl] = useState("/images/miyazaki-nature.gif");
+  const [logoUrl, setLogoUrl] = useState("/logo-oneup.png");
+
+  // Load appearance settings
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const response = await fetch("/api/settings");
+        if (response.ok) {
+          const data = await response.json();
+          if (data.data?.heroGifUrl) {
+            setHeroGifUrl(data.data.heroGifUrl);
+          }
+          if (data.data?.logoUrl) {
+            setLogoUrl(data.data.logoUrl);
+          }
+        }
+      } catch (error) {
+        console.error("Error loading settings:", error);
+      }
+    };
+    loadSettings();
+  }, []);
 
   // Parallax effect on scroll
   useEffect(() => {
@@ -32,7 +55,7 @@ export default function HomePage() {
           <div
             className="absolute inset-0 bg-cover bg-center bg-no-repeat"
             style={{
-              backgroundImage: `url('/images/miyazaki-nature.gif')`,
+              backgroundImage: `url('${heroGifUrl}')`,
               filter: "brightness(0.6) saturate(0.8)",
             }}
           />
@@ -55,12 +78,13 @@ export default function HomePage() {
           {/* Logo */}
           <div className="mb-8 flex justify-center">
             <Image
-              src="/logo-oneup.png"
+              src={logoUrl}
               alt="ONEUP Logo"
               width={120}
               height={120}
               className="h-32 w-32 drop-shadow-lg"
               priority
+              unoptimized
             />
           </div>
 
