@@ -107,10 +107,10 @@ You MUST respond with a valid JSON object containing exactly these 4 fields:
 }
 
 Requirements for each field:
-- TITLE: Engaging, keyword-rich, clickable (50-60 chars optimal for SEO)
-- EXCERPT: Works as a preview/teaser, enticing readers to click (150-200 chars)
-- CONTENT: Premium quality, minimum 2000 words, uses ## and ### headers, includes bullet points, code examples if relevant, engaging paragraphs
-- META_DESCRIPTION: Optimized for search engines, includes primary keyword, drives click-through (150-160 chars)
+- TITLE: Engaging, keyword-rich, clickable (50-60 chars optimal for SEO). IMPORTANT: Do NOT repeat or include the user's prompt description in the title.
+- EXCERPT: Works as a preview/teaser, enticing readers to click (150-200 chars). Do NOT mention or repeat the prompt.
+- CONTENT: Premium quality, minimum 2000 words, uses ## (H2) and ### (H3) headers ONLY (never use #). CRITICAL: Content MUST START DIRECTLY with ## - no introductory text or title. Includes bullet points, code examples if relevant, engaging paragraphs.
+- META_DESCRIPTION: Optimized for search engines, includes primary keyword, drives click-through (150-160 chars). Do NOT include the prompt description.
 
 Write in French. Do NOT include any placeholder text or Lorem ipsum. Provide real, valuable, actionable content.
 Respond ONLY with the JSON object, no additional text.`;
