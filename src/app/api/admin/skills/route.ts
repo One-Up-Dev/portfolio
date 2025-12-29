@@ -170,9 +170,9 @@ export async function PUT(request: NextRequest) {
         const updateData: {
           orderIndex?: number;
           proficiency?: number;
-          updatedAt: string;
+          updatedAt: Date;
         } = {
-          updatedAt: new Date().toISOString(),
+          updatedAt: new Date(),
         };
 
         if (typeof skillUpdate.orderIndex === "number") {

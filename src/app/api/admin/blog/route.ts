@@ -130,14 +130,14 @@ export async function POST(request: NextRequest) {
     // If status is published and publishedAt is provided, use it
     // If status is published and no publishedAt, use current date
     // If status is draft, set to null
-    let publishedAt: string | null = null;
+    let publishedAt: Date | null = null;
     if (body.status === "published") {
       if (body.publishedAt) {
         // Use provided date (for scheduled posts)
-        publishedAt = body.publishedAt;
+        publishedAt = new Date(body.publishedAt);
       } else {
-        // Default to today's date
-        publishedAt = new Date().toISOString().split("T")[0];
+        // Default to current date
+        publishedAt = new Date();
       }
     }
 

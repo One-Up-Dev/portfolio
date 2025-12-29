@@ -60,7 +60,7 @@ export async function PATCH(
       .update(projects)
       .set({
         visible: body.visible ?? !existing.visible,
-        updatedAt: new Date().toISOString().replace("T", " ").split(".")[0],
+        updatedAt: new Date(),
       })
       .where(eq(projects.id, id))
       .returning();

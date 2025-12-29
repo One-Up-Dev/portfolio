@@ -126,7 +126,7 @@ export async function PUT(
         galleryImages: body.galleryImages ?? existing.galleryImages,
         visible: body.visible ?? existing.visible,
         orderIndex: body.orderIndex ?? existing.orderIndex,
-        updatedAt: new Date().toISOString().replace("T", " ").split(".")[0],
+        updatedAt: new Date(),
       })
       .where(eq(projects.id, id))
       .returning();
@@ -224,7 +224,7 @@ export async function PATCH(
 
     // Build update object with only provided fields
     const updateData: Record<string, unknown> = {
-      updatedAt: new Date().toISOString().replace("T", " ").split(".")[0],
+      updatedAt: new Date(),
     };
 
     if (body.visible !== undefined) {

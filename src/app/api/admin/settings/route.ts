@@ -89,7 +89,7 @@ export async function PUT(request: NextRequest) {
         .update(siteSettings)
         .set({
           value: value,
-          updatedAt: new Date().toISOString(),
+          updatedAt: new Date(),
         })
         .where(eq(siteSettings.key, key));
     } else {
@@ -97,7 +97,7 @@ export async function PUT(request: NextRequest) {
       await db.insert(siteSettings).values({
         key,
         value,
-        updatedAt: new Date().toISOString(),
+        updatedAt: new Date(),
       });
     }
 

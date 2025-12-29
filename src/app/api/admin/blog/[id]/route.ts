@@ -120,7 +120,7 @@ export async function PUT(
     // Determine publishedAt
     let publishedAt = existing.publishedAt;
     if (body.status === "published" && !existing.publishedAt) {
-      publishedAt = new Date().toISOString();
+      publishedAt = new Date();
     } else if (body.status === "draft") {
       publishedAt = null;
     }
@@ -149,7 +149,7 @@ export async function PUT(
             ? body.metaKeywords
             : existing.metaKeywords,
         readTimeMinutes,
-        updatedAt: new Date().toISOString(),
+        updatedAt: new Date(),
       })
       .where(eq(blogPosts.id, id))
       .returning();
@@ -249,7 +249,7 @@ export async function PATCH(
     if (body.status !== undefined) {
       let publishedAt = existing.publishedAt;
       if (body.status === "published" && !existing.publishedAt) {
-        publishedAt = new Date().toISOString();
+        publishedAt = new Date();
       } else if (body.status === "draft") {
         publishedAt = null;
       }
@@ -259,7 +259,7 @@ export async function PATCH(
         .set({
           status: body.status,
           publishedAt,
-          updatedAt: new Date().toISOString(),
+          updatedAt: new Date(),
         })
         .where(eq(blogPosts.id, id))
         .returning();

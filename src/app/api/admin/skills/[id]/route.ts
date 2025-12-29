@@ -107,7 +107,7 @@ export async function PUT(
         category: body.category ?? existing.category,
         iconUrl: body.iconUrl ?? body.icon ?? existing.iconUrl,
         orderIndex: body.orderIndex ?? existing.orderIndex,
-        updatedAt: new Date().toISOString(),
+        updatedAt: new Date(),
       })
       .where(eq(skills.id, id))
       .returning();

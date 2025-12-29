@@ -116,7 +116,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const updateData: Record<string, unknown> = {
-      updatedAt: new Date().toISOString(),
+      updatedAt: new Date(),
     };
 
     if (title !== undefined) updateData.title = title;

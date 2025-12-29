@@ -1,19 +1,19 @@
-import { drizzle } from "drizzle-orm/better-sqlite3";
-import Database from "better-sqlite3";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
 import * as schema from "./schema";
-import path from "path";
 
-// Database file path - use data directory for SQLite file
-const dbPath = path.join(process.cwd(), "data", "portfolio.db");
+// Get database URL from environment or use default
+const databaseUrl = process.env.DATABASE_URL;
 
-// Create database connection
-const sqlite = new Database(dbPath);
+if (!databaseUrl) {
+  throw new Error("DATABASE_URL environment variable is not set");
+}
 
-// Enable WAL mode for better concurrent access
-sqlite.pragma("journal_mode = WAL");
+// Create postgres connection
+const client = postgres(databaseUrl);
 
 // Export drizzle database instance with schema
-export const db = drizzle(sqlite, { schema });
+export const db = drizzle(client, { schema });
 
 // Export schema for convenience
 export * from "./schema";

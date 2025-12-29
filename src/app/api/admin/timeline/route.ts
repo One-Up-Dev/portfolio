@@ -99,8 +99,8 @@ export async function POST(request: NextRequest) {
         location: location || null,
         skills: skills || null,
         orderIndex: maxOrderIndex,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
       })
       .returning();
 
@@ -143,7 +143,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const updateData: Record<string, unknown> = {
-      updatedAt: new Date().toISOString(),
+      updatedAt: new Date(),
     };
 
     if (period !== undefined) updateData.period = period;
