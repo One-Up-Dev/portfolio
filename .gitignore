@@ -1,51 +1,194 @@
+# ============================================================================
 # Dependencies
+# ============================================================================
 node_modules/
 .pnpm-store/
+yarn.lock
+package-lock.json
+pnpm-lock.yaml
 
-# Build output
+# ============================================================================
+# Build output & Cache
+# ============================================================================
 .next/
 out/
 dist/
 build/
+.cache/
+temp/
+tmp/
+*.egg-info/
 
-# Environment variables
+# ============================================================================
+# Environment variables (NEVER commit secrets)
+# ============================================================================
 .env
 .env.local
 .env.*.local
+.env.production.local
+.env.test.local
+.env.development.local
 
-# IDE
+# ============================================================================
+# IDE & Editor files
+# ============================================================================
 .idea/
 .vscode/
+.vscode-workspace
 *.swp
 *.swo
+*~
+.DS_Store.swp
+.project
+.classpath
+.c9/
+*.launch
+*.sublime-workspace
+.sublime-project
+.history/
 
-# OS
+# ============================================================================
+# OS specific files
+# ============================================================================
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+.AppleDouble
+.LSOverride
+.LSOverride.*
 
-# Logs
+# ============================================================================
+# Logs & Debug
+# ============================================================================
 *.log
 npm-debug.log*
 yarn-debug.log*
+yarn-error.log*
 pnpm-debug.log*
+lerna-debug.log*
 
+# ============================================================================
 # TypeScript
+# ============================================================================
 *.tsbuildinfo
+tsconfig.tsbuildinfo
 
-# Testing
+# ============================================================================
+# Testing & Coverage
+# ============================================================================
 coverage/
+.coverage/
 .nyc_output/
 .playwright-mcp/
+.playwright/
+test-results/
+junit.xml
+coverage-reports/
+test-artifacts/
 
-# Vercel
+# ============================================================================
+# Vercel & Deployment
+# ============================================================================
 .vercel/
+.vercel-build-env.txt
 
-# Drizzle
+# ============================================================================
+# Database files (keep schema, exclude data)
+# ============================================================================
+data/
+*.db
+*.sqlite
+*.sqlite3
+*.db-shm
+*.db-wal
+
+# ============================================================================
+# Drizzle ORM
+# ============================================================================
 drizzle/meta/
 
-# SQLite database
-data/
-
-# Misc
+# ============================================================================
+# Sensitive files & credentials
+# ============================================================================
 *.pem
+*.key
+*.crt
+.env*
+secrets/
+credentials.json
+private/
+
+# ============================================================================
+# Package manager & Build tool cache
+# ============================================================================
 .turbo
+.turborc
+turbo.json.bak
+.pnpm/
+node/.pnpm-store
+node_modules/.bin
+dist/server
+dist/client
+
+# ============================================================================
+# Local development files
+# ============================================================================
+.env.local.example
+.env.development
+local.env
+localhost.env
+*.local.json
+
+# ============================================================================
+# Backup & Temporary files
+# ============================================================================
+*.bak
+*.swp
+*.tmp
+*~
+*.backup
+.DS_Store.bak
+
+# ============================================================================
+# Node.js specific
+# ============================================================================
+.npm
+.eslintcache
+.node_repl_history
+*.tgz
+
+# ============================================================================
+# Misc files that shouldn't be committed
+# ============================================================================
+.now/
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+.cache/
+.parcel-cache
+.gatsby/.cache
+.storybook/
+
+# ============================================================================
+# Media & Upload files (generated uploads should not be committed)
+# ============================================================================
+public/uploads/
+uploads/
+.upload/
+temp_uploads/
+
+# ============================================================================
+# IDE specific
+# ============================================================================
+.vscode-test/
+.vscode/settings.json
+.vscode/launch.json
+.vscode/extensions.json
+*.code-workspace
+.env.*.local
