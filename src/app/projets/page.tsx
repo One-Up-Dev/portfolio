@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ExternalLink, Github, ChevronLeft, ChevronRight } from "lucide-react";
@@ -61,7 +62,7 @@ function highlightMatch(text: string, query: string): React.ReactNode {
   );
 }
 
-export default function ProjectsPage() {
+function ProjectsPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -485,5 +486,13 @@ export default function ProjectsPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function ProjectsPage() {
+  return (
+    <Suspense>
+      <ProjectsPageContent />
+    </Suspense>
   );
 }

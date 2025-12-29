@@ -107,8 +107,6 @@ export default function HomePage() {
         }
       } catch (error) {
         console.error("Error loading specialties:", error);
-      } finally {
-        setSpecialtiesLoaded(true);
       }
     };
     loadSpecialties();
@@ -136,14 +134,14 @@ export default function HomePage() {
           style={{ transform: `translateY(${scrollY * 0.3}px)` }}
         >
           {content.heroGifUrl ? (
-            <img
+            <Image
               src={content.heroGifUrl}
               alt="Hero background"
-              className="absolute inset-0 h-full w-full object-cover object-center"
+              fill
+              className="object-cover object-center"
               style={{
                 filter: "brightness(0.6) saturate(0.8)",
               }}
-              // eslint-disable-next-line @next/next/no-img-element
             />
           ) : null}
           {/* Fallback gradient for when GIF is not available */}
