@@ -20,6 +20,25 @@ export function Header() {
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [crtEnabled, setCrtEnabled] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [logoUrl, setLogoUrl] = useState("/logo-oneup.png");
+
+  // Load logo from settings
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const response = await fetch("/api/settings");
+        if (response.ok) {
+          const data = await response.json();
+          if (data.data?.logoUrl) {
+            setLogoUrl(data.data.logoUrl);
+          }
+        }
+      } catch (error) {
+        console.error("Error loading settings:", error);
+      }
+    };
+    loadSettings();
+  }, []);
 
   // Check authentication and load preferences from localStorage on mount
   useEffect(() => {
@@ -106,12 +125,13 @@ export function Header() {
           className="flex items-center gap-2 transition-opacity hover:opacity-80"
         >
           <Image
-            src="/logo-oneup.png"
+            src={logoUrl}
             alt="ONEUP Logo"
             width={40}
             height={40}
             className="h-10 w-10"
             priority
+            unoptimized
           />
           <span className="font-pixel text-sm text-primary uppercase tracking-wider hidden sm:inline">
             ONEUP
