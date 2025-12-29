@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { ExternalLink, Github, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -313,20 +314,13 @@ export default function ProjectsPage() {
                   className="card-glitch group flex flex-col rounded-lg border border-border bg-card transition-all hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10"
                 >
                   {/* Project Image with Glitch Effect */}
-                  <div className="glitch-image aspect-video w-full overflow-hidden bg-gradient-to-br from-retro-dark to-retro-purple">
+                  <div className="glitch-image aspect-video w-full overflow-hidden bg-gradient-to-br from-retro-dark to-retro-purple relative">
                     {project.mainImageUrl ? (
-                      <img
+                      <Image
                         src={project.mainImageUrl}
                         alt={`Image du projet ${project.title}`}
-                        className="h-full w-full object-cover"
-                        onError={(e) => {
-                          const parent = (e.target as HTMLImageElement)
-                            .parentElement;
-                          if (parent) {
-                            parent.innerHTML =
-                              '<div class="flex h-full items-center justify-center text-4xl p-4">🎮</div>';
-                          }
-                        }}
+                        fill
+                        className="object-cover"
                       />
                     ) : (
                       <div className="flex h-full items-center justify-center p-4 text-4xl">

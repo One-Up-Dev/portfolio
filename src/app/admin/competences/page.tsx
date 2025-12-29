@@ -77,36 +77,35 @@ export default function AdminSkillsPage() {
 
   // Fetch skills from API
   useEffect(() => {
+    const fetchSkills = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch("/api/admin/skills");
+        if (!response.ok) {
+          throw new Error("Failed to fetch skills");
+        }
+        const result = await response.json();
+        if (result.success) {
+          // Ensure all categories exist even if empty
+          const data: SkillsData = {
+            frontend: result.data.frontend || [],
+            backend: result.data.backend || [],
+            outils: result.data.outils || [],
+            soft_skills: result.data.soft_skills || [],
+          };
+          setSkills(data);
+        }
+      } catch (error) {
+        console.error("Error fetching skills:", error);
+        addToast("Erreur lors du chargement des compétences", "error");
+        setErrorMessage("Erreur lors du chargement des compétences");
+        setTimeout(() => setErrorMessage(""), 3000);
+      } finally {
+        setLoading(false);
+      }
+    };
     fetchSkills();
-  }, []);
-
-  const fetchSkills = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch("/api/admin/skills");
-      if (!response.ok) {
-        throw new Error("Failed to fetch skills");
-      }
-      const result = await response.json();
-      if (result.success) {
-        // Ensure all categories exist even if empty
-        const data: SkillsData = {
-          frontend: result.data.frontend || [],
-          backend: result.data.backend || [],
-          outils: result.data.outils || [],
-          soft_skills: result.data.soft_skills || [],
-        };
-        setSkills(data);
-      }
-    } catch (error) {
-      console.error("Error fetching skills:", error);
-      addToast("Erreur lors du chargement des compétences", "error");
-      setErrorMessage("Erreur lors du chargement des compétences");
-      setTimeout(() => setErrorMessage(""), 3000);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [addToast]);
 
   const handleAddSkill = async () => {
     // Validation
@@ -319,7 +318,23 @@ export default function AdminSkillsPage() {
       setErrorMessage("Erreur lors de la réorganisation");
       setTimeout(() => setErrorMessage(""), 3000);
       // Refetch to reset state
-      fetchSkills();
+      try {
+        const response = await fetch("/api/admin/skills");
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success) {
+            const data: SkillsData = {
+              frontend: result.data.frontend || [],
+              backend: result.data.backend || [],
+              outils: result.data.outils || [],
+              soft_skills: result.data.soft_skills || [],
+            };
+            setSkills(data);
+          }
+        }
+      } catch (refetchError) {
+        console.error("Error refetching skills:", refetchError);
+      }
     }
   };
 

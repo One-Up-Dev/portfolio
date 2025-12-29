@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowLeft, ExternalLink, Github, Calendar } from "lucide-react";
 import { useParams, notFound } from "next/navigation";
 import { useState, useEffect } from "react";
@@ -109,20 +110,14 @@ export default function ProjectDetailPage() {
         </Link>
 
         {/* Project Image */}
-        <div className="mb-8 aspect-video w-full overflow-hidden rounded-lg bg-gradient-to-br from-retro-dark to-retro-purple">
+        <div className="mb-8 aspect-video w-full overflow-hidden rounded-lg bg-gradient-to-br from-retro-dark to-retro-purple relative">
           {project.mainImageUrl ? (
-            <img
+            <Image
               src={project.mainImageUrl}
               alt={project.title}
-              className="h-full w-full object-cover"
-              onError={(e) => {
-                // Fallback to emoji if image fails to load
-                const parent = (e.target as HTMLImageElement).parentElement;
-                if (parent) {
-                  parent.innerHTML =
-                    '<div class="flex h-full items-center justify-center text-8xl">🎮</div>';
-                }
-              }}
+              fill
+              className="object-cover"
+              priority
             />
           ) : (
             <div className="flex h-full items-center justify-center text-8xl">
@@ -229,19 +224,11 @@ export default function ProjectDetailPage() {
                   key={index}
                   className="group relative aspect-video overflow-hidden rounded-lg bg-gradient-to-br from-retro-dark to-retro-purple"
                 >
-                  <img
+                  <Image
                     src={imageUrl}
                     alt={`${project.title} - Image ${index + 1}`}
-                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
-                    onError={(e) => {
-                      // Fallback to emoji if image fails to load
-                      const parent = (e.target as HTMLImageElement)
-                        .parentElement;
-                      if (parent) {
-                        parent.innerHTML =
-                          '<div class="flex h-full items-center justify-center text-4xl">🖼️</div>';
-                      }
-                    }}
+                    fill
+                    className="object-cover transition-transform duration-300 group-hover:scale-110"
                   />
                   <div className="absolute inset-0 bg-black/0 transition-colors duration-300 group-hover:bg-black/20" />
                 </div>

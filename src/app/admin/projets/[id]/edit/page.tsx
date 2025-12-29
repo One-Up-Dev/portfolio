@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { useState, useEffect, useCallback, useRef } from "react";
+import Image from "next/image";
 import { useToast } from "@/components/ui/retro-toast";
 
 // Default technology options (fallback if API fails)
@@ -768,14 +769,17 @@ export default function EditProjectPage() {
             {formData.mainImageUrl && (
               <div className="mt-2 p-2 border border-border rounded-lg bg-accent/20">
                 <p className="text-xs text-muted-foreground mb-2">Aperçu:</p>
-                <img
-                  src={formData.mainImageUrl}
-                  alt="Aperçu de l'image principale"
-                  className="max-h-32 rounded object-cover"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = "none";
-                  }}
-                />
+                <div className="relative h-32 w-32">
+                  <Image
+                    src={formData.mainImageUrl}
+                    alt="Aperçu de l'image principale"
+                    fill
+                    className="rounded object-cover"
+                    onError={() => {
+                      // Fallback handled by Next.js Image component
+                    }}
+                  />
+                </div>
               </div>
             )}
           </div>
@@ -834,15 +838,13 @@ export default function EditProjectPage() {
                   .map((url, index) => (
                     <div
                       key={index}
-                      className="aspect-video rounded-lg overflow-hidden bg-accent/20 border border-border"
+                      className="aspect-video rounded-lg overflow-hidden bg-accent/20 border border-border relative"
                     >
-                      <img
+                      <Image
                         src={url}
                         alt={`Galerie ${index + 1}`}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = "none";
-                        }}
+                        fill
+                        className="object-cover"
                       />
                     </div>
                   ))}

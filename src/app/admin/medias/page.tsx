@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import Image from "next/image";
 
 interface MediaItem {
   id: string;
@@ -368,10 +369,11 @@ export default function AdminMediaPage() {
                 }`}
               >
                 {item.url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                  <img
+                  <Image
                     src={item.url}
                     alt={item.altText || item.originalFilename}
-                    className="w-full h-full object-cover"
+                    fill
+                    className="object-cover"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-4xl bg-gradient-to-br from-accent to-accent/50">
@@ -403,9 +405,10 @@ export default function AdminMediaPage() {
             {/* Preview */}
             <div className="aspect-video bg-accent/30 rounded-lg flex items-center justify-center overflow-hidden mb-4">
               {selectedItem.url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                <img
+                <Image
                   src={selectedItem.url}
                   alt={selectedItem.altText || selectedItem.originalFilename}
+                  fill
                   className="max-w-full max-h-full object-contain"
                 />
               ) : (

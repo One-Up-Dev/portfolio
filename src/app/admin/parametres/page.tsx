@@ -575,6 +575,7 @@ export default function AdminSettingsPage() {
         }
 
         setImportSuccess(true);
+        console.log(`Successfully imported ${importedCount} items`);
         setTimeout(() => setImportSuccess(false), 5000);
       } catch (error) {
         console.error("Import error:", error);
