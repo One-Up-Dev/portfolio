@@ -10,13 +10,14 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Retro gaming color palette
+        // Professional retro gaming color palette
         retro: {
           black: "#0d0d0d",
           dark: "#1a1a2e",
           purple: "#16213e",
           blue: "#0f3460",
-          accent: "#e94560",
+          accent: "#ff8c00", // Orange (changed from pink)
+          orange: "#ffa500",
           gold: "#ffd700",
           green: "#00ff41",
           cyan: "#00d4ff",

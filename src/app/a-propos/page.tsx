@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Download, Calendar, MapPin, Heart } from "lucide-react";
 
 export const metadata = {
@@ -25,8 +26,14 @@ export default function AboutPage() {
         <div className="mb-12 flex justify-center">
           <div className="relative">
             <div className="h-40 w-40 rounded-full bg-gradient-to-br from-primary to-retro-cyan p-1">
-              <div className="flex h-full w-full items-center justify-center rounded-full bg-background text-6xl">
-                👨‍💻
+              <div className="flex h-full w-full items-center justify-center rounded-full bg-background">
+                <Image
+                  src="/logo-oneup.png"
+                  alt="ONEUP Avatar"
+                  width={150}
+                  height={150}
+                  className="h-32 w-32 rounded-full"
+                />
               </div>
             </div>
           </div>

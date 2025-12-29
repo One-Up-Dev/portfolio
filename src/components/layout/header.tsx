@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState, useEffect } from "react";
 import { Menu, X, Volume2, VolumeX, Monitor, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -102,10 +103,19 @@ export function Header() {
         {/* Logo */}
         <Link
           href="/"
-          className="flex items-center gap-2 font-pixel text-lg text-primary transition-colors hover:text-primary/80"
+          className="flex items-center gap-2 transition-opacity hover:opacity-80"
         >
-          <span className="text-2xl">🎮</span>
-          <span>ONEUP</span>
+          <Image
+            src="/logo-oneup.png"
+            alt="ONEUP Logo"
+            width={40}
+            height={40}
+            className="h-10 w-10"
+            priority
+          />
+          <span className="font-pixel text-sm text-primary uppercase tracking-wider hidden sm:inline">
+            ONEUP
+          </span>
         </Link>
 
         {/* Desktop Navigation */}
