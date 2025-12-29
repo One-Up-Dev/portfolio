@@ -362,7 +362,7 @@ export default function AdminMediaPage() {
               <button
                 key={item.id}
                 onClick={() => setSelectedMedia(item.id)}
-                className={`aspect-square rounded-lg overflow-hidden border-2 transition-all hover:border-primary ${
+                className={`aspect-square rounded-lg overflow-hidden border-2 transition-all hover:border-primary relative ${
                   selectedMedia === item.id
                     ? "border-primary ring-2 ring-primary/50"
                     : "border-transparent"
@@ -403,16 +403,18 @@ export default function AdminMediaPage() {
             </div>
 
             {/* Preview */}
-            <div className="aspect-video bg-accent/30 rounded-lg flex items-center justify-center overflow-hidden mb-4">
+            <div className="aspect-video bg-accent/30 rounded-lg overflow-hidden mb-4 relative">
               {selectedItem.url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
                 <Image
                   src={selectedItem.url}
                   alt={selectedItem.altText || selectedItem.originalFilename}
                   fill
-                  className="max-w-full max-h-full object-contain"
+                  className="object-contain"
                 />
               ) : (
-                <span className="text-6xl">🖼️</span>
+                <div className="flex items-center justify-center h-full text-6xl">
+                  🖼️
+                </div>
               )}
             </div>
 

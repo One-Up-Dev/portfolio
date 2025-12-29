@@ -18,7 +18,7 @@ interface HomeContent {
 }
 
 const defaultContent: HomeContent = {
-  heroGifUrl: "/images/miyazaki-nature.gif",
+  heroGifUrl: "",
   logoUrl: "/logo-oneup.png",
   heroPhrase: "Développeur Full-Stack en Reconversion",
   specialty1Title: "Automatisation n8n",

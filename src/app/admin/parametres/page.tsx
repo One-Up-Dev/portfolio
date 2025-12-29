@@ -55,7 +55,7 @@ export default function AdminSettingsPage() {
   const [generalError, setGeneralError] = useState<string | null>(null);
 
   // Appearance settings state
-  const [heroGifUrl, setHeroGifUrl] = useState("/images/miyazaki-nature.gif");
+  const [heroGifUrl, setHeroGifUrl] = useState("");
   const [logoUrl, setLogoUrl] = useState("/logo-oneup.png");
   const [appearanceSaving, setAppearanceSaving] = useState(false);
   const [appearanceSuccess, setAppearanceSuccess] = useState(false);

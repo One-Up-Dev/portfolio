@@ -18,7 +18,7 @@ export async function GET() {
       success: true,
       data: {
         // Appearance settings
-        heroGifUrl: settingsObject.heroGifUrl || "/images/miyazaki-nature.gif",
+        heroGifUrl: settingsObject.heroGifUrl || null,
         logoUrl: settingsObject.logoUrl || "/logo-oneup.png",
         // About page content
         aboutMyJourney: settingsObject.aboutMyJourney || null,
@@ -45,7 +45,7 @@ export async function GET() {
     return NextResponse.json({
       success: true,
       data: {
-        heroGifUrl: "/images/miyazaki-nature.gif",
+        heroGifUrl: null,
         logoUrl: "/logo-oneup.png",
       },
     });
