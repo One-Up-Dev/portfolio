@@ -5,23 +5,85 @@ import Image from "next/image";
 import { ArrowRight, Code2, Cpu, Zap } from "lucide-react";
 import { useEffect, useState } from "react";
 
+interface HomeContent {
+  heroGifUrl: string;
+  logoUrl: string;
+  heroPhrase: string;
+}
+
+interface SpecialtyFrame {
+  id: string;
+  title: string;
+  description: string;
+  icon: string | null;
+  orderIndex: number;
+}
+
+const defaultContent: HomeContent = {
+  heroGifUrl: "",
+  logoUrl: "/logo-oneup.png",
+  heroPhrase: "Développeur Full-Stack en Reconversion",
+};
+
+// Default specialty frames (used when database is empty)
+const defaultSpecialties: SpecialtyFrame[] = [
+  {
+    id: "default-1",
+    title: "Automatisation n8n",
+    description:
+      "Création de workflows automatisés pour optimiser les processus métier et gagner en productivité.",
+    icon: "🤖",
+    orderIndex: 0,
+  },
+  {
+    id: "default-2",
+    title: "Claude Code",
+    description:
+      "Développement assisté par IA avec Claude pour un code de qualité et une productivité décuplée.",
+    icon: "💻",
+    orderIndex: 1,
+  },
+  {
+    id: "default-3",
+    title: "Vibe Coding",
+    description:
+      "Approche créative du développement alliant passion, intuition et bonnes pratiques techniques.",
+    icon: "⚡",
+    orderIndex: 2,
+  },
+];
+
+// Map icon emoji to lucide icons for fallback
+const getIconComponent = (icon: string | null, index: number) => {
+  // If we have an emoji icon, return it as text
+  if (icon) {
+    return <span className="text-2xl">{icon}</span>;
+  }
+  // Fallback to lucide icons based on index
+  const icons = [Cpu, Code2, Zap];
+  const IconComponent = icons[index % icons.length];
+  return <IconComponent className="h-6 w-6" />;
+};
+
 export default function HomePage() {
   const [scrollY, setScrollY] = useState(0);
-  const [heroGifUrl, setHeroGifUrl] = useState("/images/miyazaki-nature.gif");
-  const [logoUrl, setLogoUrl] = useState("/logo-oneup.png");
+  const [content, setContent] = useState<HomeContent>(defaultContent);
+  const [specialties, setSpecialties] =
+    useState<SpecialtyFrame[]>(defaultSpecialties);
 
-  // Load appearance settings
+  // Load appearance and content settings
   useEffect(() => {
     const loadSettings = async () => {
       try {
         const response = await fetch("/api/settings");
         if (response.ok) {
           const data = await response.json();
-          if (data.data?.heroGifUrl) {
-            setHeroGifUrl(data.data.heroGifUrl);
-          }
-          if (data.data?.logoUrl) {
-            setLogoUrl(data.data.logoUrl);
+          if (data.data) {
+            setContent({
+              heroGifUrl: data.data.heroGifUrl || defaultContent.heroGifUrl,
+              logoUrl: data.data.logoUrl || defaultContent.logoUrl,
+              heroPhrase: data.data.homeHeroPhrase || defaultContent.heroPhrase,
+            });
           }
         }
       } catch (error) {
@@ -29,6 +91,27 @@ export default function HomePage() {
       }
     };
     loadSettings();
+  }, []);
+
+  // Load specialty frames from database
+  useEffect(() => {
+    const loadSpecialties = async () => {
+      try {
+        const response = await fetch("/api/specialty-frames");
+        if (response.ok) {
+          const data = await response.json();
+          if (data.data && data.data.length > 0) {
+            setSpecialties(data.data);
+          }
+          // If no data in DB, keep using defaultSpecialties
+        }
+      } catch (error) {
+        console.error("Error loading specialties:", error);
+      } finally {
+        setSpecialtiesLoaded(true);
+      }
+    };
+    loadSpecialties();
   }, []);
 
   // Parallax effect on scroll
@@ -47,18 +130,22 @@ export default function HomePage() {
         id="hero"
         className="relative flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center px-4 py-20 overflow-hidden"
       >
-        {/* Miyazaki-style nature GIF background with parallax */}
+        {/* Miyazaki-style nature GIF background with parallax - responsive */}
         <div
           className="absolute inset-0 -z-20"
           style={{ transform: `translateY(${scrollY * 0.3}px)` }}
         >
-          <div
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-            style={{
-              backgroundImage: `url('${heroGifUrl}')`,
-              filter: "brightness(0.6) saturate(0.8)",
-            }}
-          />
+          {content.heroGifUrl ? (
+            <img
+              src={content.heroGifUrl}
+              alt="Hero background"
+              className="absolute inset-0 h-full w-full object-cover object-center"
+              style={{
+                filter: "brightness(0.6) saturate(0.8)",
+              }}
+              // eslint-disable-next-line @next/next/no-img-element
+            />
+          ) : null}
           {/* Fallback gradient for when GIF is not available */}
           <div className="absolute inset-0 bg-gradient-to-b from-retro-dark/90 via-background/80 to-background" />
         </div>
@@ -78,7 +165,7 @@ export default function HomePage() {
           {/* Logo */}
           <div className="mb-8 flex justify-center">
             <Image
-              src={logoUrl}
+              src={content.logoUrl}
               alt="ONEUP Logo"
               width={120}
               height={120}
@@ -95,12 +182,12 @@ export default function HomePage() {
 
           {/* Subtitle */}
           <p className="mb-4 text-xl font-medium text-foreground md:text-2xl">
-            Développeur Full-Stack en Reconversion
+            {content.heroPhrase}
           </p>
 
           {/* Tagline */}
           <p className="mb-8 text-lg text-muted-foreground">
-            n8n • claude-code • automatisation • vibe coding
+            n8n &bull; claude-code &bull; automatisation &bull; vibe coding
           </p>
 
           {/* CTA Buttons - Pixel Art Style */}
@@ -133,7 +220,7 @@ export default function HomePage() {
         </a>
       </section>
 
-      {/* Features Section */}
+      {/* Features Section - Dynamic 3-column grid */}
       <section
         id="specialites"
         className="border-t border-border bg-card py-20"
@@ -143,42 +230,24 @@ export default function HomePage() {
             Spécialités
           </h2>
 
-          <div className="grid gap-8 md:grid-cols-3">
-            {/* Feature 1 */}
-            <div className="group rounded-lg border border-border bg-background p-6 transition-all hover:border-primary/50">
-              <div className="mb-4 inline-flex rounded-lg bg-primary/10 p-3 text-primary">
-                <Cpu className="h-6 w-6" />
+          {/* Dynamic grid - 1 col mobile, 2 cols tablet, 3 cols desktop */}
+          <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-3">
+            {specialties.map((specialty, index) => (
+              <div
+                key={specialty.id}
+                className="group rounded-lg border border-border bg-background p-6 transition-all hover:border-primary/50"
+              >
+                <div className="mb-4 inline-flex rounded-lg bg-primary/10 p-3 text-primary">
+                  {getIconComponent(specialty.icon, index)}
+                </div>
+                <h3 className="mb-2 text-lg font-semibold">
+                  {specialty.title}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {specialty.description}
+                </p>
               </div>
-              <h3 className="mb-2 text-lg font-semibold">Automatisation n8n</h3>
-              <p className="text-sm text-muted-foreground">
-                Création de workflows automatisés pour optimiser les processus
-                métier et gagner en productivité.
-              </p>
-            </div>
-
-            {/* Feature 2 */}
-            <div className="group rounded-lg border border-border bg-background p-6 transition-all hover:border-primary/50">
-              <div className="mb-4 inline-flex rounded-lg bg-primary/10 p-3 text-primary">
-                <Code2 className="h-6 w-6" />
-              </div>
-              <h3 className="mb-2 text-lg font-semibold">Claude Code</h3>
-              <p className="text-sm text-muted-foreground">
-                Développement assisté par IA avec Claude pour un code de qualité
-                et une productivité décuplée.
-              </p>
-            </div>
-
-            {/* Feature 3 */}
-            <div className="group rounded-lg border border-border bg-background p-6 transition-all hover:border-primary/50">
-              <div className="mb-4 inline-flex rounded-lg bg-primary/10 p-3 text-primary">
-                <Zap className="h-6 w-6" />
-              </div>
-              <h3 className="mb-2 text-lg font-semibold">Vibe Coding</h3>
-              <p className="text-sm text-muted-foreground">
-                Approche créative du développement alliant passion, intuition et
-                bonnes pratiques techniques.
-              </p>
-            </div>
+            ))}
           </div>
         </div>
       </section>

@@ -13,12 +13,30 @@ export async function GET() {
       settingsObject[setting.key] = setting.value;
     });
 
-    // Return only public-safe settings
+    // Return only public-safe settings (appearance and content)
     return NextResponse.json({
       success: true,
       data: {
-        heroGifUrl: settingsObject.heroGifUrl || "/images/miyazaki-nature.gif",
+        // Appearance settings
+        heroGifUrl: settingsObject.heroGifUrl || null,
         logoUrl: settingsObject.logoUrl || "/logo-oneup.png",
+        // About page content
+        aboutMyJourney: settingsObject.aboutMyJourney || null,
+        aboutMyStory: settingsObject.aboutMyStory || null,
+        aboutWhyDevelopment: settingsObject.aboutWhyDevelopment || null,
+        aboutMySpecialties: settingsObject.aboutMySpecialties || null,
+        aboutDateOfBirth: settingsObject.aboutDateOfBirth || null,
+        // Home page content
+        homeHeroPhrase: settingsObject.homeHeroPhrase || null,
+        homeSpecialty1Title: settingsObject.homeSpecialty1Title || null,
+        homeSpecialty1Description:
+          settingsObject.homeSpecialty1Description || null,
+        homeSpecialty2Title: settingsObject.homeSpecialty2Title || null,
+        homeSpecialty2Description:
+          settingsObject.homeSpecialty2Description || null,
+        homeSpecialty3Title: settingsObject.homeSpecialty3Title || null,
+        homeSpecialty3Description:
+          settingsObject.homeSpecialty3Description || null,
       },
     });
   } catch (error) {
@@ -27,7 +45,7 @@ export async function GET() {
     return NextResponse.json({
       success: true,
       data: {
-        heroGifUrl: "/images/miyazaki-nature.gif",
+        heroGifUrl: null,
         logoUrl: "/logo-oneup.png",
       },
     });

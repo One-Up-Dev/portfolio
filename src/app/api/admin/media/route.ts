@@ -203,8 +203,8 @@ export async function POST(request: NextRequest) {
     await writeFile(filePath, buffer);
 
     // Get image dimensions if it's an image (basic implementation)
-    let width: number | null = null;
-    let height: number | null = null;
+    const width: number | null = null;
+    const height: number | null = null;
 
     // Store in database
     const publicUrl = `/uploads/${uniqueFilename}`;

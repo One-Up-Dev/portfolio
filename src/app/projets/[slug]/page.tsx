@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowLeft, ExternalLink, Github, Calendar } from "lucide-react";
 import { useParams, notFound } from "next/navigation";
 import { useState, useEffect } from "react";
@@ -109,20 +110,14 @@ export default function ProjectDetailPage() {
         </Link>
 
         {/* Project Image */}
-        <div className="mb-8 aspect-video w-full overflow-hidden rounded-lg bg-gradient-to-br from-retro-dark to-retro-purple">
+        <div className="mb-8 aspect-video w-full overflow-hidden rounded-lg bg-gradient-to-br from-retro-dark to-retro-purple relative">
           {project.mainImageUrl ? (
-            <img
+            <Image
               src={project.mainImageUrl}
               alt={project.title}
-              className="h-full w-full object-cover"
-              onError={(e) => {
-                // Fallback to emoji if image fails to load
-                const parent = (e.target as HTMLImageElement).parentElement;
-                if (parent) {
-                  parent.innerHTML =
-                    '<div class="flex h-full items-center justify-center text-8xl">🎮</div>';
-                }
-              }}
+              fill
+              className="object-cover"
+              priority
             />
           ) : (
             <div className="flex h-full items-center justify-center text-8xl">
@@ -132,7 +127,7 @@ export default function ProjectDetailPage() {
         </div>
 
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-4">
           {/* Status & Date */}
           <div className="mb-4 flex flex-wrap items-center gap-4">
             <span
@@ -157,30 +152,13 @@ export default function ProjectDetailPage() {
           </h1>
 
           {/* Short description */}
-          <p className="text-lg text-muted-foreground">
+          <p className="font-pixel text-xl font-semibold text-foreground">
             {project.shortDescription}
           </p>
         </div>
 
-        {/* Technologies */}
-        <div className="mb-8">
-          <h2 className="mb-3 text-sm font-medium uppercase tracking-wider text-muted-foreground">
-            Technologies
-          </h2>
-          <div className="flex flex-wrap gap-2">
-            {(project.technologies || []).map((tech) => (
-              <span
-                key={tech}
-                className="rounded-md bg-secondary px-3 py-1 text-sm text-secondary-foreground"
-              >
-                {tech}
-              </span>
-            ))}
-          </div>
-        </div>
-
         {/* Links */}
-        <div className="mb-8 flex flex-wrap gap-4">
+        <div className="mb-4 flex flex-wrap gap-4">
           {project.githubUrl && (
             <Link
               href={project.githubUrl}
@@ -208,9 +186,6 @@ export default function ProjectDetailPage() {
         {/* Long description */}
         {project.longDescription && (
           <div className="prose prose-invert max-w-none">
-            <h2 className="mb-4 text-xl font-semibold text-foreground">
-              À propos du projet
-            </h2>
             <div className="whitespace-pre-line text-muted-foreground">
               {project.longDescription}
             </div>
@@ -229,19 +204,11 @@ export default function ProjectDetailPage() {
                   key={index}
                   className="group relative aspect-video overflow-hidden rounded-lg bg-gradient-to-br from-retro-dark to-retro-purple"
                 >
-                  <img
+                  <Image
                     src={imageUrl}
                     alt={`${project.title} - Image ${index + 1}`}
-                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
-                    onError={(e) => {
-                      // Fallback to emoji if image fails to load
-                      const parent = (e.target as HTMLImageElement)
-                        .parentElement;
-                      if (parent) {
-                        parent.innerHTML =
-                          '<div class="flex h-full items-center justify-center text-4xl">🖼️</div>';
-                      }
-                    }}
+                    fill
+                    className="object-cover transition-transform duration-300 group-hover:scale-110"
                   />
                   <div className="absolute inset-0 bg-black/0 transition-colors duration-300 group-hover:bg-black/20" />
                 </div>
@@ -249,6 +216,23 @@ export default function ProjectDetailPage() {
             </div>
           </div>
         )}
+
+        {/* Technologies */}
+        <div className="mt-12">
+          <h2 className="mb-3 text-sm font-medium uppercase tracking-wider text-muted-foreground">
+            Technologies
+          </h2>
+          <div className="flex flex-wrap gap-2">
+            {(project.technologies || []).map((tech) => (
+              <span
+                key={tech}
+                className="rounded-md bg-secondary px-3 py-1 text-sm text-secondary-foreground"
+              >
+                {tech}
+              </span>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

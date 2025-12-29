@@ -1,20 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  Code2,
-  Database,
-  Wrench,
-  Users,
-  Cpu,
-  Globe,
-  Palette,
-  Terminal,
-} from "lucide-react";
+import { Code2, Database, Wrench, Users, Globe } from "lucide-react";
 
 interface Skill {
+  id: string;
   name: string;
-  level: number;
+  category: string;
+  iconUrl: string | null;
+  proficiency: number;
+  orderIndex: number | null;
 }
 
 interface SkillCategory {
@@ -24,102 +19,60 @@ interface SkillCategory {
   skills: Skill[];
 }
 
-// Demo skills data
-const demoSkillCategories: SkillCategory[] = [
-  {
-    id: "frontend",
-    name: "Frontend",
-    icon: Globe,
-    skills: [
-      { name: "React", level: 80 },
-      { name: "Next.js", level: 75 },
-      { name: "TypeScript", level: 70 },
-      { name: "Tailwind CSS", level: 85 },
-      { name: "HTML/CSS", level: 90 },
-      { name: "Framer Motion", level: 60 },
-    ],
-  },
-  {
-    id: "backend",
-    name: "Backend",
-    icon: Database,
-    skills: [
-      { name: "Node.js", level: 70 },
-      { name: "API REST", level: 75 },
-      { name: "PostgreSQL", level: 65 },
-      { name: "Drizzle ORM", level: 60 },
-      { name: "Authentication", level: 65 },
-    ],
-  },
-  {
-    id: "outils",
-    name: "Outils",
-    icon: Wrench,
-    skills: [
-      { name: "n8n", level: 85 },
-      { name: "Claude Code", level: 90 },
-      { name: "Git", level: 75 },
-      { name: "VS Code", level: 85 },
-      { name: "Figma", level: 50 },
-      { name: "Vercel", level: 70 },
-    ],
-  },
-  {
-    id: "soft_skills",
-    name: "Soft Skills",
-    icon: Users,
-    skills: [
-      { name: "Créativité", level: 90 },
-      { name: "Adaptabilité", level: 95 },
-      { name: "Autonomie", level: 85 },
-      { name: "Communication", level: 80 },
-      { name: "Résolution problèmes", level: 85 },
-    ],
-  },
-];
-
-const techIcons: Record<string, React.ReactNode> = {
-  React: <Code2 className="h-4 w-4" />,
-  "Next.js": <Globe className="h-4 w-4" />,
-  TypeScript: <Terminal className="h-4 w-4" />,
-  "Tailwind CSS": <Palette className="h-4 w-4" />,
-  n8n: <Cpu className="h-4 w-4" />,
-  "Claude Code": <Cpu className="h-4 w-4" />,
+const categoryConfig: Record<
+  string,
+  { name: string; icon: React.ComponentType<{ className?: string }> }
+> = {
+  frontend: { name: "Frontend", icon: Globe },
+  backend: { name: "Backend", icon: Database },
+  outils: { name: "Outils", icon: Wrench },
+  soft_skills: { name: "Soft Skills", icon: Users },
 };
 
 export default function SkillsPage() {
-  const [skillCategories, setSkillCategories] =
-    useState<SkillCategory[]>(demoSkillCategories);
+  const [skillCategories, setSkillCategories] = useState<SkillCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Load skills from localStorage on mount
+  // Load skills from API on mount
   useEffect(() => {
-    const loadSkills = () => {
+    const loadSkills = async () => {
       try {
-        const savedSkills = localStorage.getItem("demo_skills");
-        if (savedSkills) {
-          const parsed = JSON.parse(savedSkills);
-
-          // Merge user-created skills with demo skills
-          const mergedCategories = demoSkillCategories.map((category) => {
-            const userSkills = parsed[category.id] || [];
-            const additionalSkills = userSkills.map(
-              (s: { name: string; icon: string }) => ({
-                name: s.name,
-                level: 75, // Default level for user-created skills
-              }),
-            );
-
-            return {
-              ...category,
-              skills: [...category.skills, ...additionalSkills],
-            };
-          });
-
-          setSkillCategories(mergedCategories);
+        setIsLoading(true);
+        const response = await fetch("/api/skills");
+        if (!response.ok) {
+          throw new Error("Failed to fetch skills");
         }
-      } catch (error) {
-        console.error("Error loading skills:", error);
+        const result = await response.json();
+
+        if (result.success) {
+          // Transform API data into skill categories
+          const categories: SkillCategory[] = [];
+
+          for (const categoryId of [
+            "frontend",
+            "backend",
+            "outils",
+            "soft_skills",
+          ]) {
+            const config = categoryConfig[categoryId];
+            const categorySkills = result.data[categoryId] || [];
+
+            if (categorySkills.length > 0) {
+              categories.push({
+                id: categoryId,
+                name: config.name,
+                icon: config.icon,
+                skills: categorySkills,
+              });
+            }
+          }
+
+          setSkillCategories(categories);
+        }
+      } catch (err) {
+        console.error("Error loading skills:", err);
+        setError("Erreur lors du chargement des compétences");
       } finally {
         setIsLoading(false);
       }
@@ -135,6 +88,18 @@ export default function SkillsPage() {
           <div className="flex items-center justify-center py-20">
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
             <span className="ml-3 text-muted-foreground">Chargement...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="py-20">
+        <div className="container mx-auto max-w-6xl px-4">
+          <div className="flex items-center justify-center py-20 text-destructive">
+            {error}
           </div>
         </div>
       </div>
@@ -172,22 +137,24 @@ export default function SkillsPage() {
               {/* Skills List */}
               <div className="space-y-4">
                 {category.skills.map((skill) => (
-                  <div key={skill.name}>
+                  <div key={skill.id}>
                     <div className="mb-1 flex items-center justify-between">
                       <span className="flex items-center gap-2 text-sm font-medium">
-                        {techIcons[skill.name] || (
+                        {skill.iconUrl ? (
+                          <span className="text-base">{skill.iconUrl}</span>
+                        ) : (
                           <Code2 className="h-4 w-4 text-muted-foreground" />
                         )}
                         {skill.name}
                       </span>
                       <span className="text-xs text-muted-foreground">
-                        {skill.level}%
+                        {skill.proficiency}%
                       </span>
                     </div>
                     <div className="h-2 overflow-hidden rounded-full bg-secondary">
                       <div
                         className="h-full rounded-full bg-gradient-to-r from-primary to-retro-cyan transition-all duration-500"
-                        style={{ width: `${skill.level}%` }}
+                        style={{ width: `${skill.proficiency}%` }}
                       />
                     </div>
                   </div>

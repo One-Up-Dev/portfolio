@@ -75,10 +75,9 @@ export async function GET(request: NextRequest) {
     });
 
     // Merge with default technologies (defaults first, then project-specific)
-    const allTechnologies = new Set<string>([
-      ...defaultTechnologies,
-      ...projectTechnologies,
-    ]);
+    const allTechnologies = new Set<string>();
+    defaultTechnologies.forEach((tech) => allTechnologies.add(tech));
+    projectTechnologies.forEach((tech) => allTechnologies.add(tech));
 
     // Convert to sorted array
     const technologiesArray = Array.from(allTechnologies).sort((a, b) =>

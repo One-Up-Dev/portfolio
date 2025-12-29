@@ -94,6 +94,7 @@ export const skills = sqliteTable("skills", {
     enum: ["frontend", "backend", "outils", "soft_skills"],
   }).notNull(),
   iconUrl: text("icon_url"),
+  proficiency: integer("proficiency").default(75).notNull(), // Proficiency percentage (0-100)
   orderIndex: integer("order_index").default(0),
   createdAt: text("created_at")
     .default(sql`(datetime('now'))`)
@@ -180,6 +181,42 @@ export const siteSettings = sqliteTable("site_settings", {
     .notNull(),
 });
 
+// Timeline entries table for My Journey section
+export const timelineEntries = sqliteTable("timeline_entries", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => generateUUID()),
+  period: text("period").notNull(), // e.g., "2020-2022" or "Jan 2020 - Mar 2022"
+  title: text("title").notNull(), // e.g., "Senior Developer at TechCorp"
+  description: text("description").notNull(), // e.g., "Led frontend team, built React applications"
+  location: text("location"), // e.g., "Remote / Paris, France"
+  skills: text("skills"), // e.g., "React, Node.js, TypeScript"
+  orderIndex: integer("order_index").default(0).notNull(), // For manual ordering
+  createdAt: text("created_at")
+    .default(sql`(datetime('now'))`)
+    .notNull(),
+  updatedAt: text("updated_at")
+    .default(sql`(datetime('now'))`)
+    .notNull(),
+});
+
+// Specialty frames table for Home page
+export const specialtyFrames = sqliteTable("specialty_frames", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => generateUUID()),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  icon: text("icon").default("⚡"), // Emoji or icon reference
+  orderIndex: integer("order_index").default(0).notNull(),
+  createdAt: text("created_at")
+    .default(sql`(datetime('now'))`)
+    .notNull(),
+  updatedAt: text("updated_at")
+    .default(sql`(datetime('now'))`)
+    .notNull(),
+});
+
 // Type exports for use in application
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
@@ -207,3 +244,9 @@ export type NewAIGeneration = typeof aiGenerations.$inferInsert;
 
 export type SiteSetting = typeof siteSettings.$inferSelect;
 export type NewSiteSetting = typeof siteSettings.$inferInsert;
+
+export type TimelineEntry = typeof timelineEntries.$inferSelect;
+export type NewTimelineEntry = typeof timelineEntries.$inferInsert;
+
+export type SpecialtyFrame = typeof specialtyFrames.$inferSelect;
+export type NewSpecialtyFrame = typeof specialtyFrames.$inferInsert;

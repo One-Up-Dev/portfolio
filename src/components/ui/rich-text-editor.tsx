@@ -153,8 +153,16 @@ export function RichTextEditor({
     ],
     // Insert
     [
-      { icon: <Link className="w-4 h-4" />, label: "Lien", command: "link" },
-      { icon: <Image className="w-4 h-4" />, label: "Image", command: "image" },
+      {
+        icon: <Link className="w-4 h-4" aria-label="Link" />,
+        label: "Lien",
+        command: "link",
+      },
+      {
+        icon: <Image className="w-4 h-4" aria-label="Image" />,
+        label: "Image",
+        command: "image",
+      },
     ],
     // History
     [

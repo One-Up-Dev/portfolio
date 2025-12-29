@@ -33,7 +33,11 @@ const statusOptions = [
 
 // AI generation type options
 const aiGenerationTypes = [
-  { value: "article", label: "Article complet" },
+  {
+    value: "complete",
+    label: "Article complet (titre, extrait, contenu, méta)",
+  },
+  { value: "article", label: "Contenu seul" },
   { value: "title", label: "Titre accrocheur" },
   { value: "outline", label: "Plan d'article" },
   { value: "section", label: "Section spécifique" },
@@ -83,10 +87,17 @@ export default function NewBlogPostPage() {
   // AI Generation state
   const [showAiModal, setShowAiModal] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
-  const [aiGenerationType, setAiGenerationType] = useState("article");
+  const [aiGenerationType, setAiGenerationType] = useState("complete");
   const [aiGenerating, setAiGenerating] = useState(false);
   const [aiGeneratedContent, setAiGeneratedContent] = useState("");
   const [aiError, setAiError] = useState<string | null>(null);
+  const [contextUrls, setContextUrls] = useState<string[]>([""]);
+  const [aiGeneratedArticle, setAiGeneratedArticle] = useState<{
+    title?: string;
+    excerpt?: string;
+    content?: string;
+    metaDescription?: string;
+  } | null>(null);
 
   // Load existing tags from API on mount
   useEffect(() => {
@@ -203,8 +214,12 @@ export default function NewBlogPostPage() {
     setAiGenerating(true);
     setAiError(null);
     setAiGeneratedContent("");
+    setAiGeneratedArticle(null);
 
     try {
+      // Filter out empty context URLs
+      const validUrls = contextUrls.filter((url) => url.trim() !== "");
+
       const response = await fetch("/api/admin/ai/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -212,6 +227,7 @@ export default function NewBlogPostPage() {
         body: JSON.stringify({
           prompt: aiPrompt,
           type: aiGenerationType,
+          contextUrls: validUrls,
         }),
       });
 
@@ -221,7 +237,19 @@ export default function NewBlogPostPage() {
       }
 
       const data = await response.json();
-      setAiGeneratedContent(data.data?.content || data.content || "");
+
+      // Handle complete article generation
+      if (aiGenerationType === "complete" && data.data?.type === "complete") {
+        setAiGeneratedArticle({
+          title: data.data.title,
+          excerpt: data.data.excerpt,
+          content: data.data.content,
+          metaDescription: data.data.metaDescription,
+        });
+        setAiGeneratedContent(data.data.content || "");
+      } else {
+        setAiGeneratedContent(data.data?.content || data.content || "");
+      }
     } catch (error) {
       console.error("AI generation error:", error);
       setAiError(
@@ -234,6 +262,29 @@ export default function NewBlogPostPage() {
 
   // Insert AI generated content into the form
   const handleInsertAiContent = () => {
+    // Handle complete article insertion
+    if (aiGenerationType === "complete" && aiGeneratedArticle) {
+      setFormData((prev) => ({
+        ...prev,
+        title: aiGeneratedArticle.title || prev.title,
+        excerpt: aiGeneratedArticle.excerpt || prev.excerpt,
+        content: aiGeneratedArticle.content || prev.content,
+        metaDescription:
+          aiGeneratedArticle.metaDescription || prev.metaDescription,
+      }));
+      // Close modal and reset
+      setShowAiModal(false);
+      setAiPrompt("");
+      setAiGeneratedContent("");
+      setAiGeneratedArticle(null);
+      setContextUrls([""]);
+      addToast(
+        "Article complet inséré avec succès! (titre, extrait, contenu, méta)",
+        "success",
+      );
+      return;
+    }
+
     if (!aiGeneratedContent) return;
 
     if (aiGenerationType === "title") {
@@ -256,6 +307,8 @@ export default function NewBlogPostPage() {
     setShowAiModal(false);
     setAiPrompt("");
     setAiGeneratedContent("");
+    setAiGeneratedArticle(null);
+    setContextUrls([""]);
     addToast("Contenu IA inséré avec succès!", "success");
   };
 
@@ -797,16 +850,70 @@ export default function NewBlogPostPage() {
                   value={aiPrompt}
                   onChange={(e) => setAiPrompt(e.target.value)}
                   placeholder={
-                    aiGenerationType === "title"
-                      ? "Décrivez le sujet pour lequel vous voulez un titre accrocheur..."
-                      : aiGenerationType === "improve"
-                        ? "Collez le texte à améliorer..."
-                        : "Décrivez le sujet de l'article que vous voulez générer..."
+                    aiGenerationType === "complete"
+                      ? "Décrivez le sujet de l'article complet (ex: 'React hooks best practices', 'Guide SEO pour développeurs')..."
+                      : aiGenerationType === "title"
+                        ? "Décrivez le sujet pour lequel vous voulez un titre accrocheur..."
+                        : aiGenerationType === "improve"
+                          ? "Collez le texte à améliorer..."
+                          : "Décrivez le sujet de l'article que vous voulez générer..."
                   }
                   rows={4}
                   className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-y"
                 />
               </div>
+
+              {/* Context URLs - only for complete article type */}
+              {aiGenerationType === "complete" && (
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    URLs de contexte (optionnel, max 5)
+                  </label>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Ajoutez des liens vers des articles de référence pour
+                    enrichir le contenu généré
+                  </p>
+                  {contextUrls.map((url, index) => (
+                    <div key={index} className="flex gap-2 mb-2">
+                      <input
+                        type="url"
+                        value={url}
+                        onChange={(e) => {
+                          const newUrls = [...contextUrls];
+                          newUrls[index] = e.target.value;
+                          setContextUrls(newUrls);
+                        }}
+                        placeholder={`https://example.com/article-${index + 1}`}
+                        className="flex-1 px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                      />
+                      {contextUrls.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newUrls = contextUrls.filter(
+                              (_, i) => i !== index,
+                            );
+                            setContextUrls(newUrls);
+                          }}
+                          className="px-3 py-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                          aria-label="Supprimer cette URL"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  {contextUrls.length < 5 && (
+                    <button
+                      type="button"
+                      onClick={() => setContextUrls([...contextUrls, ""])}
+                      className="text-sm text-primary hover:underline mt-1"
+                    >
+                      + Ajouter une URL de contexte
+                    </button>
+                  )}
+                </div>
+              )}
 
               {/* Generate Button */}
               <button
@@ -828,8 +935,78 @@ export default function NewBlogPostPage() {
                 )}
               </button>
 
-              {/* Generated Content */}
-              {aiGeneratedContent && (
+              {/* Generated Content - Complete Article Preview */}
+              {aiGenerationType === "complete" && aiGeneratedArticle && (
+                <div className="mt-4 space-y-4">
+                  <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4">
+                    <h4 className="text-sm font-semibold text-green-500 mb-3">
+                      ✅ Article complet généré avec succès!
+                    </h4>
+
+                    {/* Title Preview */}
+                    <div className="mb-3">
+                      <span className="text-xs font-medium text-muted-foreground">
+                        TITRE:
+                      </span>
+                      <p className="text-foreground font-semibold">
+                        {aiGeneratedArticle.title}
+                      </p>
+                      <span className="text-xs text-muted-foreground">
+                        ({aiGeneratedArticle.title?.length || 0} caractères)
+                      </span>
+                    </div>
+
+                    {/* Excerpt Preview */}
+                    <div className="mb-3">
+                      <span className="text-xs font-medium text-muted-foreground">
+                        EXTRAIT:
+                      </span>
+                      <p className="text-foreground text-sm">
+                        {aiGeneratedArticle.excerpt}
+                      </p>
+                      <span className="text-xs text-muted-foreground">
+                        ({aiGeneratedArticle.excerpt?.length || 0} caractères)
+                      </span>
+                    </div>
+
+                    {/* Meta Description Preview */}
+                    <div className="mb-3">
+                      <span className="text-xs font-medium text-muted-foreground">
+                        META DESCRIPTION (SEO):
+                      </span>
+                      <p className="text-foreground text-sm italic">
+                        {aiGeneratedArticle.metaDescription}
+                      </p>
+                      <span className="text-xs text-muted-foreground">
+                        ({aiGeneratedArticle.metaDescription?.length || 0}{" "}
+                        caractères)
+                      </span>
+                    </div>
+
+                    {/* Content Preview */}
+                    <div>
+                      <span className="text-xs font-medium text-muted-foreground">
+                        CONTENU:
+                      </span>
+                      <div className="bg-background border border-border rounded-lg p-3 max-h-40 overflow-y-auto mt-1">
+                        <pre className="whitespace-pre-wrap text-xs text-foreground font-mono">
+                          {aiGeneratedArticle.content?.slice(0, 500)}...
+                        </pre>
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        ({aiGeneratedArticle.content?.length || 0} caractères, ~
+                        {Math.round(
+                          aiGeneratedArticle.content?.split(/\s+/).length || 0,
+                        )}{" "}
+                        mots)
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Generated Content - Standard Preview */}
+              {aiGenerationType !== "complete" && aiGeneratedContent && (
                 <div className="mt-4 space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-2">
@@ -868,11 +1045,19 @@ export default function NewBlogPostPage() {
               <button
                 type="button"
                 onClick={handleInsertAiContent}
-                disabled={!aiGeneratedContent}
+                disabled={
+                  aiGenerationType === "complete"
+                    ? !aiGeneratedArticle
+                    : !aiGeneratedContent
+                }
                 className="px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 <span>📝</span>
-                <span>Insérer dans l&apos;article</span>
+                <span>
+                  {aiGenerationType === "complete"
+                    ? "Insérer l'article complet"
+                    : "Insérer dans l'article"}
+                </span>
               </button>
             </div>
           </div>

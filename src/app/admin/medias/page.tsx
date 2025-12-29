@@ -361,7 +361,7 @@ export default function AdminMediaPage() {
               <button
                 key={item.id}
                 onClick={() => setSelectedMedia(item.id)}
-                className={`aspect-square rounded-lg overflow-hidden border-2 transition-all hover:border-primary ${
+                className={`aspect-square rounded-lg overflow-hidden border-2 transition-all hover:border-primary relative ${
                   selectedMedia === item.id
                     ? "border-primary ring-2 ring-primary/50"
                     : "border-transparent"
@@ -372,6 +372,7 @@ export default function AdminMediaPage() {
                     src={item.url}
                     alt={item.altText || item.originalFilename}
                     className="w-full h-full object-cover"
+                    // eslint-disable-next-line @next/next/no-img-element
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-4xl bg-gradient-to-br from-accent to-accent/50">
@@ -401,15 +402,18 @@ export default function AdminMediaPage() {
             </div>
 
             {/* Preview */}
-            <div className="aspect-video bg-accent/30 rounded-lg flex items-center justify-center overflow-hidden mb-4">
+            <div className="aspect-video bg-accent/30 rounded-lg overflow-hidden mb-4">
               {selectedItem.url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
                 <img
                   src={selectedItem.url}
                   alt={selectedItem.altText || selectedItem.originalFilename}
-                  className="max-w-full max-h-full object-contain"
+                  className="w-full h-full object-contain"
+                  // eslint-disable-next-line @next/next/no-img-element
                 />
               ) : (
-                <span className="text-6xl">🖼️</span>
+                <div className="flex items-center justify-center h-full text-6xl">
+                  🖼️
+                </div>
               )}
             </div>
 

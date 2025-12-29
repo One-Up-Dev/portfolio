@@ -152,17 +152,6 @@ export default function AdminLoginPage() {
               )}
             </button>
           </form>
-
-          {/* Demo credentials hint */}
-          <div className="mt-6 p-4 bg-accent/20 border border-accent/50 rounded-lg">
-            <p className="text-sm text-muted-foreground text-center">
-              <strong className="text-foreground">Mode démo:</strong>
-              <br />
-              Email: admin@oneup.dev
-              <br />
-              Mot de passe: Admin123!
-            </p>
-          </div>
         </div>
 
         {/* Back to site link */}

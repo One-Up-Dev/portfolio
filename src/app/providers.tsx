@@ -2,7 +2,7 @@
 
 import { ToastProvider } from "@/components/ui/retro-toast";
 import { PageViewTracker } from "@/components/analytics/page-view-tracker";
-import { KonamiModal } from "@/components/ui/konami-modal";
+import { SpaceInvaders } from "@/components/ui/space-invaders";
 import { SoundProvider } from "@/lib/sound-context";
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -10,7 +10,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <SoundProvider>
       <ToastProvider>
         <PageViewTracker />
-        <KonamiModal />
+        <SpaceInvaders />
         {children}
       </ToastProvider>
     </SoundProvider>
