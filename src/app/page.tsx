@@ -70,7 +70,6 @@ export default function HomePage() {
   const [content, setContent] = useState<HomeContent>(defaultContent);
   const [specialties, setSpecialties] =
     useState<SpecialtyFrame[]>(defaultSpecialties);
-  const [specialtiesLoaded, setSpecialtiesLoaded] = useState(false);
 
   // Load appearance and content settings
   useEffect(() => {
@@ -131,18 +130,22 @@ export default function HomePage() {
         id="hero"
         className="relative flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center px-4 py-20 overflow-hidden"
       >
-        {/* Miyazaki-style nature GIF background with parallax */}
+        {/* Miyazaki-style nature GIF background with parallax - responsive */}
         <div
           className="absolute inset-0 -z-20"
           style={{ transform: `translateY(${scrollY * 0.3}px)` }}
         >
-          <div
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-            style={{
-              backgroundImage: `url('${content.heroGifUrl}')`,
-              filter: "brightness(0.6) saturate(0.8)",
-            }}
-          />
+          {content.heroGifUrl ? (
+            <img
+              src={content.heroGifUrl}
+              alt="Hero background"
+              className="absolute inset-0 h-full w-full object-cover object-center"
+              style={{
+                filter: "brightness(0.6) saturate(0.8)",
+              }}
+              // eslint-disable-next-line @next/next/no-img-element
+            />
+          ) : null}
           {/* Fallback gradient for when GIF is not available */}
           <div className="absolute inset-0 bg-gradient-to-b from-retro-dark/90 via-background/80 to-background" />
         </div>

@@ -127,7 +127,7 @@ export default function ProjectDetailPage() {
         </div>
 
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-4">
           {/* Status & Date */}
           <div className="mb-4 flex flex-wrap items-center gap-4">
             <span
@@ -152,30 +152,13 @@ export default function ProjectDetailPage() {
           </h1>
 
           {/* Short description */}
-          <p className="text-lg text-muted-foreground">
+          <p className="font-pixel text-xl font-semibold text-foreground">
             {project.shortDescription}
           </p>
         </div>
 
-        {/* Technologies */}
-        <div className="mb-8">
-          <h2 className="mb-3 text-sm font-medium uppercase tracking-wider text-muted-foreground">
-            Technologies
-          </h2>
-          <div className="flex flex-wrap gap-2">
-            {(project.technologies || []).map((tech) => (
-              <span
-                key={tech}
-                className="rounded-md bg-secondary px-3 py-1 text-sm text-secondary-foreground"
-              >
-                {tech}
-              </span>
-            ))}
-          </div>
-        </div>
-
         {/* Links */}
-        <div className="mb-8 flex flex-wrap gap-4">
+        <div className="mb-4 flex flex-wrap gap-4">
           {project.githubUrl && (
             <Link
               href={project.githubUrl}
@@ -203,9 +186,6 @@ export default function ProjectDetailPage() {
         {/* Long description */}
         {project.longDescription && (
           <div className="prose prose-invert max-w-none">
-            <h2 className="mb-4 text-xl font-semibold text-foreground">
-              À propos du projet
-            </h2>
             <div className="whitespace-pre-line text-muted-foreground">
               {project.longDescription}
             </div>
@@ -236,6 +216,23 @@ export default function ProjectDetailPage() {
             </div>
           </div>
         )}
+
+        {/* Technologies */}
+        <div className="mt-12">
+          <h2 className="mb-3 text-sm font-medium uppercase tracking-wider text-muted-foreground">
+            Technologies
+          </h2>
+          <div className="flex flex-wrap gap-2">
+            {(project.technologies || []).map((tech) => (
+              <span
+                key={tech}
+                className="rounded-md bg-secondary px-3 py-1 text-sm text-secondary-foreground"
+              >
+                {tech}
+              </span>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

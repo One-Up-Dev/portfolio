@@ -669,12 +669,12 @@ export function SpaceInvaders() {
                     setUsername(
                       e.target.value
                         .toUpperCase()
-                        .replace(/[^A-Z]/g, "")
+                        .replace(/[^A-Z0-9]/g, "")
                         .slice(0, 3),
                     )
                   }
                   maxLength={3}
-                  placeholder="AAA"
+                  placeholder="A1B"
                   className="w-24 px-4 py-2 bg-black border-2 border-green-500 text-green-400 font-pixel text-center text-xl uppercase tracking-widest focus:outline-none focus:border-yellow-400"
                   autoFocus
                   onKeyDown={(e) => {
@@ -683,7 +683,7 @@ export function SpaceInvaders() {
                     }
                   }}
                 />
-                <div className="text-xs text-gray-500">3 letters only</div>
+                <div className="text-xs text-gray-500">A-Z 0-9, max 3</div>
                 <button
                   onClick={submitScore}
                   disabled={username.length !== 3}
@@ -736,10 +736,15 @@ export function SpaceInvaders() {
           )}
         </div>
 
-        {/* Controls hint during gameplay */}
+        {/* Game info during gameplay */}
         {gameState === "playing" && (
-          <div className="mt-4 text-center text-xs text-gray-500 font-pixel">
-            ←→ MOVE | SPACE SHOOT | ESC PAUSE
+          <div className="mt-4 space-y-2">
+            <div className="text-center text-sm text-yellow-400 font-pixel">
+              WAVE: {wave}
+            </div>
+            <div className="text-center text-xs text-gray-500 font-pixel">
+              ←→ MOVE | SPACE SHOOT | ESC PAUSE
+            </div>
           </div>
         )}
       </div>
