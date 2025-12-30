@@ -30,7 +30,7 @@ async function getClaudeApiKey(): Promise<string | null> {
     const result = await db
       .select()
       .from(siteSettings)
-      .where(eq(siteSettings.key, "claude_api_key"))
+      .where(eq(siteSettings.key, "claudeApiKey"))
       .limit(1);
 
     if (result.length > 0 && result[0].value) {
