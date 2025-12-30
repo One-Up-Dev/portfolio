@@ -192,3 +192,5 @@ temp_uploads/
 .vscode/extensions.json
 *.code-workspace
 .env.*.local
+.vercel
+.env*.local

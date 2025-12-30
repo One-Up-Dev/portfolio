@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "../../../../../db";
 import { mediaLibrary } from "../../../../../db/schema";
 import { desc, eq } from "drizzle-orm";
-import { writeFile, mkdir, unlink } from "fs/promises";
+import { put, del } from "@vercel/blob";
 import path from "path";
 
 // Allowed image MIME types
@@ -192,28 +192,27 @@ export async function POST(request: NextRequest) {
       .replace(/[^a-zA-Z0-9-_]/g, "-");
     const uniqueFilename = `${baseName}-${timestamp}${ext}`;
 
-    // Create uploads directory if it doesn't exist
-    const uploadsDir = path.join(process.cwd(), "public", "uploads");
-    await mkdir(uploadsDir, { recursive: true });
-
-    // Save file to disk
-    const filePath = path.join(uploadsDir, uniqueFilename);
+    // Upload to Vercel Blob
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
-    await writeFile(filePath, buffer);
+
+    const blob = await put(uniqueFilename, buffer, {
+      access: "public",
+      contentType: file.type,
+      addRandomSuffix: false,
+    });
 
     // Get image dimensions if it's an image (basic implementation)
     const width: number | null = null;
     const height: number | null = null;
 
     // Store in database
-    const publicUrl = `/uploads/${uniqueFilename}`;
     const result = await db
       .insert(mediaLibrary)
       .values({
         filename: uniqueFilename,
         originalFilename: file.name,
-        url: publicUrl,
+        url: blob.url,
         mimeType: file.type,
         sizeBytes: file.size,
         width,
@@ -269,6 +268,16 @@ export async function DELETE(request: NextRequest) {
 
     const media = mediaToDelete[0];
 
+    // Delete the file from Vercel Blob if it's a blob URL
+    if (media.url) {
+      try {
+        await del(media.url);
+      } catch (fileError) {
+        // Log but don't fail if blob deletion fails (file might not exist)
+        console.warn("Could not delete file from Vercel Blob:", fileError);
+      }
+    }
+
     // Delete from database
     const deleted = await db
       .delete(mediaLibrary)
@@ -277,17 +286,6 @@ export async function DELETE(request: NextRequest) {
 
     if (deleted.length === 0) {
       return NextResponse.json({ error: "Media not found" }, { status: 404 });
-    }
-
-    // Delete the file from disk if it's a local upload
-    if (media.url && media.url.startsWith("/uploads/")) {
-      try {
-        const filePath = path.join(process.cwd(), "public", media.url);
-        await unlink(filePath);
-      } catch (fileError) {
-        // Log but don't fail if file deletion fails (file might not exist)
-        console.warn("Could not delete file from disk:", fileError);
-      }
     }
 
     return NextResponse.json({
