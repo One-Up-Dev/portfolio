@@ -74,7 +74,9 @@ export async function POST(request: NextRequest) {
       sameSite: "lax", // CSRF protection
       path: "/",
       maxAge: maxAge,
-      // secure: true, // Enable this in production with HTTPS
+      secure:
+        process.env.NODE_ENV === "production" ||
+        process.env.NEXT_PUBLIC_BASE_URL?.startsWith("https"), // Enable in production or HTTPS
     });
 
     return response;

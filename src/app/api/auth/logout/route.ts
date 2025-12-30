@@ -16,6 +16,9 @@ export async function POST() {
       sameSite: "lax",
       path: "/",
       maxAge: 0, // Expire immediately
+      secure:
+        process.env.NODE_ENV === "production" ||
+        process.env.NEXT_PUBLIC_BASE_URL?.startsWith("https"), // Enable in production or HTTPS
     });
 
     return response;
