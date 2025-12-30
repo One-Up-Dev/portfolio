@@ -16,35 +16,39 @@ export default function AdminLoginPage() {
     setError("");
     setIsLoading(true);
 
-    // Simulate API call delay
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
-    // Demo authentication - in production this would call a real API
-    // Demo credentials: admin@oneup.dev / Admin123!
-    // Also check for changed password in localStorage
-    const storedPassword = localStorage.getItem("demo_password") || "Admin123!";
-    if (email === "admin@oneup.dev" && password === storedPassword) {
-      // Store session in localStorage for demo purposes
-      const session = {
-        user: {
-          id: "1",
-          email: "admin@oneup.dev",
-          name: "Admin ONEUP",
+    try {
+      // Call the server-side login API
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-        isAuthenticated: true,
-        expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 days
-      };
-      localStorage.setItem("admin_session", JSON.stringify(session));
+        body: JSON.stringify({ email, password }),
+      });
 
-      // Also set a cookie for API route authentication
-      document.cookie = `admin_session=${encodeURIComponent(JSON.stringify(session))}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
+      const data = await response.json();
 
-      router.push("/admin");
-    } else {
-      setError("Email ou mot de passe incorrect");
+      if (response.ok && data.success) {
+        // Store session in localStorage for client-side reference only
+        // The actual authentication is handled by the HTTP-only cookie set by the server
+        const session = {
+          user: data.session.user,
+          isAuthenticated: true,
+          expiresAt: data.session.expiresAt,
+        };
+        localStorage.setItem("admin_session", JSON.stringify(session));
+
+        // Redirect to admin dashboard
+        router.push("/admin");
+      } else {
+        setError(data.error || "Email ou mot de passe incorrect");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      setError("Une erreur s'est produite. Veuillez réessayer.");
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
 
   return (

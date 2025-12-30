@@ -3,6 +3,19 @@ import { db } from "../../../../../../db";
 import { skills } from "../../../../../../db/schema";
 import { eq } from "drizzle-orm";
 
+// Helper function to serialize dates to ISO strings
+function serializeDates<T extends Record<string, unknown>>(obj: T): T {
+  const serialized = { ...obj };
+  for (const key in serialized) {
+    if (serialized[key] instanceof Date) {
+      serialized[key] = (
+        serialized[key] as Date
+      ).toISOString() as T[typeof key];
+    }
+  }
+  return serialized;
+}
+
 // Check if the request has a valid admin session
 function isAuthenticated(request: NextRequest): boolean {
   const authHeader = request.headers.get("authorization");
@@ -51,7 +64,7 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      data: skill,
+      data: serializeDates(skill),
     });
   } catch (error) {
     console.error("Error fetching skill:", error);
@@ -114,7 +127,7 @@ export async function PUT(
 
     return NextResponse.json({
       success: true,
-      data: updatedSkill,
+      data: serializeDates(updatedSkill),
       message: "Skill updated successfully",
     });
   } catch (error) {

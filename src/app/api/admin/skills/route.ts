@@ -3,6 +3,19 @@ import { db } from "../../../../../db";
 import { skills } from "../../../../../db/schema";
 import { eq, asc } from "drizzle-orm";
 
+// Helper function to serialize dates to ISO strings
+function serializeDates<T extends Record<string, unknown>>(obj: T): T {
+  const serialized = { ...obj };
+  for (const key in serialized) {
+    if (serialized[key] instanceof Date) {
+      serialized[key] = (
+        serialized[key] as Date
+      ).toISOString() as T[typeof key];
+    }
+  }
+  return serialized;
+}
+
 // Check if the request has a valid admin session
 function isAuthenticated(request: NextRequest): boolean {
   const authHeader = request.headers.get("authorization");
@@ -41,8 +54,11 @@ export async function GET(request: NextRequest) {
       .from(skills)
       .orderBy(asc(skills.orderIndex));
 
+    // Serialize dates first
+    const serializedSkills = allSkills.map(serializeDates);
+
     // Group skills by category
-    const groupedSkills = allSkills.reduce(
+    const groupedSkills = serializedSkills.reduce(
       (acc, skill) => {
         const category = skill.category;
         if (!acc[category]) {
@@ -51,13 +67,13 @@ export async function GET(request: NextRequest) {
         acc[category].push(skill);
         return acc;
       },
-      {} as Record<string, typeof allSkills>,
+      {} as Record<string, typeof serializedSkills>,
     );
 
     return NextResponse.json({
       success: true,
       data: groupedSkills,
-      all: allSkills,
+      all: serializedSkills,
       total: allSkills.length,
     });
   } catch (error) {
@@ -130,7 +146,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        data: newSkill,
+        data: serializeDates(newSkill),
         message: "Skill created successfully",
       },
       { status: 201 },

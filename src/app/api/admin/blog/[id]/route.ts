@@ -3,6 +3,19 @@ import { db } from "../../../../../../db";
 import { blogPosts, pageViews } from "../../../../../../db/schema";
 import { eq } from "drizzle-orm";
 
+// Helper function to serialize dates to ISO strings
+function serializeDates<T extends Record<string, unknown>>(obj: T): T {
+  const serialized = { ...obj };
+  for (const key in serialized) {
+    if (serialized[key] instanceof Date) {
+      serialized[key] = (
+        serialized[key] as Date
+      ).toISOString() as T[typeof key];
+    }
+  }
+  return serialized;
+}
+
 function isAuthenticated(request: NextRequest): boolean {
   const authHeader = request.headers.get("authorization");
   const sessionCookie = request.cookies.get("admin_session");
@@ -53,7 +66,7 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      data: post,
+      data: serializeDates(post),
     });
   } catch (error) {
     console.error("Error fetching blog post:", error);
@@ -156,7 +169,7 @@ export async function PUT(
 
     return NextResponse.json({
       success: true,
-      data: updated,
+      data: serializeDates(updated),
       message: "Blog post updated successfully",
     });
   } catch (error) {
@@ -266,7 +279,7 @@ export async function PATCH(
 
       return NextResponse.json({
         success: true,
-        data: updated,
+        data: serializeDates(updated),
         message:
           body.status === "published"
             ? "Article publié avec succès!"

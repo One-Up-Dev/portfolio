@@ -3,6 +3,19 @@ import { db } from "../../../../../db";
 import { timelineEntries } from "../../../../../db/schema";
 import { eq, asc } from "drizzle-orm";
 
+// Helper function to serialize dates to ISO strings
+function serializeDates<T extends Record<string, unknown>>(obj: T): T {
+  const serialized = { ...obj };
+  for (const key in serialized) {
+    if (serialized[key] instanceof Date) {
+      serialized[key] = (
+        serialized[key] as Date
+      ).toISOString() as T[typeof key];
+    }
+  }
+  return serialized;
+}
+
 function isAuthenticated(request: NextRequest): boolean {
   const authHeader = request.headers.get("authorization");
   const sessionCookie = request.cookies.get("admin_session");
@@ -40,9 +53,11 @@ export async function GET(request: NextRequest) {
       .from(timelineEntries)
       .orderBy(asc(timelineEntries.orderIndex));
 
+    const serializedEntries = entries.map(serializeDates);
+
     return NextResponse.json({
       success: true,
-      data: entries,
+      data: serializedEntries,
     });
   } catch (error) {
     console.error("Error fetching timeline entries:", error);
@@ -106,7 +121,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: newEntry[0],
+      data: serializeDates(newEntry[0]),
       message: "Timeline entry created successfully",
     });
   } catch (error) {
@@ -168,7 +183,7 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: updatedEntry[0],
+      data: serializeDates(updatedEntry[0]),
       message: "Timeline entry updated successfully",
     });
   } catch (error) {

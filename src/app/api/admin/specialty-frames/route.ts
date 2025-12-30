@@ -3,6 +3,19 @@ import { db } from "../../../../../db";
 import { specialtyFrames } from "../../../../../db/schema";
 import { eq, asc } from "drizzle-orm";
 
+// Helper function to serialize dates to ISO strings
+function serializeDates<T extends Record<string, unknown>>(obj: T): T {
+  const serialized = { ...obj };
+  for (const key in serialized) {
+    if (serialized[key] instanceof Date) {
+      serialized[key] = (
+        serialized[key] as Date
+      ).toISOString() as T[typeof key];
+    }
+  }
+  return serialized;
+}
+
 // Check admin authentication (matching timeline route auth)
 function isAuthenticated(request: NextRequest): boolean {
   const authHeader = request.headers.get("authorization");
@@ -41,7 +54,9 @@ export async function GET(request: NextRequest) {
       .from(specialtyFrames)
       .orderBy(asc(specialtyFrames.orderIndex));
 
-    return NextResponse.json({ success: true, data: frames });
+    const serializedFrames = frames.map(serializeDates);
+
+    return NextResponse.json({ success: true, data: serializedFrames });
   } catch (error) {
     console.error("Error fetching specialty frames:", error);
     return NextResponse.json(
@@ -85,7 +100,7 @@ export async function POST(request: NextRequest) {
       })
       .returning();
 
-    return NextResponse.json({ success: true, data: newFrame });
+    return NextResponse.json({ success: true, data: serializeDates(newFrame) });
   } catch (error) {
     console.error("Error creating specialty frame:", error);
     return NextResponse.json(
@@ -137,7 +152,10 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ success: true, data: updatedFrame });
+    return NextResponse.json({
+      success: true,
+      data: serializeDates(updatedFrame),
+    });
   } catch (error) {
     console.error("Error updating specialty frame:", error);
     return NextResponse.json(
@@ -192,7 +210,10 @@ export async function DELETE(request: NextRequest) {
         .where(eq(specialtyFrames.id, remainingFrames[i].id));
     }
 
-    return NextResponse.json({ success: true, data: deletedFrame });
+    return NextResponse.json({
+      success: true,
+      data: serializeDates(deletedFrame),
+    });
   } catch (error) {
     console.error("Error deleting specialty frame:", error);
     return NextResponse.json(

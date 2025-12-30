@@ -84,10 +84,20 @@ export default function AdminLayout({
     checkAuth();
   }, [pathname, router]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("admin_session");
-    setSession(null);
-    router.push("/admin/login");
+  const handleLogout = async () => {
+    try {
+      // Call the server-side logout API to clear the HTTP-only cookie
+      await fetch("/api/auth/logout", {
+        method: "POST",
+      });
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      // Clear client-side session data
+      localStorage.removeItem("admin_session");
+      setSession(null);
+      router.push("/admin/login");
+    }
   };
 
   // Show nothing while checking auth (or for login page)

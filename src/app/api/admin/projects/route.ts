@@ -3,6 +3,19 @@ import { db } from "../../../../../db";
 import { projects } from "../../../../../db/schema";
 import { eq, desc } from "drizzle-orm";
 
+// Helper function to serialize dates to ISO strings
+function serializeDates<T extends Record<string, unknown>>(obj: T): T {
+  const serialized = { ...obj };
+  for (const key in serialized) {
+    if (serialized[key] instanceof Date) {
+      serialized[key] = (
+        serialized[key] as Date
+      ).toISOString() as T[typeof key];
+    }
+  }
+  return serialized;
+}
+
 // Check if the request has a valid admin session
 function isAuthenticated(request: NextRequest): boolean {
   const authHeader = request.headers.get("authorization");
@@ -40,9 +53,11 @@ export async function GET(request: NextRequest) {
       .from(projects)
       .orderBy(desc(projects.createdAt));
 
+    const serializedProjects = allProjects.map(serializeDates);
+
     return NextResponse.json({
       success: true,
-      data: allProjects,
+      data: serializedProjects,
       total: allProjects.length,
     });
   } catch (error) {
@@ -171,7 +186,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        data: newProject,
+        data: serializeDates(newProject),
         message: "Project created successfully",
       },
       { status: 201 },
