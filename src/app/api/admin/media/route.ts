@@ -152,6 +152,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   if (!isAuthenticated(request)) {
+    console.log("Upload: Auth failed");
     return NextResponse.json(
       { error: "Unauthorized", message: "Authentication required" },
       { status: 401 },
@@ -159,16 +160,23 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    console.log("Upload: Auth OK, parsing form data");
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
 
     if (!file) {
+      console.log("Upload: No file provided");
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
+
+    console.log(
+      `Upload: File received: ${file.name}, size: ${file.size}, type: ${file.type}`,
+    );
 
     // Validate file type
     const typeValidation = validateFileType(file.name, file.type);
     if (!typeValidation.valid) {
+      console.log(`Upload: Type validation failed: ${typeValidation.error}`);
       return NextResponse.json(
         { error: typeValidation.error },
         { status: 400 },
@@ -178,6 +186,7 @@ export async function POST(request: NextRequest) {
     // Validate file size
     const sizeValidation = validateFileSize(file.size);
     if (!sizeValidation.valid) {
+      console.log(`Upload: Size validation failed: ${sizeValidation.error}`);
       return NextResponse.json(
         { error: sizeValidation.error },
         { status: 400 },
@@ -191,22 +200,28 @@ export async function POST(request: NextRequest) {
       .basename(file.name, ext)
       .replace(/[^a-zA-Z0-9-_]/g, "-");
     const uniqueFilename = `${baseName}-${timestamp}${ext}`;
+    console.log(`Upload: Generated filename: ${uniqueFilename}`);
 
     // Upload to Vercel Blob
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
+    console.log(
+      `Upload: Uploading to Vercel Blob, buffer size: ${buffer.length}`,
+    );
     const blob = await put(uniqueFilename, buffer, {
       access: "public",
       contentType: file.type,
       addRandomSuffix: false,
     });
+    console.log(`Upload: Blob uploaded successfully, URL: ${blob.url}`);
 
     // Get image dimensions if it's an image (basic implementation)
     const width: number | null = null;
     const height: number | null = null;
 
     // Store in database
+    console.log("Upload: Storing in database");
     const result = await db
       .insert(mediaLibrary)
       .values({
@@ -222,6 +237,8 @@ export async function POST(request: NextRequest) {
       })
       .returning();
 
+    console.log(`Upload: Success! DB result:`, result[0]);
+
     return NextResponse.json(
       {
         success: true,
@@ -232,8 +249,15 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error("Error uploading file:", error);
+    console.error(
+      "Error type:",
+      error instanceof Error ? error.message : String(error),
+    );
     return NextResponse.json(
-      { error: "Failed to upload file" },
+      {
+        error: "Failed to upload file",
+        details: error instanceof Error ? error.message : String(error),
+      },
       { status: 500 },
     );
   }
