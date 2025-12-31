@@ -2,28 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "../../../../../../db";
 import { siteSettings } from "../../../../../../db/schema";
 import { eq } from "drizzle-orm";
-
-function isAuthenticated(request: NextRequest): boolean {
-  const authHeader = request.headers.get("authorization");
-  const sessionCookie = request.cookies.get("admin_session");
-
-  if (authHeader?.startsWith("Bearer ") && authHeader.length > 10) {
-    return true;
-  }
-
-  if (sessionCookie?.value) {
-    try {
-      const session = JSON.parse(sessionCookie.value);
-      if (session.isAuthenticated && session.expiresAt > Date.now()) {
-        return true;
-      }
-    } catch {
-      return false;
-    }
-  }
-
-  return false;
-}
+import { isAuthenticated } from "@/lib/auth";
 
 async function getClaudeApiKey(): Promise<string | null> {
   try {
@@ -254,7 +233,7 @@ Please create engaging, informative content that:
 }
 
 export async function POST(request: NextRequest) {
-  if (!isAuthenticated(request)) {
+  if (!(await isAuthenticated(request))) {
     return NextResponse.json(
       { error: "Unauthorized", message: "Authentication required" },
       { status: 401 },

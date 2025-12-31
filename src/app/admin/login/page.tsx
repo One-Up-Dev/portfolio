@@ -1,11 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 export default function AdminLoginPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -28,18 +26,21 @@ export default function AdminLoginPage() {
 
       const data = await response.json();
 
+      console.log("Login response:", data);
+
       if (response.ok && data.success) {
+        console.log("Login successful, redirecting...");
+
         // Store session in localStorage for client-side reference only
         // The actual authentication is handled by the HTTP-only cookie set by the server
         const session = {
-          user: data.session.user,
+          user: data.user,
           isAuthenticated: true,
-          expiresAt: data.session.expiresAt,
         };
         localStorage.setItem("admin_session", JSON.stringify(session));
 
-        // Redirect to admin dashboard
-        router.push("/admin");
+        // Force a hard redirect to ensure the cookie is sent
+        window.location.href = "/admin";
       } else {
         setError(data.error || "Email ou mot de passe incorrect");
       }

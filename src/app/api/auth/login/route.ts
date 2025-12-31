@@ -8,9 +8,11 @@ interface LoginRequest {
 }
 
 export async function POST(request: NextRequest) {
+  console.log("=== LOGIN ATTEMPT ===");
   try {
     const body: LoginRequest = await request.json();
     const { email, password } = body;
+    console.log("Email:", email);
 
     if (!email || !password) {
       return NextResponse.json(
@@ -26,11 +28,14 @@ export async function POST(request: NextRequest) {
     const DEMO_PASSWORD = process.env.ADMIN_PASSWORD || "Admin123!";
 
     if (email !== DEMO_EMAIL || password !== DEMO_PASSWORD) {
+      console.log("Invalid credentials");
       return NextResponse.json(
         { error: "Invalid email or password" },
         { status: 401 },
       );
     }
+
+    console.log("Credentials valid, creating session...");
 
     // Generate secure session token
     const token = crypto.randomUUID();
@@ -44,6 +49,7 @@ export async function POST(request: NextRequest) {
     const userAgent = request.headers.get("user-agent") || "unknown";
 
     // Create session in database
+    console.log("Inserting session into DB...");
     await db.insert(adminSessions).values({
       userId: "1", // Demo user ID
       token,
@@ -51,6 +57,7 @@ export async function POST(request: NextRequest) {
       ipAddress,
       userAgent,
     });
+    console.log("Session created with token:", token.substring(0, 8) + "...");
 
     // Create response with user data (not session data)
     const response = NextResponse.json({
@@ -64,6 +71,15 @@ export async function POST(request: NextRequest) {
 
     // Set HTTP-only cookie with just the token
     const maxAge = 7 * 24 * 60 * 60; // 7 days in seconds
+    // Only use secure cookies in production (not in local dev)
+    const isSecure = process.env.NODE_ENV === "production";
+
+    console.log(
+      "Setting cookie, secure:",
+      isSecure,
+      "NODE_ENV:",
+      process.env.NODE_ENV,
+    );
 
     response.cookies.set({
       name: "admin_session",
@@ -72,11 +88,10 @@ export async function POST(request: NextRequest) {
       sameSite: "lax", // CSRF protection
       path: "/",
       maxAge: maxAge,
-      secure:
-        process.env.NODE_ENV === "production" ||
-        process.env.NEXT_PUBLIC_BASE_URL?.startsWith("https"), // Enable in production or HTTPS
+      secure: isSecure,
     });
 
+    console.log("=== LOGIN SUCCESS ===");
     return response;
   } catch (error) {
     console.error("Login error:", error);

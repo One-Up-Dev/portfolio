@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "../../../../../db";
 import { projects } from "../../../../../db/schema";
+import { isAuthenticated } from "@/lib/auth";
 
 // Default technology options (fallback)
 const defaultTechnologies = [
@@ -21,32 +22,9 @@ const defaultTechnologies = [
   "Vercel",
 ];
 
-// Check if the request has a valid admin session
-function isAuthenticated(request: NextRequest): boolean {
-  const authHeader = request.headers.get("authorization");
-  const sessionCookie = request.cookies.get("admin_session");
-
-  if (authHeader?.startsWith("Bearer ") && authHeader.length > 10) {
-    return true;
-  }
-
-  if (sessionCookie?.value) {
-    try {
-      const session = JSON.parse(sessionCookie.value);
-      if (session.isAuthenticated && session.expiresAt > Date.now()) {
-        return true;
-      }
-    } catch {
-      return false;
-    }
-  }
-
-  return false;
-}
-
 // GET /api/admin/technologies - Get all unique technologies from projects
 export async function GET(request: NextRequest) {
-  if (!isAuthenticated(request)) {
+  if (!(await isAuthenticated(request))) {
     return NextResponse.json(
       { success: false, message: "Non autorisé" },
       { status: 401 },
@@ -103,7 +81,7 @@ export async function GET(request: NextRequest) {
 
 // POST /api/admin/technologies - Add a new custom technology
 export async function POST(request: NextRequest) {
-  if (!isAuthenticated(request)) {
+  if (!(await isAuthenticated(request))) {
     return NextResponse.json(
       { success: false, message: "Non autorisé" },
       { status: 401 },

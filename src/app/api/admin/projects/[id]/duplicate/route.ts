@@ -2,36 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "../../../../../../../db";
 import { projects } from "../../../../../../../db/schema";
 import { eq } from "drizzle-orm";
-
-// Check if the request has a valid admin session
-function isAuthenticated(request: NextRequest): boolean {
-  const authHeader = request.headers.get("authorization");
-  const sessionCookie = request.cookies.get("admin_session");
-
-  if (authHeader?.startsWith("Bearer ") && authHeader.length > 10) {
-    return true;
-  }
-
-  if (sessionCookie?.value) {
-    try {
-      const session = JSON.parse(sessionCookie.value);
-      if (session.isAuthenticated && session.expiresAt > Date.now()) {
-        return true;
-      }
-    } catch {
-      return false;
-    }
-  }
-
-  return false;
-}
+import { isAuthenticated } from "@/lib/auth";
 
 // POST - Duplicate a project
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  if (!isAuthenticated(request)) {
+  if (!(await isAuthenticated(request))) {
     return NextResponse.json(
       { error: "Unauthorized", message: "Authentication required" },
       { status: 401 },

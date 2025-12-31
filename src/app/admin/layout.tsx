@@ -11,7 +11,7 @@ interface Session {
     email: string;
     name: string;
   };
-  expiresAt: number;
+  isAuthenticated: boolean;
 }
 
 // Admin sidebar navigation items
@@ -65,8 +65,8 @@ export default function AdminLayout({
       if (storedSession) {
         try {
           const parsedSession: Session = JSON.parse(storedSession);
-          // Check if session is expired
-          if (parsedSession.expiresAt > Date.now()) {
+          // Check if session is authenticated (real auth is via HTTP-only cookie validated by middleware)
+          if (parsedSession.isAuthenticated && parsedSession.user) {
             setSession(parsedSession);
             setIsLoading(false);
             return;

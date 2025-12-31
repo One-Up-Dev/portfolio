@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "../../../../../db";
 import { specialtyFrames } from "../../../../../db/schema";
 import { eq, asc } from "drizzle-orm";
+import { isAuthenticated } from "@/lib/auth";
 
 // Helper function to serialize dates to ISO strings
 function serializeDates<T extends Record<string, unknown>>(obj: T): T {
@@ -16,33 +17,10 @@ function serializeDates<T extends Record<string, unknown>>(obj: T): T {
   return serialized;
 }
 
-// Check admin authentication (matching timeline route auth)
-function isAuthenticated(request: NextRequest): boolean {
-  const authHeader = request.headers.get("authorization");
-  const sessionCookie = request.cookies.get("admin_session");
-
-  if (authHeader?.startsWith("Bearer ") && authHeader.length > 10) {
-    return true;
-  }
-
-  if (sessionCookie?.value) {
-    try {
-      const session = JSON.parse(sessionCookie.value);
-      if (session.isAuthenticated && session.expiresAt > Date.now()) {
-        return true;
-      }
-    } catch {
-      return false;
-    }
-  }
-
-  return false;
-}
-
 // GET - Fetch all specialty frames
 export async function GET(request: NextRequest) {
   try {
-    if (!isAuthenticated(request)) {
+    if (!(await isAuthenticated(request))) {
       return NextResponse.json(
         { success: false, message: "Non autorisé" },
         { status: 401 },
@@ -69,7 +47,7 @@ export async function GET(request: NextRequest) {
 // POST - Create a new specialty frame
 export async function POST(request: NextRequest) {
   try {
-    if (!isAuthenticated(request)) {
+    if (!(await isAuthenticated(request))) {
       return NextResponse.json(
         { success: false, message: "Non autorisé" },
         { status: 401 },
@@ -113,7 +91,7 @@ export async function POST(request: NextRequest) {
 // PUT - Update a specialty frame
 export async function PUT(request: NextRequest) {
   try {
-    if (!isAuthenticated(request)) {
+    if (!(await isAuthenticated(request))) {
       return NextResponse.json(
         { success: false, message: "Non autorisé" },
         { status: 401 },
@@ -168,7 +146,7 @@ export async function PUT(request: NextRequest) {
 // DELETE - Delete a specialty frame
 export async function DELETE(request: NextRequest) {
   try {
-    if (!isAuthenticated(request)) {
+    if (!(await isAuthenticated(request))) {
       return NextResponse.json(
         { success: false, message: "Non autorisé" },
         { status: 401 },

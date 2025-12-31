@@ -1,16 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "../db";
-import { adminSessions } from "../db/schema";
-import { eq, and, gte } from "drizzle-orm";
-
-// Use Node.js runtime instead of Edge runtime for database access
-export const runtime = "nodejs";
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Allow access to login page without authentication
-  if (pathname === "/admin/login") {
+  // Allow access to login page and auth API routes without authentication
+  if (pathname === "/admin/login" || pathname.startsWith("/api/auth/")) {
     return NextResponse.next();
   }
 
@@ -24,28 +18,33 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(loginUrl);
     }
 
-    // Validate the session token against the database
+    // Validate the session token via API call (Edge-compatible)
     try {
-      const session = await db.query.adminSessions.findFirst({
-        where: and(
-          eq(adminSessions.token, token),
-          gte(adminSessions.expiresAt, new Date()),
-        ),
+      const baseUrl = request.nextUrl.origin;
+      const validateResponse = await fetch(`${baseUrl}/api/auth/validate`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ token }),
       });
 
-      // No valid session found or session expired, redirect to login
-      if (!session) {
-        // Clean up expired session if it exists
-        await db.delete(adminSessions).where(eq(adminSessions.token, token));
+      const result = await validateResponse.json();
 
-        const loginUrl = new URL("/admin/login", request.url);
-        return NextResponse.redirect(loginUrl);
+      // No valid session found or session expired, redirect to login
+      if (!result.valid) {
+        const response = NextResponse.redirect(
+          new URL("/admin/login", request.url),
+        );
+        // Clear the invalid cookie
+        response.cookies.delete("admin_session");
+        return response;
       }
 
       // Session is valid, allow the request to proceed
       return NextResponse.next();
     } catch (error) {
-      // Database error, redirect to login for safety
+      // API error, redirect to login for safety
       console.error("Session validation error:", error);
       const loginUrl = new URL("/admin/login", request.url);
       return NextResponse.redirect(loginUrl);

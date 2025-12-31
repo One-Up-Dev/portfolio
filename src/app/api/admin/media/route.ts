@@ -4,6 +4,7 @@ import { mediaLibrary } from "../../../../../db/schema";
 import { desc, eq } from "drizzle-orm";
 import { put, del } from "@vercel/blob";
 import path from "path";
+import { isAuthenticated } from "@/lib/auth";
 
 // Allowed image MIME types
 const ALLOWED_IMAGE_TYPES = [
@@ -49,28 +50,6 @@ const FORBIDDEN_EXTENSIONS = [
 
 // Maximum file size in bytes (5MB)
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
-
-function isAuthenticated(request: NextRequest): boolean {
-  const authHeader = request.headers.get("authorization");
-  const sessionCookie = request.cookies.get("admin_session");
-
-  if (authHeader?.startsWith("Bearer ") && authHeader.length > 10) {
-    return true;
-  }
-
-  if (sessionCookie?.value) {
-    try {
-      const session = JSON.parse(sessionCookie.value);
-      if (session.isAuthenticated && session.expiresAt > Date.now()) {
-        return true;
-      }
-    } catch {
-      return false;
-    }
-  }
-
-  return false;
-}
 
 function validateFileType(
   filename: string,
@@ -122,7 +101,7 @@ function validateFileSize(sizeBytes: number): {
 }
 
 export async function GET(request: NextRequest) {
-  if (!isAuthenticated(request)) {
+  if (!(await isAuthenticated(request))) {
     return NextResponse.json(
       { error: "Unauthorized", message: "Authentication required" },
       { status: 401 },
@@ -151,7 +130,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  if (!isAuthenticated(request)) {
+  if (!(await isAuthenticated(request))) {
     return NextResponse.json(
       { error: "Unauthorized", message: "Authentication required" },
       { status: 401 },
@@ -247,7 +226,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  if (!isAuthenticated(request)) {
+  if (!(await isAuthenticated(request))) {
     return NextResponse.json(
       { error: "Unauthorized", message: "Authentication required" },
       { status: 401 },
