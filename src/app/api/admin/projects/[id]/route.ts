@@ -112,7 +112,9 @@ export async function PUT(
         githubUrl: body.githubUrl ?? existing.githubUrl,
         demoUrl: body.demoUrl ?? existing.demoUrl,
         status: body.status ?? existing.status,
-        projectDate: body.projectDate ?? existing.projectDate,
+        projectDate: body.projectDate
+          ? new Date(body.projectDate)
+          : existing.projectDate,
         mainImageUrl: body.mainImageUrl ?? existing.mainImageUrl,
         galleryImages: body.galleryImages ?? existing.galleryImages,
         visible: body.visible ?? existing.visible,

@@ -230,7 +230,9 @@ export default function AdminMediaPage() {
   };
 
   const handleCopyUrl = (url: string) => {
-    const fullUrl = window.location.origin + url;
+    // If URL is already absolute (starts with http), use it directly
+    // Otherwise, prepend the origin for relative paths
+    const fullUrl = url.startsWith("http") ? url : window.location.origin + url;
     navigator.clipboard.writeText(fullUrl);
     setSuccessMessage("URL copiée dans le presse-papier!");
     setTimeout(() => setSuccessMessage(null), 3000);
