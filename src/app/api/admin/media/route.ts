@@ -179,6 +179,7 @@ export async function POST(request: NextRequest) {
       access: "public",
       contentType: file.type,
       addRandomSuffix: false,
+      token: process.env.BLOB_READ_WRITE_TOKEN,
     });
 
     // Get image dimensions if it's an image (basic implementation)
