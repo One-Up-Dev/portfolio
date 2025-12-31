@@ -24,6 +24,21 @@ export const users = pgTable("users", {
   lastLogin: timestamp("last_login"),
 });
 
+// Admin sessions table - for secure session management
+export const adminSessions = pgTable("admin_sessions", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id").notNull(),
+  token: text("token").notNull().unique(), // Random secure token
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at")
+    .default(sql`now()`)
+    .notNull(),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+});
+
 // Projects table
 export const projects = pgTable("projects", {
   id: text("id")
@@ -217,6 +232,9 @@ export const specialtyFrames = pgTable("specialty_frames", {
 // Type exports for use in application
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
+
+export type AdminSession = typeof adminSessions.$inferSelect;
+export type NewAdminSession = typeof adminSessions.$inferInsert;
 
 export type Project = typeof projects.$inferSelect;
 export type NewProject = typeof projects.$inferInsert;

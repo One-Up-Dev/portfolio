@@ -2,7 +2,6 @@
 
 import { Suspense } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { ExternalLink, Github, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -317,11 +316,10 @@ function ProjectsPageContent() {
                   {/* Project Image with Glitch Effect */}
                   <div className="glitch-image aspect-video w-full overflow-hidden bg-gradient-to-br from-retro-dark to-retro-purple relative">
                     {project.mainImageUrl ? (
-                      <Image
+                      <img
                         src={project.mainImageUrl}
                         alt={`Image du projet ${project.title}`}
-                        fill
-                        className="object-cover"
+                        className="w-full h-full object-cover"
                       />
                     ) : (
                       <div className="flex h-full items-center justify-center p-4 text-4xl">

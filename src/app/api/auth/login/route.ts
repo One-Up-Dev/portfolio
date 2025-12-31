@@ -1,18 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { db } from "../../../../../db";
+import { adminSessions } from "../../../../../db/schema";
 
 interface LoginRequest {
   email: string;
   password: string;
-}
-
-interface Session {
-  user: {
-    id: string;
-    email: string;
-    name: string;
-  };
-  isAuthenticated: boolean;
-  expiresAt: number;
 }
 
 export async function POST(request: NextRequest) {
@@ -40,36 +32,42 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create session
-    const session: Session = {
+    // Generate secure session token
+    const token = crypto.randomUUID();
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+
+    // Extract IP address and user agent for session tracking
+    const ipAddress =
+      request.headers.get("x-forwarded-for") ||
+      request.headers.get("x-real-ip") ||
+      "unknown";
+    const userAgent = request.headers.get("user-agent") || "unknown";
+
+    // Create session in database
+    await db.insert(adminSessions).values({
+      userId: "1", // Demo user ID
+      token,
+      expiresAt,
+      ipAddress,
+      userAgent,
+    });
+
+    // Create response with user data (not session data)
+    const response = NextResponse.json({
+      success: true,
       user: {
         id: "1",
         email: DEMO_EMAIL,
         name: "Admin ONEUP",
       },
-      isAuthenticated: true,
-      expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 days
-    };
-
-    // Create response with session data
-    const response = NextResponse.json({
-      success: true,
-      session: {
-        user: session.user,
-        expiresAt: session.expiresAt,
-      },
     });
 
-    // Set HTTP-only cookie for server-side authentication
-    // In development (non-HTTPS), we use SameSite=Lax without Secure flag
-    // In production with HTTPS, you should add the Secure flag
-    const cookieValue = JSON.stringify(session);
+    // Set HTTP-only cookie with just the token
     const maxAge = 7 * 24 * 60 * 60; // 7 days in seconds
 
-    // Set the cookie with HttpOnly flag (can only be set server-side)
     response.cookies.set({
       name: "admin_session",
-      value: cookieValue,
+      value: token, // Only store the token, not the full session
       httpOnly: true, // Prevents client-side JavaScript access
       sameSite: "lax", // CSRF protection
       path: "/",

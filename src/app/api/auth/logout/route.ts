@@ -1,7 +1,18 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { db } from "../../../../../db";
+import { adminSessions } from "../../../../../db/schema";
+import { eq } from "drizzle-orm";
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   try {
+    // Get the session token from cookie
+    const token = request.cookies.get("admin_session")?.value;
+
+    // Delete the session from database if token exists
+    if (token) {
+      await db.delete(adminSessions).where(eq(adminSessions.token, token));
+    }
+
     // Create response
     const response = NextResponse.json({
       success: true,

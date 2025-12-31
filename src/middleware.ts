@@ -1,17 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { db } from "../db";
+import { adminSessions } from "../db/schema";
+import { eq, and, gte } from "drizzle-orm";
 
-// Session interface matching the client-side session structure
-interface Session {
-  isAuthenticated: boolean;
-  expiresAt: number;
-  user?: {
-    id: string;
-    email: string;
-    name: string;
-  };
-}
+// Use Node.js runtime instead of Edge runtime for database access
+export const runtime = "nodejs";
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Allow access to login page without authentication
@@ -21,26 +16,28 @@ export function middleware(request: NextRequest) {
 
   // Check if this is an admin route that needs protection
   if (pathname.startsWith("/admin")) {
-    const sessionCookie = request.cookies.get("admin_session");
+    const token = request.cookies.get("admin_session")?.value;
 
-    // No session cookie, redirect to login
-    if (!sessionCookie?.value) {
+    // No session token, redirect to login
+    if (!token) {
       const loginUrl = new URL("/admin/login", request.url);
       return NextResponse.redirect(loginUrl);
     }
 
-    // Try to parse and validate the session
+    // Validate the session token against the database
     try {
-      const session: Session = JSON.parse(sessionCookie.value);
+      const session = await db.query.adminSessions.findFirst({
+        where: and(
+          eq(adminSessions.token, token),
+          gte(adminSessions.expiresAt, new Date()),
+        ),
+      });
 
-      // Validate session has required fields and is not expired
-      if (!session.isAuthenticated || !session.expiresAt) {
-        const loginUrl = new URL("/admin/login", request.url);
-        return NextResponse.redirect(loginUrl);
-      }
+      // No valid session found or session expired, redirect to login
+      if (!session) {
+        // Clean up expired session if it exists
+        await db.delete(adminSessions).where(eq(adminSessions.token, token));
 
-      // Check if session is expired
-      if (session.expiresAt <= Date.now()) {
         const loginUrl = new URL("/admin/login", request.url);
         return NextResponse.redirect(loginUrl);
       }
@@ -48,8 +45,8 @@ export function middleware(request: NextRequest) {
       // Session is valid, allow the request to proceed
       return NextResponse.next();
     } catch (error) {
-      // Invalid session cookie format, redirect to login
-      console.error("Invalid session cookie format:", error);
+      // Database error, redirect to login for safety
+      console.error("Session validation error:", error);
       const loginUrl = new URL("/admin/login", request.url);
       return NextResponse.redirect(loginUrl);
     }

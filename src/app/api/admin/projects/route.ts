@@ -174,7 +174,7 @@ export async function POST(request: NextRequest) {
         githubUrl: body.githubUrl || null,
         demoUrl: body.demoUrl || null,
         status: body.status || "en_cours",
-        projectDate: body.projectDate || new Date().toISOString().split("T")[0],
+        projectDate: body.projectDate ? new Date(body.projectDate) : new Date(),
         mainImageUrl: body.mainImageUrl || null,
         galleryImages: body.galleryImages || [],
         visible: body.visible ?? true,

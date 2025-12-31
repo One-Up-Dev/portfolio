@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { ArrowLeft, ExternalLink, Github, Calendar } from "lucide-react";
 import { useParams, notFound } from "next/navigation";
 import { useState, useEffect } from "react";
@@ -112,12 +111,10 @@ export default function ProjectDetailPage() {
         {/* Project Image */}
         <div className="mb-8 aspect-video w-full overflow-hidden rounded-lg bg-gradient-to-br from-retro-dark to-retro-purple relative">
           {project.mainImageUrl ? (
-            <Image
+            <img
               src={project.mainImageUrl}
               alt={project.title}
-              fill
-              className="object-cover"
-              priority
+              className="w-full h-full object-cover"
             />
           ) : (
             <div className="flex h-full items-center justify-center text-8xl">
@@ -204,11 +201,10 @@ export default function ProjectDetailPage() {
                   key={index}
                   className="group relative aspect-video overflow-hidden rounded-lg bg-gradient-to-br from-retro-dark to-retro-purple"
                 >
-                  <Image
+                  <img
                     src={imageUrl}
                     alt={`${project.title} - Image ${index + 1}`}
-                    fill
-                    className="object-cover transition-transform duration-300 group-hover:scale-110"
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                   />
                   <div className="absolute inset-0 bg-black/0 transition-colors duration-300 group-hover:bg-black/20" />
                 </div>

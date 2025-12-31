@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { useState, useEffect, useCallback, useRef } from "react";
-import Image from "next/image";
 import { useToast } from "@/components/ui/retro-toast";
 
 // Default technology options (fallback if API fails)
@@ -769,15 +768,11 @@ export default function EditProjectPage() {
             {formData.mainImageUrl && (
               <div className="mt-2 p-2 border border-border rounded-lg bg-accent/20">
                 <p className="text-xs text-muted-foreground mb-2">Aperçu:</p>
-                <div className="relative h-32 w-32">
-                  <Image
+                <div className="h-32 w-32">
+                  <img
                     src={formData.mainImageUrl}
                     alt="Aperçu de l'image principale"
-                    fill
-                    className="rounded object-cover"
-                    onError={() => {
-                      // Fallback handled by Next.js Image component
-                    }}
+                    className="h-full w-full rounded object-cover"
                   />
                 </div>
               </div>
@@ -838,13 +833,12 @@ export default function EditProjectPage() {
                   .map((url, index) => (
                     <div
                       key={index}
-                      className="aspect-video rounded-lg overflow-hidden bg-accent/20 border border-border relative"
+                      className="aspect-video rounded-lg overflow-hidden bg-accent/20 border border-border"
                     >
-                      <Image
+                      <img
                         src={url}
                         alt={`Galerie ${index + 1}`}
-                        fill
-                        className="object-cover"
+                        className="w-full h-full object-cover"
                       />
                     </div>
                   ))}
