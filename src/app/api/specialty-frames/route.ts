@@ -3,6 +3,9 @@ import { db } from "../../../../db";
 import { specialtyFrames } from "../../../../db/schema";
 import { asc } from "drizzle-orm";
 
+// Force dynamic rendering - no caching
+export const dynamic = "force-dynamic";
+
 // GET - Fetch all specialty frames (public endpoint)
 export async function GET() {
   try {

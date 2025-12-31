@@ -3,6 +3,9 @@ import { db } from "../../../../db";
 import { skills } from "../../../../db/schema";
 import { asc } from "drizzle-orm";
 
+// Force dynamic rendering - no caching
+export const dynamic = "force-dynamic";
+
 // GET /api/skills - List all skills grouped by category
 export async function GET() {
   try {

@@ -3,6 +3,9 @@ import { db } from "../../../../db";
 import { blogPosts } from "../../../../db/schema";
 import { eq, desc, and, or, sql } from "drizzle-orm";
 
+// Force dynamic rendering - no caching
+export const dynamic = "force-dynamic";
+
 // GET /api/blog - List all published blog posts
 export async function GET(request: NextRequest) {
   try {

@@ -273,6 +273,12 @@ export async function POST(request: NextRequest) {
 
     // Get Claude API key from settings
     const apiKey = await getClaudeApiKey();
+    console.log("Claude API Key check:", {
+      exists: !!apiKey,
+      length: apiKey?.length || 0,
+      startsWithSkAnt: apiKey?.startsWith("sk-ant-"),
+      preview: apiKey ? `${apiKey.slice(0, 10)}...` : "null",
+    });
 
     // Handle "complete" type - generates all 4 fields (title, excerpt, content, metaDescription)
     if (body.type === "complete") {

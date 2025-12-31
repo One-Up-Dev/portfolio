@@ -3,6 +3,9 @@ import { db } from "../../../../db";
 import { timelineEntries } from "../../../../db/schema";
 import { asc } from "drizzle-orm";
 
+// Force dynamic rendering - no caching
+export const dynamic = "force-dynamic";
+
 // GET /api/timeline - Get all timeline entries (public)
 export async function GET() {
   try {

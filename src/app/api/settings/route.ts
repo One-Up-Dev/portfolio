@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { db } from "../../../../db";
 import { siteSettings } from "../../../../db/schema";
 
+// Force dynamic rendering - no caching
+export const dynamic = "force-dynamic";
+
 // GET /api/settings - Get public appearance settings (no auth required)
 export async function GET() {
   try {

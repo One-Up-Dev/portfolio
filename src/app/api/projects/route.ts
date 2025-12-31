@@ -3,6 +3,9 @@ import { db } from "../../../../db";
 import { projects } from "../../../../db/schema";
 import { eq, desc, asc, and, or, sql } from "drizzle-orm";
 
+// Force dynamic rendering - no caching
+export const dynamic = "force-dynamic";
+
 // GET /api/projects - List all visible projects
 export async function GET(request: NextRequest) {
   try {
