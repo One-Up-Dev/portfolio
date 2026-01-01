@@ -23,6 +23,11 @@ export async function GET() {
         // Appearance settings
         heroGifUrl: settingsObject.heroGifUrl || null,
         logoUrl: settingsObject.logoUrl || "/logo-oneup.png",
+        // Contact page settings
+        contactEmail: settingsObject.contactEmail || "contact@oneup.dev",
+        githubUrl: settingsObject.githubUrl || "https://github.com/oneup",
+        linkedinUrl:
+          settingsObject.linkedinUrl || "https://linkedin.com/in/oneup",
         // About page content
         aboutMyJourney: settingsObject.aboutMyJourney || null,
         aboutMyStory: settingsObject.aboutMyStory || null,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import {
   Bold,
   Italic,
@@ -16,6 +16,8 @@ import {
   Image,
   Undo,
   Redo,
+  Palette,
+  ChevronDown,
 } from "lucide-react";
 
 interface RichTextEditorProps {
@@ -34,6 +36,36 @@ interface ToolbarButton {
   value?: string;
 }
 
+// Couleurs disponibles pour le texte
+const TEXT_COLORS = [
+  { name: "Par défaut", color: "#ffffff" },
+  { name: "Orange", color: "#f97316" },
+  { name: "Jaune", color: "#eab308" },
+  { name: "Vert", color: "#22c55e" },
+  { name: "Bleu", color: "#3b82f6" },
+  { name: "Rouge", color: "#ef4444" },
+];
+
+// Helper to save current selection
+function saveSelection(): Range | null {
+  const selection = window.getSelection();
+  if (selection && selection.rangeCount > 0) {
+    return selection.getRangeAt(0).cloneRange();
+  }
+  return null;
+}
+
+// Helper to restore selection
+function restoreSelection(range: Range | null) {
+  if (range) {
+    const selection = window.getSelection();
+    if (selection) {
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+  }
+}
+
 export function RichTextEditor({
   value,
   onChange,
@@ -43,27 +75,74 @@ export function RichTextEditor({
   name,
 }: RichTextEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null);
+  const colorMenuRef = useRef<HTMLDivElement>(null);
   const [isFocused, setIsFocused] = useState(false);
+  const [showColorMenu, setShowColorMenu] = useState(false);
+  const [currentColor, setCurrentColor] = useState("#ffffff");
+  const isInternalChange = useRef(false);
+  const lastSelectionRef = useRef<Range | null>(null);
+  const isInitialized = useRef(false);
 
-  // Execute document command
-  const execCommand = useCallback(
-    (command: string, value: string | undefined = undefined) => {
-      document.execCommand(command, false, value);
-      editorRef.current?.focus();
-      // Sync content to parent
-      if (editorRef.current) {
-        onChange(editorRef.current.innerHTML);
+  // Initialize content only once on mount or when value changes externally
+  useEffect(() => {
+    if (editorRef.current) {
+      // Only set innerHTML if:
+      // 1. This is the first initialization, OR
+      // 2. The change came from external source (not user input)
+      if (!isInitialized.current) {
+        editorRef.current.innerHTML = value || "";
+        isInitialized.current = true;
+      } else if (!isInternalChange.current) {
+        // External change - need to update content
+        // Save selection before update
+        const savedRange = saveSelection();
+        editorRef.current.innerHTML = value || "";
+        // Try to restore selection if editor is focused
+        if (isFocused && savedRange) {
+          restoreSelection(savedRange);
+        }
       }
+      // Reset internal change flag
+      isInternalChange.current = false;
+    }
+  }, [value, isFocused]);
+
+  // Sync content to parent without triggering re-render loop
+  const syncToParent = useCallback(() => {
+    if (editorRef.current) {
+      isInternalChange.current = true;
+      onChange(editorRef.current.innerHTML);
+    }
+  }, [onChange]);
+
+  // Execute document command with selection preservation
+  const execCommand = useCallback(
+    (command: string, commandValue: string | undefined = undefined) => {
+      // Save current selection
+      const savedRange = saveSelection();
+      lastSelectionRef.current = savedRange;
+
+      // Focus editor first
+      editorRef.current?.focus();
+
+      // Restore selection if we have one
+      if (savedRange) {
+        restoreSelection(savedRange);
+      }
+
+      // Execute the command
+      document.execCommand(command, false, commandValue);
+
+      // Sync content to parent
+      syncToParent();
     },
-    [onChange],
+    [syncToParent],
   );
 
   // Handle input changes
   const handleInput = useCallback(() => {
-    if (editorRef.current) {
-      onChange(editorRef.current.innerHTML);
-    }
-  }, [onChange]);
+    syncToParent();
+  }, [syncToParent]);
 
   // Insert heading
   const insertHeading = useCallback(
@@ -75,19 +154,60 @@ export function RichTextEditor({
 
   // Insert link
   const insertLink = useCallback(() => {
+    // Save selection before prompt (prompt loses focus)
+    const savedRange = saveSelection();
     const url = prompt("Entrez l'URL du lien:", "https://");
     if (url) {
-      execCommand("createLink", url);
+      // Restore selection
+      editorRef.current?.focus();
+      if (savedRange) {
+        restoreSelection(savedRange);
+      }
+      document.execCommand("createLink", false, url);
+      syncToParent();
     }
-  }, [execCommand]);
+  }, [syncToParent]);
 
   // Insert image
   const insertImage = useCallback(() => {
+    // Save selection before prompt
+    const savedRange = saveSelection();
     const url = prompt("Entrez l'URL de l'image:", "https://");
     if (url) {
-      execCommand("insertImage", url);
+      // Restore selection
+      editorRef.current?.focus();
+      if (savedRange) {
+        restoreSelection(savedRange);
+      }
+      document.execCommand("insertImage", false, url);
+      syncToParent();
     }
-  }, [execCommand]);
+  }, [syncToParent]);
+
+  // Apply text color
+  const applyColor = useCallback(
+    (color: string) => {
+      execCommand("foreColor", color);
+      setCurrentColor(color);
+      setShowColorMenu(false);
+    },
+    [execCommand],
+  );
+
+  // Close color menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        colorMenuRef.current &&
+        !colorMenuRef.current.contains(event.target as Node)
+      ) {
+        setShowColorMenu(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Toolbar buttons configuration
   const toolbarButtons: ToolbarButton[][] = [
@@ -175,9 +295,11 @@ export function RichTextEditor({
     ],
   ];
 
-  // Handle toolbar button click
-  const handleToolbarClick = useCallback(
-    (command: string, value?: string) => {
+  // Handle toolbar button click with mousedown to prevent focus loss
+  const handleToolbarMouseDown = useCallback(
+    (e: React.MouseEvent, command: string, commandValue?: string) => {
+      e.preventDefault(); // Prevent focus loss from editor
+
       switch (command) {
         case "heading1":
           insertHeading(1);
@@ -195,16 +317,16 @@ export function RichTextEditor({
           insertImage();
           break;
         case "formatBlock":
-          execCommand(command, value);
+          execCommand(command, commandValue);
           break;
         default:
-          execCommand(command, value);
+          execCommand(command, commandValue);
       }
     },
     [execCommand, insertHeading, insertLink, insertImage],
   );
 
-  // Set initial content when value changes externally
+  // Handle paste with sanitization
   const handlePaste = useCallback(
     (e: React.ClipboardEvent) => {
       e.preventDefault();
@@ -217,10 +339,21 @@ export function RichTextEditor({
         .replace(/on\w+="[^"]*"/gi, "")
         .replace(/javascript:/gi, "");
       document.execCommand("insertHTML", false, sanitized);
-      handleInput();
+      syncToParent();
     },
-    [handleInput],
+    [syncToParent],
   );
+
+  // Handle focus
+  const handleFocus = useCallback(() => {
+    setIsFocused(true);
+  }, []);
+
+  // Handle blur - save selection for later restoration
+  const handleBlur = useCallback(() => {
+    lastSelectionRef.current = saveSelection();
+    setIsFocused(false);
+  }, []);
 
   return (
     <div className="rich-text-editor">
@@ -240,7 +373,9 @@ export function RichTextEditor({
               <button
                 key={button.command + (button.value || "")}
                 type="button"
-                onClick={() => handleToolbarClick(button.command, button.value)}
+                onMouseDown={(e) =>
+                  handleToolbarMouseDown(e, button.command, button.value)
+                }
                 className="p-2 rounded hover:bg-primary/20 hover:text-primary transition-colors focus:outline-none focus:ring-2 focus:ring-primary"
                 title={button.label}
                 aria-label={button.label}
@@ -253,6 +388,56 @@ export function RichTextEditor({
             )}
           </div>
         ))}
+
+        {/* Color picker */}
+        <div className="w-px h-6 bg-border mx-1" aria-hidden="true" />
+        <div ref={colorMenuRef} className="relative">
+          <button
+            type="button"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              setShowColorMenu(!showColorMenu);
+            }}
+            className="flex items-center gap-1 p-2 rounded hover:bg-primary/20 hover:text-primary transition-colors focus:outline-none focus:ring-2 focus:ring-primary"
+            title="Couleur du texte"
+            aria-label="Couleur du texte"
+            aria-expanded={showColorMenu}
+            aria-haspopup="true"
+          >
+            <Palette className="w-4 h-4" />
+            <div
+              className="w-3 h-3 rounded-sm border border-white/30"
+              style={{ backgroundColor: currentColor }}
+            />
+            <ChevronDown className="w-3 h-3" />
+          </button>
+
+          {/* Color dropdown menu */}
+          {showColorMenu && (
+            <div className="absolute top-full left-0 mt-1 p-2 bg-accent border border-border rounded-lg shadow-lg z-50 min-w-[120px]">
+              <div className="flex flex-wrap gap-1">
+                {TEXT_COLORS.map((colorOption) => (
+                  <button
+                    key={colorOption.color}
+                    type="button"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      applyColor(colorOption.color);
+                    }}
+                    className={`w-7 h-7 rounded border-2 transition-all hover:scale-110 focus:outline-none focus:ring-2 focus:ring-primary ${
+                      currentColor === colorOption.color
+                        ? "border-primary"
+                        : "border-transparent"
+                    }`}
+                    style={{ backgroundColor: colorOption.color }}
+                    title={colorOption.name}
+                    aria-label={colorOption.name}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Editor area */}
@@ -262,10 +447,9 @@ export function RichTextEditor({
         contentEditable
         suppressContentEditableWarning
         onInput={handleInput}
-        onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
         onPaste={handlePaste}
-        dangerouslySetInnerHTML={{ __html: value }}
         className={`min-h-[300px] p-4 bg-background border border-t-0 rounded-b-lg focus:outline-none focus:ring-2 focus:ring-primary prose prose-invert max-w-none ${
           error ? "border-destructive" : "border-border"
         } ${isFocused ? "ring-2 ring-primary" : ""}`}

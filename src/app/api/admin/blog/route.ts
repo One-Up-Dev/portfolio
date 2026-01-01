@@ -117,8 +117,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Calculate read time (approx 200 words per minute, 5 chars per word)
+    // Use manual readTimeMinutes if provided, otherwise calculate from content
     const contentLength = body.content?.length || 0;
-    const readTimeMinutes = Math.max(1, Math.ceil(contentLength / 1000));
+    const readTimeMinutes =
+      body.readTimeMinutes || Math.max(1, Math.ceil(contentLength / 1000));
 
     // Determine publishedAt date
     // If status is published and publishedAt is provided, use it

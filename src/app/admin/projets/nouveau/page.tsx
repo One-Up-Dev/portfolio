@@ -43,9 +43,10 @@ function generateSlug(title: string): string {
     .trim();
 }
 
-// Get today's date in YYYY-MM-DD format
-function getTodayDate(): string {
-  return new Date().toISOString().split("T")[0];
+// Get current month/year as ISO date (1st of current month)
+function getCurrentMonthDate(): string {
+  const now = new Date();
+  return new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1)).toISOString();
 }
 
 interface ProjectFormData {
@@ -106,7 +107,7 @@ export default function NewProjectPage() {
     githubUrl: "",
     demoUrl: "",
     status: "en_cours", // Default to "En cours"
-    projectDate: getTodayDate(), // Default to today
+    projectDate: getCurrentMonthDate(), // Default to current month
     visible: true, // Default to visible
   });
 
@@ -610,20 +611,77 @@ export default function NewProjectPage() {
               </select>
             </div>
             <div>
-              <label
-                htmlFor="projectDate"
-                className="block text-sm font-medium text-foreground mb-2"
-              >
+              <label className="block text-sm font-medium text-foreground mb-2">
                 Date du projet
               </label>
-              <input
-                type="date"
-                id="projectDate"
-                name="projectDate"
-                value={formData.projectDate}
-                onChange={handleChange}
-                className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-              />
+              <div className="flex gap-2">
+                <select
+                  id="projectMonth"
+                  value={
+                    formData.projectDate
+                      ? new Date(formData.projectDate).getUTCMonth()
+                      : new Date().getMonth()
+                  }
+                  onChange={(e) => {
+                    const month = parseInt(e.target.value);
+                    const currentDate = formData.projectDate
+                      ? new Date(formData.projectDate)
+                      : new Date();
+                    const newDate = new Date(
+                      Date.UTC(currentDate.getUTCFullYear(), month, 1),
+                    );
+                    setFormData((prev) => ({
+                      ...prev,
+                      projectDate: newDate.toISOString(),
+                    }));
+                  }}
+                  className="flex-1 px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value={0}>Janvier</option>
+                  <option value={1}>Février</option>
+                  <option value={2}>Mars</option>
+                  <option value={3}>Avril</option>
+                  <option value={4}>Mai</option>
+                  <option value={5}>Juin</option>
+                  <option value={6}>Juillet</option>
+                  <option value={7}>Août</option>
+                  <option value={8}>Septembre</option>
+                  <option value={9}>Octobre</option>
+                  <option value={10}>Novembre</option>
+                  <option value={11}>Décembre</option>
+                </select>
+                <select
+                  id="projectYear"
+                  value={
+                    formData.projectDate
+                      ? new Date(formData.projectDate).getUTCFullYear()
+                      : new Date().getFullYear()
+                  }
+                  onChange={(e) => {
+                    const year = parseInt(e.target.value);
+                    const currentDate = formData.projectDate
+                      ? new Date(formData.projectDate)
+                      : new Date();
+                    const newDate = new Date(
+                      Date.UTC(year, currentDate.getUTCMonth(), 1),
+                    );
+                    setFormData((prev) => ({
+                      ...prev,
+                      projectDate: newDate.toISOString(),
+                    }));
+                  }}
+                  className="w-28 px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  {Array.from(
+                    { length: 10 },
+                    (_, i) => new Date().getFullYear() - 5 + i,
+                  ).map((year) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
 

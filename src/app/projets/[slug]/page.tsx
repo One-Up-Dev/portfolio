@@ -137,10 +137,24 @@ export default function ProjectDetailPage() {
             {project.projectDate && (
               <span className="inline-flex items-center gap-1 text-sm text-muted-foreground">
                 <Calendar className="h-4 w-4" />
-                {new Date(project.projectDate).toLocaleDateString("fr-FR", {
-                  year: "numeric",
-                  month: "long",
-                })}
+                {(() => {
+                  const date = new Date(project.projectDate);
+                  const months = [
+                    "janvier",
+                    "février",
+                    "mars",
+                    "avril",
+                    "mai",
+                    "juin",
+                    "juillet",
+                    "août",
+                    "septembre",
+                    "octobre",
+                    "novembre",
+                    "décembre",
+                  ];
+                  return `${months[date.getUTCMonth()]} ${date.getUTCFullYear()}`;
+                })()}
               </span>
             )}
           </div>

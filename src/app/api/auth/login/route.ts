@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "../../../../../db";
-import { adminSessions } from "../../../../../db/schema";
+import { adminSessions, siteSettings } from "../../../../../db/schema";
 
 interface LoginRequest {
   email: string;
@@ -21,13 +21,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Demo authentication - in production this would check against a real database
-    // Demo credentials: admin@oneup.dev / Admin123!
-    // For now, we'll hardcode this but in production this should be environment variables
-    const DEMO_EMAIL = "admin@oneup.dev";
-    const DEMO_PASSWORD = process.env.ADMIN_PASSWORD || "Admin123!";
+    // Get credentials from database (or fall back to defaults/env vars)
+    const settings = await db.select().from(siteSettings);
+    const settingsMap: Record<string, string> = {};
+    settings.forEach((s) => {
+      settingsMap[s.key] = s.value as string;
+    });
 
-    if (email !== DEMO_EMAIL || password !== DEMO_PASSWORD) {
+    const ADMIN_EMAIL =
+      settingsMap.adminEmail || process.env.ADMIN_EMAIL || "admin@oneup.dev";
+    const ADMIN_PASSWORD =
+      settingsMap.adminPassword || process.env.ADMIN_PASSWORD || "Admin123!";
+
+    if (email !== ADMIN_EMAIL || password !== ADMIN_PASSWORD) {
       console.log("Invalid credentials");
       return NextResponse.json(
         { error: "Invalid email or password" },
@@ -64,7 +70,7 @@ export async function POST(request: NextRequest) {
       success: true,
       user: {
         id: "1",
-        email: DEMO_EMAIL,
+        email: ADMIN_EMAIL,
         name: "Admin ONEUP",
       },
     });

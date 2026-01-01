@@ -50,6 +50,10 @@ export default function AdminSettingsPage() {
     "Portfolio de développeur full-stack en reconversion professionnelle.",
   );
   const [contactEmail, setContactEmail] = useState("contact@oneup.dev");
+  const [githubUrl, setGithubUrl] = useState("https://github.com/oneup");
+  const [linkedinUrl, setLinkedinUrl] = useState(
+    "https://linkedin.com/in/oneup",
+  );
   const [generalSaving, setGeneralSaving] = useState(false);
   const [generalSuccess, setGeneralSuccess] = useState(false);
   const [generalError, setGeneralError] = useState<string | null>(null);
@@ -74,6 +78,8 @@ export default function AdminSettingsPage() {
 
   // Account settings state
   const [adminEmail, setAdminEmail] = useState("admin@oneup.dev");
+  const [newAdminEmail, setNewAdminEmail] = useState("");
+  const [emailPassword, setEmailPassword] = useState("");
   const [emailSaving, setEmailSaving] = useState(false);
   const [emailSuccess, setEmailSuccess] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
@@ -96,6 +102,12 @@ export default function AdminSettingsPage() {
           }
           if (data.data?.contactEmail) {
             setContactEmail(data.data.contactEmail);
+          }
+          if (data.data?.githubUrl) {
+            setGithubUrl(data.data.githubUrl);
+          }
+          if (data.data?.linkedinUrl) {
+            setLinkedinUrl(data.data.linkedinUrl);
           }
           // Appearance settings
           if (data.data?.heroGifUrl) {
@@ -157,6 +169,22 @@ export default function AdminSettingsPage() {
         body: JSON.stringify({ key: "contactEmail", value: contactEmail }),
       });
 
+      // Save GitHub URL
+      await fetch("/api/admin/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ key: "githubUrl", value: githubUrl }),
+      });
+
+      // Save LinkedIn URL
+      await fetch("/api/admin/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ key: "linkedinUrl", value: linkedinUrl }),
+      });
+
       setGeneralSuccess(true);
       setTimeout(() => setGeneralSuccess(false), 3000);
     } catch (error) {
@@ -213,14 +241,43 @@ export default function AdminSettingsPage() {
     setEmailError(null);
     setEmailSuccess(false);
 
+    // Validate new email
+    if (!newAdminEmail || !newAdminEmail.includes("@")) {
+      setEmailError("Veuillez entrer un email valide");
+      setEmailSaving(false);
+      return;
+    }
+
+    // Validate password is provided
+    if (!emailPassword) {
+      setEmailError("Veuillez entrer votre mot de passe");
+      setEmailSaving(false);
+      return;
+    }
+
     try {
-      await fetch("/api/admin/settings", {
+      const response = await fetch("/api/admin/account", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ key: "adminEmail", value: adminEmail }),
+        body: JSON.stringify({
+          action: "changeEmail",
+          currentPassword: emailPassword,
+          newEmail: newAdminEmail,
+        }),
       });
 
+      const data = await response.json();
+
+      if (!response.ok) {
+        setEmailError(data.error || "Erreur lors de la sauvegarde");
+        setEmailSaving(false);
+        return;
+      }
+
+      setAdminEmail(newAdminEmail);
+      setNewAdminEmail("");
+      setEmailPassword("");
       setEmailSuccess(true);
       setTimeout(() => setEmailSuccess(false), 3000);
     } catch (error) {
@@ -369,16 +426,9 @@ export default function AdminSettingsPage() {
   };
 
   // Handle password change
-  const handlePasswordChange = () => {
+  const handlePasswordChange = async () => {
     setPasswordError(null);
     setPasswordSuccess(false);
-
-    // Validate current password (check localStorage for changed password)
-    const storedPassword = localStorage.getItem("demo_password") || "Admin123!";
-    if (currentPassword !== storedPassword) {
-      setPasswordError("Mot de passe actuel incorrect");
-      return;
-    }
 
     // Validate new password
     const validation = validatePassword(newPassword);
@@ -396,12 +446,26 @@ export default function AdminSettingsPage() {
       return;
     }
 
-    // In demo mode, just simulate success and update localStorage
     try {
-      const session = JSON.parse(localStorage.getItem("admin_session") || "{}");
-      session.passwordHash = btoa(newPassword); // Simple encoding for demo
-      localStorage.setItem("admin_session", JSON.stringify(session));
-      localStorage.setItem("demo_password", newPassword); // Store new password for login
+      const response = await fetch("/api/admin/account", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          action: "changePassword",
+          currentPassword,
+          newPassword,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setPasswordError(
+          data.error || "Erreur lors du changement de mot de passe",
+        );
+        return;
+      }
 
       setPasswordSuccess(true);
       setCurrentPassword("");
@@ -694,6 +758,40 @@ export default function AdminSettingsPage() {
                   onChange={(e) => setContactEmail(e.target.value)}
                   className="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground"
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Affiché sur la page Contact et utilisé pour recevoir les
+                  messages
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  URL GitHub
+                </label>
+                <input
+                  type="url"
+                  value={githubUrl}
+                  onChange={(e) => setGithubUrl(e.target.value)}
+                  placeholder="https://github.com/votre-username"
+                  className="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Lien vers votre profil GitHub
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  URL LinkedIn
+                </label>
+                <input
+                  type="url"
+                  value={linkedinUrl}
+                  onChange={(e) => setLinkedinUrl(e.target.value)}
+                  placeholder="https://linkedin.com/in/votre-profil"
+                  className="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Lien vers votre profil LinkedIn
+                </p>
               </div>
               <button
                 onClick={handleSaveGeneral}
@@ -933,22 +1031,52 @@ export default function AdminSettingsPage() {
 
             <div className="grid gap-6 max-w-xl">
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  value={adminEmail}
-                  onChange={(e) => setAdminEmail(e.target.value)}
-                  className="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground"
-                />
-                <button
-                  onClick={handleSaveEmail}
-                  disabled={emailSaving}
-                  className="mt-2 px-4 py-2 bg-accent text-foreground rounded-lg hover:bg-accent/80 transition-colors disabled:opacity-50 text-sm"
-                >
-                  {emailSaving ? "Sauvegarde..." : "Mettre à jour l'email"}
-                </button>
+                <h4 className="text-sm font-medium text-foreground mb-4">
+                  Changer l&apos;email administrateur
+                </h4>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm text-muted-foreground mb-2">
+                      Email actuel
+                    </label>
+                    <input
+                      type="email"
+                      value={adminEmail}
+                      disabled
+                      className="w-full px-4 py-2 bg-muted border border-input rounded-lg text-muted-foreground cursor-not-allowed"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-muted-foreground mb-2">
+                      Nouvel email
+                    </label>
+                    <input
+                      type="email"
+                      value={newAdminEmail}
+                      onChange={(e) => setNewAdminEmail(e.target.value)}
+                      placeholder="nouveau@email.com"
+                      className="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-muted-foreground mb-2">
+                      Mot de passe actuel (pour confirmation)
+                    </label>
+                    <input
+                      type="password"
+                      value={emailPassword}
+                      onChange={(e) => setEmailPassword(e.target.value)}
+                      className="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground"
+                    />
+                  </div>
+                  <button
+                    onClick={handleSaveEmail}
+                    disabled={emailSaving}
+                    className="px-4 py-2 bg-accent text-foreground rounded-lg hover:bg-accent/80 transition-colors disabled:opacity-50 text-sm"
+                  >
+                    {emailSaving ? "Sauvegarde..." : "Mettre à jour l'email"}
+                  </button>
+                </div>
               </div>
               <div className="pt-4 border-t border-border">
                 <h4 className="text-sm font-medium text-foreground mb-4">

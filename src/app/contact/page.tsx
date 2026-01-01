@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Mail,
   Send,
@@ -9,6 +9,7 @@ import {
   CheckCircle,
   AlertCircle,
 } from "lucide-react";
+import { RetroLoader } from "@/components/ui/retro-spinner";
 
 interface FormErrors {
   name?: string;
@@ -17,7 +18,21 @@ interface FormErrors {
   message?: string;
 }
 
+interface ContactSettings {
+  contactEmail: string;
+  githubUrl: string;
+  linkedinUrl: string;
+}
+
+const defaultSettings: ContactSettings = {
+  contactEmail: "contact@oneup.dev",
+  githubUrl: "https://github.com/oneup",
+  linkedinUrl: "https://linkedin.com/in/oneup",
+};
+
 export default function ContactPage() {
+  const [settings, setSettings] = useState<ContactSettings>(defaultSettings);
+  const [isLoading, setIsLoading] = useState(true);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -28,6 +43,32 @@ export default function ContactPage() {
   const [status, setStatus] = useState<
     "idle" | "loading" | "success" | "error"
   >("idle");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Load contact settings
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const response = await fetch("/api/settings");
+        if (response.ok) {
+          const data = await response.json();
+          if (data.data) {
+            setSettings({
+              contactEmail:
+                data.data.contactEmail || defaultSettings.contactEmail,
+              githubUrl: data.data.githubUrl || defaultSettings.githubUrl,
+              linkedinUrl: data.data.linkedinUrl || defaultSettings.linkedinUrl,
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Error loading settings:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadSettings();
+  }, []);
 
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -70,13 +111,33 @@ export default function ContactPage() {
 
     setStatus("loading");
 
-    // Simulate form submission (will be replaced with real API call)
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
 
-    // For demo, always succeed
-    setStatus("success");
-    setFormData({ name: "", email: "", subject: "", message: "" });
-    setErrors({});
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setStatus("success");
+        setErrorMessage(null);
+        setFormData({ name: "", email: "", subject: "", message: "" });
+        setErrors({});
+      } else {
+        setStatus("error");
+        setErrorMessage(
+          data.error || "Une erreur est survenue. Veuillez réessayer.",
+        );
+      }
+    } catch (error) {
+      console.error("Error sending message:", error);
+      setStatus("error");
+      setErrorMessage(
+        "Impossible de contacter le serveur. Veuillez réessayer.",
+      );
+    }
   };
 
   const handleChange = (
@@ -96,6 +157,22 @@ export default function ContactPage() {
       }));
     }
   };
+
+  // Extract username from URLs for display
+  const githubUsername = settings.githubUrl.split("/").pop() || "oneup";
+  const linkedinUsername = settings.linkedinUrl.split("/").pop() || "oneup";
+
+  if (isLoading) {
+    return (
+      <div className="py-20">
+        <div className="container mx-auto max-w-4xl px-4">
+          <div className="flex items-center justify-center py-20">
+            <RetroLoader size="lg" text="CHARGEMENT" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="py-20">
@@ -272,7 +349,10 @@ export default function ContactPage() {
               {status === "error" && (
                 <div className="flex items-center gap-2 rounded-lg bg-red-500/20 p-3 text-red-400">
                   <AlertCircle className="h-5 w-5" />
-                  <span>Une erreur est survenue. Veuillez réessayer.</span>
+                  <span>
+                    {errorMessage ||
+                      "Une erreur est survenue. Veuillez réessayer."}
+                  </span>
                 </div>
               )}
             </form>
@@ -286,7 +366,7 @@ export default function ContactPage() {
 
               <div className="space-y-4">
                 <a
-                  href="mailto:contact@oneup.dev"
+                  href={`mailto:${settings.contactEmail}`}
                   className="flex items-center gap-3 text-muted-foreground transition-colors hover:text-primary"
                 >
                   <div className="rounded-lg bg-primary/10 p-2 text-primary">
@@ -295,7 +375,7 @@ export default function ContactPage() {
                   <div>
                     <p className="text-sm text-muted-foreground">Email</p>
                     <p className="font-medium text-foreground">
-                      contact@oneup.dev
+                      {settings.contactEmail}
                     </p>
                   </div>
                 </a>
@@ -308,7 +388,7 @@ export default function ContactPage() {
 
               <div className="space-y-4">
                 <a
-                  href="https://github.com/oneup"
+                  href={settings.githubUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-3 text-muted-foreground transition-colors hover:text-primary"
@@ -318,12 +398,14 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">GitHub</p>
-                    <p className="font-medium text-foreground">@oneup</p>
+                    <p className="font-medium text-foreground">
+                      @{githubUsername}
+                    </p>
                   </div>
                 </a>
 
                 <a
-                  href="https://linkedin.com/in/oneup"
+                  href={settings.linkedinUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-3 text-muted-foreground transition-colors hover:text-primary"
@@ -333,7 +415,9 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">LinkedIn</p>
-                    <p className="font-medium text-foreground">ONEUP</p>
+                    <p className="font-medium text-foreground">
+                      {linkedinUsername.toUpperCase()}
+                    </p>
                   </div>
                 </a>
               </div>

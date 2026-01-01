@@ -103,11 +103,11 @@ export async function PUT(
       }
     }
 
-    // Calculate read time if content is provided
-    let readTimeMinutes = existing.readTimeMinutes;
-    if (body.content) {
-      readTimeMinutes = Math.max(1, Math.ceil(body.content.length / 1000));
-    }
+    // Use manual readTimeMinutes if provided, otherwise keep existing or calculate from content
+    const readTimeMinutes =
+      body.readTimeMinutes !== undefined
+        ? body.readTimeMinutes
+        : existing.readTimeMinutes;
 
     // Determine publishedAt
     let publishedAt = existing.publishedAt;

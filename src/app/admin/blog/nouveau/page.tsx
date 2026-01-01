@@ -72,6 +72,7 @@ interface BlogFormData {
   status: string;
   metaDescription: string;
   publishedAt: string;
+  readTimeMinutes: number;
 }
 
 export default function NewBlogPostPage() {
@@ -134,6 +135,7 @@ export default function NewBlogPostPage() {
     status: "draft", // Default to draft
     metaDescription: "",
     publishedAt: new Date().toISOString().split("T")[0], // Default to today
+    readTimeMinutes: 5,
   });
 
   // Auto-generate slug when title changes (if autoSlug is enabled)
@@ -372,6 +374,7 @@ export default function NewBlogPostPage() {
           metaDescription: formData.metaDescription,
           publishedAt:
             formData.status === "published" ? formData.publishedAt : null,
+          readTimeMinutes: formData.readTimeMinutes,
         }),
       });
 
@@ -667,27 +670,52 @@ export default function NewBlogPostPage() {
             )}
           </div>
 
-          {/* Status */}
-          <div>
-            <label
-              htmlFor="status"
-              className="block text-sm font-medium text-foreground mb-2"
-            >
-              Statut
-            </label>
-            <select
-              id="status"
-              name="status"
-              value={formData.status}
-              onChange={handleChange}
-              className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              {statusOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+          {/* Status and Reading Time */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label
+                htmlFor="status"
+                className="block text-sm font-medium text-foreground mb-2"
+              >
+                Statut
+              </label>
+              <select
+                id="status"
+                name="status"
+                value={formData.status}
+                onChange={handleChange}
+                className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                {statusOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Reading Time */}
+            <div>
+              <label
+                htmlFor="readTimeMinutes"
+                className="block text-sm font-medium text-foreground mb-2"
+              >
+                Temps de lecture (minutes)
+              </label>
+              <input
+                type="number"
+                id="readTimeMinutes"
+                name="readTimeMinutes"
+                value={formData.readTimeMinutes}
+                onChange={handleChange}
+                min={1}
+                max={120}
+                className="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Durée estimée de lecture de l&apos;article
+              </p>
+            </div>
           </div>
 
           {/* Published At Date (for scheduling) */}

@@ -97,7 +97,8 @@ export default function EditBlogPostPage() {
       formData.content !== initial.content ||
       JSON.stringify(formData.tags) !== JSON.stringify(initial.tags) ||
       formData.status !== initial.status ||
-      formData.metaDescription !== initial.metaDescription
+      formData.metaDescription !== initial.metaDescription ||
+      formData.readTimeMinutes !== initial.readTimeMinutes
     );
   }, [formData]);
 
@@ -171,7 +172,8 @@ export default function EditBlogPostPage() {
       formData.content !== lastSaved.content ||
       JSON.stringify(formData.tags) !== JSON.stringify(lastSaved.tags) ||
       formData.status !== lastSaved.status ||
-      formData.metaDescription !== lastSaved.metaDescription
+      formData.metaDescription !== lastSaved.metaDescription ||
+      formData.readTimeMinutes !== lastSaved.readTimeMinutes
     );
   }, [formData, hasUnsavedChanges]);
 
@@ -197,6 +199,7 @@ export default function EditBlogPostPage() {
           tags: formData.tags,
           status: formData.status,
           metaDescription: formData.metaDescription,
+          readTimeMinutes: formData.readTimeMinutes,
         }),
       });
 
@@ -410,6 +413,7 @@ export default function EditBlogPostPage() {
           tags: formData.tags,
           status: formData.status,
           metaDescription: formData.metaDescription,
+          readTimeMinutes: formData.readTimeMinutes,
         }),
       });
 
@@ -773,8 +777,8 @@ export default function EditBlogPostPage() {
             )}
           </div>
 
-          {/* Status */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Status, Reading Time, and Publication Date */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label
                 htmlFor="status"
@@ -796,6 +800,27 @@ export default function EditBlogPostPage() {
                 ))}
               </select>
             </div>
+
+            {/* Reading Time */}
+            <div>
+              <label
+                htmlFor="readTimeMinutes"
+                className="block text-sm font-medium text-foreground mb-2"
+              >
+                Temps de lecture (min)
+              </label>
+              <input
+                type="number"
+                id="readTimeMinutes"
+                name="readTimeMinutes"
+                value={formData.readTimeMinutes}
+                onChange={handleChange}
+                min={1}
+                max={120}
+                className="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
                 Date de publication
