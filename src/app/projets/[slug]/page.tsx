@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowLeft, ExternalLink, Github, Calendar } from "lucide-react";
 import { useParams, notFound } from "next/navigation";
 import { useState, useEffect } from "react";
+import { ImageLightbox } from "@/components/ui/image-lightbox";
 
 interface Project {
   id: string;
@@ -36,6 +37,7 @@ export default function ProjectDetailPage() {
   const [project, setProject] = useState<Project | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [notFoundState, setNotFoundState] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   // Build back URL preserving filter params from referrer
   const [backUrl, setBackUrl] = useState("/projets");
@@ -199,7 +201,8 @@ export default function ProjectDetailPage() {
               {project.galleryImages.map((imageUrl, index) => (
                 <div
                   key={index}
-                  className="group relative aspect-video overflow-hidden rounded-lg bg-gradient-to-br from-retro-dark to-retro-purple"
+                  className="group relative aspect-video overflow-hidden rounded-lg bg-gradient-to-br from-retro-dark to-retro-purple cursor-pointer"
+                  onClick={() => setSelectedImage(imageUrl)}
                 >
                   <img
                     src={imageUrl}
@@ -210,6 +213,13 @@ export default function ProjectDetailPage() {
                 </div>
               ))}
             </div>
+
+            <ImageLightbox
+              isOpen={!!selectedImage}
+              src={selectedImage || ""}
+              alt={selectedImage ? `${project.title} - Galerie` : ""}
+              onClose={() => setSelectedImage(null)}
+            />
           </div>
         )}
 

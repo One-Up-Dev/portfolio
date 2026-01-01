@@ -19,7 +19,6 @@ import {
 
 interface ContentState {
   // About page content
-  aboutMyJourney: string;
   aboutMyStory: string;
   aboutWhyDevelopment: string;
   aboutMySpecialties: string;
@@ -27,12 +26,7 @@ interface ContentState {
 
   // Home page content
   homeHeroPhrase: string;
-  homeSpecialty1Title: string;
-  homeSpecialty1Description: string;
-  homeSpecialty2Title: string;
-  homeSpecialty2Description: string;
-  homeSpecialty3Title: string;
-  homeSpecialty3Description: string;
+  homeHeroDescription: string;
 }
 
 interface TimelineEntry {
@@ -58,22 +52,14 @@ interface SpecialtyFrame {
 }
 
 const defaultContent: ContentState = {
-  aboutMyJourney: `Plus de 20 ans d'expérience dans la restauration. Apprentissage de la gestion du stress, du travail en équipe et de la persévérance. Premiers pas en autodidacte en 2020, exploration de HTML, CSS, JavaScript. Formation intensive en 2023 avec React, Next.js, TypeScript. Découverte de n8n et des outils d'automatisation. Adoption de Claude Code et du vibe coding en 2024. Début de la reconversion professionnelle officielle.`,
   aboutMyStory: `Après plus de 20 ans dans la restauration, j'ai décidé de suivre ma passion pour la technologie et le développement. Cette reconversion professionnelle représente un nouveau chapitre passionnant de ma vie.\n\nMon expérience de vie m'a appris la persévérance, la gestion du stress et le travail en équipe - des compétences essentielles que j'apporte aujourd'hui dans mes projets de développement.`,
   aboutWhyDevelopment: `La programmation a toujours été une passion cachée. Autodidacte depuis des années, j'ai finalement décidé d'en faire mon métier. L'arrivée de l'IA et des outils comme Claude Code m'ont convaincu que c'était le bon moment.\n\nJe suis particulièrement attiré par l'automatisation avec n8n, le développement assisté par IA, et la création d'interfaces utilisateur modernes et intuitives.`,
   aboutMySpecialties: `n8n Automation - Création de workflows automatisés\nClaude Code - Développement assisté par IA\nReact & Next.js - Applications web modernes\nTypeScript - Code typé et maintenable\nVibe Coding - Approche créative du développement`,
   aboutDateOfBirth: "1978-06-15",
 
   homeHeroPhrase: "Développeur Full-Stack en Reconversion",
-  homeSpecialty1Title: "Automatisation n8n",
-  homeSpecialty1Description:
-    "Création de workflows automatisés pour optimiser les processus métier et gagner en productivité.",
-  homeSpecialty2Title: "Claude Code",
-  homeSpecialty2Description:
-    "Développement assisté par IA avec Claude pour un code de qualité et une productivité décuplée.",
-  homeSpecialty3Title: "Vibe Coding",
-  homeSpecialty3Description:
-    "Approche créative du développement alliant passion, intuition et bonnes pratiques techniques.",
+  homeHeroDescription:
+    "Passionné par l'automatisation et le développement assisté par IA, je crée des solutions web modernes et efficaces.",
 };
 
 const emptyTimelineEntry: Omit<
@@ -156,8 +142,6 @@ export default function ContentManagementPage() {
           const data = await response.json();
           if (data.data) {
             setContent({
-              aboutMyJourney:
-                data.data.aboutMyJourney || defaultContent.aboutMyJourney,
               aboutMyStory:
                 data.data.aboutMyStory || defaultContent.aboutMyStory,
               aboutWhyDevelopment:
@@ -170,24 +154,9 @@ export default function ContentManagementPage() {
                 data.data.aboutDateOfBirth || defaultContent.aboutDateOfBirth,
               homeHeroPhrase:
                 data.data.homeHeroPhrase || defaultContent.homeHeroPhrase,
-              homeSpecialty1Title:
-                data.data.homeSpecialty1Title ||
-                defaultContent.homeSpecialty1Title,
-              homeSpecialty1Description:
-                data.data.homeSpecialty1Description ||
-                defaultContent.homeSpecialty1Description,
-              homeSpecialty2Title:
-                data.data.homeSpecialty2Title ||
-                defaultContent.homeSpecialty2Title,
-              homeSpecialty2Description:
-                data.data.homeSpecialty2Description ||
-                defaultContent.homeSpecialty2Description,
-              homeSpecialty3Title:
-                data.data.homeSpecialty3Title ||
-                defaultContent.homeSpecialty3Title,
-              homeSpecialty3Description:
-                data.data.homeSpecialty3Description ||
-                defaultContent.homeSpecialty3Description,
+              homeHeroDescription:
+                data.data.homeHeroDescription ||
+                defaultContent.homeHeroDescription,
             });
           }
         }
@@ -639,25 +608,6 @@ export default function ContentManagementPage() {
               </p>
             </div>
 
-            {/* My Journey */}
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
-                Mon parcours (My Journey)
-              </label>
-              <textarea
-                value={content.aboutMyJourney}
-                onChange={(e) =>
-                  handleContentChange("aboutMyJourney", e.target.value)
-                }
-                rows={6}
-                className="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground resize-none"
-                placeholder="Décrivez votre parcours professionnel..."
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Ce texte apparaît dans la section timeline de la page À propos
-              </p>
-            </div>
-
             {/* My Story */}
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
@@ -668,12 +618,14 @@ export default function ContentManagementPage() {
                 onChange={(e) =>
                   handleContentChange("aboutMyStory", e.target.value)
                 }
-                rows={6}
-                className="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground resize-none"
+                rows={8}
+                className="w-full px-4 py-3 bg-background border border-input rounded-lg text-foreground resize-y min-h-[150px]"
                 placeholder="Racontez votre histoire personnelle..."
               />
               <p className="text-xs text-muted-foreground mt-1">
-                Utilisez \n pour créer des nouveaux paragraphes
+                <strong>1 Entrée</strong> = saut de ligne simple |{" "}
+                <strong>2 Entrées</strong> = nouveau paragraphe (espacement
+                visible)
               </p>
             </div>
 
@@ -687,10 +639,15 @@ export default function ContentManagementPage() {
                 onChange={(e) =>
                   handleContentChange("aboutWhyDevelopment", e.target.value)
                 }
-                rows={6}
-                className="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground resize-none"
+                rows={8}
+                className="w-full px-4 py-3 bg-background border border-input rounded-lg text-foreground resize-y min-h-[150px]"
                 placeholder="Expliquez pourquoi vous avez choisi le développement..."
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                <strong>1 Entrée</strong> = saut de ligne simple |{" "}
+                <strong>2 Entrées</strong> = nouveau paragraphe (espacement
+                visible)
+              </p>
             </div>
 
             {/* My Specialties */}
@@ -741,149 +698,24 @@ export default function ContentManagementPage() {
               </p>
             </div>
 
-            {/* Specialties Frames */}
-            <div className="space-y-6">
-              <h4 className="text-md font-medium text-foreground">
-                Cadres des spécialités (3 cartes)
-              </h4>
-
-              {/* Specialty 1 */}
-              <div className="p-4 border border-border rounded-lg bg-background">
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
-                    1
-                  </span>
-                  <span className="font-medium">Spécialité 1</span>
-                </div>
-                <div className="grid gap-4">
-                  <div>
-                    <label className="block text-sm text-muted-foreground mb-1">
-                      Titre
-                    </label>
-                    <input
-                      type="text"
-                      value={content.homeSpecialty1Title}
-                      onChange={(e) =>
-                        handleContentChange(
-                          "homeSpecialty1Title",
-                          e.target.value,
-                        )
-                      }
-                      className="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground"
-                      placeholder="Automatisation n8n"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-muted-foreground mb-1">
-                      Description
-                    </label>
-                    <textarea
-                      value={content.homeSpecialty1Description}
-                      onChange={(e) =>
-                        handleContentChange(
-                          "homeSpecialty1Description",
-                          e.target.value,
-                        )
-                      }
-                      rows={2}
-                      className="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground resize-none"
-                      placeholder="Description de la spécialité..."
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Specialty 2 */}
-              <div className="p-4 border border-border rounded-lg bg-background">
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
-                    2
-                  </span>
-                  <span className="font-medium">Spécialité 2</span>
-                </div>
-                <div className="grid gap-4">
-                  <div>
-                    <label className="block text-sm text-muted-foreground mb-1">
-                      Titre
-                    </label>
-                    <input
-                      type="text"
-                      value={content.homeSpecialty2Title}
-                      onChange={(e) =>
-                        handleContentChange(
-                          "homeSpecialty2Title",
-                          e.target.value,
-                        )
-                      }
-                      className="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground"
-                      placeholder="Claude Code"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-muted-foreground mb-1">
-                      Description
-                    </label>
-                    <textarea
-                      value={content.homeSpecialty2Description}
-                      onChange={(e) =>
-                        handleContentChange(
-                          "homeSpecialty2Description",
-                          e.target.value,
-                        )
-                      }
-                      rows={2}
-                      className="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground resize-none"
-                      placeholder="Description de la spécialité..."
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Specialty 3 */}
-              <div className="p-4 border border-border rounded-lg bg-background">
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
-                    3
-                  </span>
-                  <span className="font-medium">Spécialité 3</span>
-                </div>
-                <div className="grid gap-4">
-                  <div>
-                    <label className="block text-sm text-muted-foreground mb-1">
-                      Titre
-                    </label>
-                    <input
-                      type="text"
-                      value={content.homeSpecialty3Title}
-                      onChange={(e) =>
-                        handleContentChange(
-                          "homeSpecialty3Title",
-                          e.target.value,
-                        )
-                      }
-                      className="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground"
-                      placeholder="Vibe Coding"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-muted-foreground mb-1">
-                      Description
-                    </label>
-                    <textarea
-                      value={content.homeSpecialty3Description}
-                      onChange={(e) =>
-                        handleContentChange(
-                          "homeSpecialty3Description",
-                          e.target.value,
-                        )
-                      }
-                      rows={2}
-                      className="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground resize-none"
-                      placeholder="Description de la spécialité..."
-                    />
-                  </div>
-                </div>
-              </div>
+            {/* Hero Description */}
+            <div className="p-4 border border-border rounded-lg bg-background">
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Description de la page d&apos;accueil
+              </label>
+              <textarea
+                value={content.homeHeroDescription}
+                onChange={(e) =>
+                  handleContentChange("homeHeroDescription", e.target.value)
+                }
+                rows={3}
+                className="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground resize-none"
+                placeholder="Une phrase de description pour la page d'accueil..."
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Cette phrase apparaît sous la phrase d&apos;accroche dans la
+                section hero
+              </p>
             </div>
           </div>
         )}

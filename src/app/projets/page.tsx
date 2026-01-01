@@ -2,6 +2,7 @@
 
 import { Suspense } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { ExternalLink, Github, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -314,19 +315,22 @@ function ProjectsPageContent() {
                   className="card-glitch group flex flex-col rounded-lg border border-border bg-card transition-all hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10"
                 >
                   {/* Project Image with Glitch Effect */}
-                  <div className="glitch-image aspect-video w-full overflow-hidden bg-gradient-to-br from-retro-dark to-retro-purple relative">
-                    {project.mainImageUrl ? (
-                      <img
-                        src={project.mainImageUrl}
-                        alt={`Image du projet ${project.title}`}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-full items-center justify-center p-4 text-4xl">
-                        🎮
-                      </div>
-                    )}
-                  </div>
+                  <Link href={`/projets/${project.slug}`} className="block">
+                    <div className="glitch-image aspect-video w-full overflow-hidden bg-gradient-to-br from-retro-dark to-retro-purple relative">
+                      {project.mainImageUrl ? (
+                        <Image
+                          src={project.mainImageUrl}
+                          alt={`Image du projet ${project.title}`}
+                          fill
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full items-center justify-center p-4 text-4xl">
+                          🎮
+                        </div>
+                      )}
+                    </div>
+                  </Link>
 
                   {/* Content */}
                   <div className="flex flex-1 flex-col p-6">

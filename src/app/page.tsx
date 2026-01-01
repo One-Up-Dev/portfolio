@@ -9,6 +9,7 @@ interface HomeContent {
   heroGifUrl: string;
   logoUrl: string;
   heroPhrase: string;
+  heroTagline: string;
 }
 
 interface SpecialtyFrame {
@@ -23,6 +24,7 @@ const defaultContent: HomeContent = {
   heroGifUrl: "",
   logoUrl: "/logo-oneup.png",
   heroPhrase: "Développeur Full-Stack en Reconversion",
+  heroTagline: "n8n • claude-code • automatisation • vibe coding",
 };
 
 // Default specialty frames (used when database is empty)
@@ -83,6 +85,7 @@ export default function HomePage() {
               heroGifUrl: data.data.heroGifUrl || defaultContent.heroGifUrl,
               logoUrl: data.data.logoUrl || defaultContent.logoUrl,
               heroPhrase: data.data.homeHeroPhrase || defaultContent.heroPhrase,
+              heroTagline: data.data.homeHeroDescription || defaultContent.heroTagline,
             });
           }
         }

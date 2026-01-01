@@ -6,7 +6,6 @@ import Image from "next/image";
 import { Download, Calendar, MapPin, Heart, Code } from "lucide-react";
 
 interface AboutContent {
-  myJourney: string;
   myStory: string;
   whyDevelopment: string;
   mySpecialties: string;
@@ -24,7 +23,6 @@ interface TimelineEntry {
 }
 
 const defaultContent: AboutContent = {
-  myJourney: `Plus de 20 ans d'expérience dans la restauration. Apprentissage de la gestion du stress, du travail en équipe et de la persévérance. Premiers pas en autodidacte en 2020, exploration de HTML, CSS, JavaScript. Formation intensive en 2023 avec React, Next.js, TypeScript. Découverte de n8n et des outils d'automatisation. Adoption de Claude Code et du vibe coding en 2024. Début de la reconversion professionnelle officielle.`,
   myStory: `Après plus de 20 ans dans la restauration, j'ai décidé de suivre ma passion pour la technologie et le développement. Cette reconversion professionnelle représente un nouveau chapitre passionnant de ma vie.\n\nMon expérience de vie m'a appris la persévérance, la gestion du stress et le travail en équipe - des compétences essentielles que j'apporte aujourd'hui dans mes projets de développement.`,
   whyDevelopment: `La programmation a toujours été une passion cachée. Autodidacte depuis des années, j'ai finalement décidé d'en faire mon métier. L'arrivée de l'IA et des outils comme Claude Code m'ont convaincu que c'était le bon moment.\n\nJe suis particulièrement attiré par l'automatisation avec n8n, le développement assisté par IA, et la création d'interfaces utilisateur modernes et intuitives.`,
   mySpecialties: `n8n Automation - Création de workflows automatisés\nClaude Code - Développement assisté par IA\nReact & Next.js - Applications web modernes\nTypeScript - Code typé et maintenable\nVibe Coding - Approche créative du développement`,
@@ -163,7 +161,6 @@ export default function AboutPage() {
           const data = await contentResponse.json();
           if (data.data) {
             setContent({
-              myJourney: data.data.aboutMyJourney || defaultContent.myJourney,
               myStory: data.data.aboutMyStory || defaultContent.myStory,
               whyDevelopment:
                 data.data.aboutWhyDevelopment || defaultContent.whyDevelopment,
@@ -201,11 +198,14 @@ export default function AboutPage() {
   const age = calculateAge(content.dateOfBirth);
   const specialties = parseSpecialties(content.mySpecialties);
 
-  // Split story into paragraphs
-  const storyParagraphs = content.myStory.split("\n").filter((p) => p.trim());
-  const whyDevParagraphs = content.whyDevelopment
-    .split("\n")
-    .filter((p) => p.trim());
+  // Split into paragraphs (double newline) and preserve single line breaks
+  const formatTextWithLineBreaks = (text: string) => {
+    // Split by double newlines for paragraphs
+    return text.split(/\n\n+/).filter((p) => p.trim());
+  };
+
+  const storyParagraphs = formatTextWithLineBreaks(content.myStory);
+  const whyDevParagraphs = formatTextWithLineBreaks(content.whyDevelopment);
 
   if (loading) {
     return (
@@ -362,7 +362,10 @@ export default function AboutPage() {
               Mon histoire
             </h2>
             {storyParagraphs.map((paragraph, index) => (
-              <p key={index} className="mb-4 text-muted-foreground">
+              <p
+                key={index}
+                className="mb-4 text-muted-foreground whitespace-pre-line"
+              >
                 {paragraph}
               </p>
             ))}
@@ -373,7 +376,10 @@ export default function AboutPage() {
               Pourquoi le développement ?
             </h2>
             {whyDevParagraphs.map((paragraph, index) => (
-              <p key={index} className="mb-4 text-muted-foreground">
+              <p
+                key={index}
+                className="mb-4 text-muted-foreground whitespace-pre-line"
+              >
                 {paragraph}
               </p>
             ))}
