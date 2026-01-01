@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { RetroLoader } from "@/components/ui/retro-spinner";
 
 interface BlogPost {
   id: string;
@@ -141,10 +142,7 @@ export default function AdminBlogPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="text-4xl animate-spin mb-4">⏳</div>
-          <p className="text-muted-foreground">Chargement des articles...</p>
-        </div>
+        <RetroLoader size="lg" text="CHARGEMENT" />
       </div>
     );
   }

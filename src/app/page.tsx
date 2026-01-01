@@ -85,7 +85,8 @@ export default function HomePage() {
               heroGifUrl: data.data.heroGifUrl || defaultContent.heroGifUrl,
               logoUrl: data.data.logoUrl || defaultContent.logoUrl,
               heroPhrase: data.data.homeHeroPhrase || defaultContent.heroPhrase,
-              heroTagline: data.data.homeHeroDescription || defaultContent.heroTagline,
+              heroTagline:
+                data.data.homeHeroDescription || defaultContent.heroTagline,
             });
           }
         }
@@ -188,7 +189,7 @@ export default function HomePage() {
 
           {/* Tagline */}
           <p className="mb-8 text-lg text-muted-foreground">
-            n8n &bull; claude-code &bull; automatisation &bull; vibe coding
+            {content.heroTagline}
           </p>
 
           {/* CTA Buttons - Pixel Art Style */}

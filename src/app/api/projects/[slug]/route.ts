@@ -3,6 +3,22 @@ import { db } from "../../../../../db";
 import { projects } from "../../../../../db/schema";
 import { eq, and } from "drizzle-orm";
 
+// Force dynamic rendering - no caching
+export const dynamic = "force-dynamic";
+
+// Helper function to serialize dates to ISO strings
+function serializeDates<T extends Record<string, unknown>>(obj: T): T {
+  const serialized = { ...obj };
+  for (const key in serialized) {
+    if (serialized[key] instanceof Date) {
+      serialized[key] = (
+        serialized[key] as Date
+      ).toISOString() as T[typeof key];
+    }
+  }
+  return serialized;
+}
+
 // GET /api/projects/[slug] - Get a single project by slug
 export async function GET(
   request: NextRequest,
@@ -31,7 +47,7 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      data: { ...project, viewCount: project.viewCount + 1 },
+      data: serializeDates({ ...project, viewCount: project.viewCount + 1 }),
     });
   } catch (error) {
     console.error("Error fetching project:", error);

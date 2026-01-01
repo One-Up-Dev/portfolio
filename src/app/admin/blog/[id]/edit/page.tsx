@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useToast } from "@/components/ui/retro-toast";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { RetroLoader } from "@/components/ui/retro-spinner";
 
 // Tag options for multi-select (common blog tags)
 const tagOptions = [
@@ -458,12 +459,7 @@ export default function EditBlogPostPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="text-4xl animate-spin mb-4">⏳</div>
-          <p className="text-muted-foreground">
-            Chargement de l&apos;article...
-          </p>
-        </div>
+        <RetroLoader size="lg" text="CHARGEMENT" />
       </div>
     );
   }

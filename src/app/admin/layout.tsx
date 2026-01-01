@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
+import { RetroLoader } from "@/components/ui/retro-spinner";
 
 // Session type for demo authentication
 interface Session {
@@ -108,10 +109,7 @@ export default function AdminLayout({
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
-          <p className="text-muted-foreground">Chargement...</p>
-        </div>
+        <RetroLoader size="lg" text="CHARGEMENT" />
       </div>
     );
   }

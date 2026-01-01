@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Download, Calendar, MapPin, Heart, Code } from "lucide-react";
+import { RetroLoader } from "@/components/ui/retro-spinner";
 
 interface AboutContent {
   myStory: string;
@@ -212,7 +213,7 @@ export default function AboutPage() {
       <div className="py-20">
         <div className="container mx-auto max-w-4xl px-4">
           <div className="flex items-center justify-center min-h-[400px]">
-            <div className="text-muted-foreground">Chargement...</div>
+            <RetroLoader size="lg" text="CHARGEMENT" />
           </div>
         </div>
       </div>

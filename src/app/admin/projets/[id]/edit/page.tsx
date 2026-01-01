@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter, useParams } from "next/navigation";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useToast } from "@/components/ui/retro-toast";
+import { RetroLoader } from "@/components/ui/retro-spinner";
 
 // Default technology options (fallback if API fails)
 const fallbackTechnologyOptions = [
@@ -130,6 +132,17 @@ export default function EditProjectPage() {
         if (response.ok) {
           const data = await response.json();
           const project = data.data;
+          // Convert ISO date string to YYYY-MM-DD format for input type="date"
+          const formatDateForInput = (dateString: string | null): string => {
+            if (!dateString) return "";
+            try {
+              const date = new Date(dateString);
+              return date.toISOString().split("T")[0];
+            } catch {
+              return "";
+            }
+          };
+
           const loadedData = {
             id: project.id,
             title: project.title || "",
@@ -140,7 +153,7 @@ export default function EditProjectPage() {
             githubUrl: project.githubUrl || "",
             demoUrl: project.demoUrl || "",
             status: project.status || "en_cours",
-            projectDate: project.projectDate || "",
+            projectDate: formatDateForInput(project.projectDate),
             mainImageUrl: project.mainImageUrl || "",
             galleryImages: project.galleryImages || [],
             visible: project.visible ?? true,
@@ -361,10 +374,7 @@ export default function EditProjectPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="text-4xl animate-spin mb-4">⏳</div>
-          <p className="text-muted-foreground">Chargement du projet...</p>
-        </div>
+        <RetroLoader size="lg" text="CHARGEMENT" />
       </div>
     );
   }
@@ -768,11 +778,13 @@ export default function EditProjectPage() {
             {formData.mainImageUrl && (
               <div className="mt-2 p-2 border border-border rounded-lg bg-accent/20">
                 <p className="text-xs text-muted-foreground mb-2">Aperçu:</p>
-                <div className="h-32 w-32">
-                  <img
+                <div className="h-32 w-32 relative">
+                  <Image
                     src={formData.mainImageUrl}
                     alt="Aperçu de l'image principale"
-                    className="h-full w-full rounded object-cover"
+                    fill
+                    className="rounded object-cover"
+                    unoptimized
                   />
                 </div>
               </div>
@@ -833,12 +845,14 @@ export default function EditProjectPage() {
                   .map((url, index) => (
                     <div
                       key={index}
-                      className="aspect-video rounded-lg overflow-hidden bg-accent/20 border border-border"
+                      className="aspect-video rounded-lg overflow-hidden bg-accent/20 border border-border relative"
                     >
-                      <img
+                      <Image
                         src={url}
                         alt={`Galerie ${index + 1}`}
-                        className="w-full h-full object-cover"
+                        fill
+                        className="object-cover"
+                        unoptimized
                       />
                     </div>
                   ))}

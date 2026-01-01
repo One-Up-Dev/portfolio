@@ -31,6 +31,7 @@ export async function GET() {
         aboutDateOfBirth: settingsObject.aboutDateOfBirth || null,
         // Home page content
         homeHeroPhrase: settingsObject.homeHeroPhrase || null,
+        homeHeroDescription: settingsObject.homeHeroDescription || null,
         homeSpecialty1Title: settingsObject.homeSpecialty1Title || null,
         homeSpecialty1Description:
           settingsObject.homeSpecialty1Description || null,

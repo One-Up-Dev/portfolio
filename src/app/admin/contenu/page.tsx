@@ -16,6 +16,7 @@ import {
   Code,
   LayoutGrid,
 } from "lucide-react";
+import { RetroLoader } from "@/components/ui/retro-spinner";
 
 interface ContentState {
   // About page content
@@ -475,7 +476,7 @@ export default function ContentManagementPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-muted-foreground">Chargement du contenu...</div>
+        <RetroLoader size="lg" text="CHARGEMENT" />
       </div>
     );
   }

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { RetroLoader } from "@/components/ui/retro-spinner";
 
 interface Project {
   id: string;
@@ -208,10 +209,7 @@ export default function AdminProjectsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="inline-block animate-spin text-4xl mb-4">⏳</div>
-          <p className="text-muted-foreground">Chargement des projets...</p>
-        </div>
+        <RetroLoader size="lg" text="CHARGEMENT" />
       </div>
     );
   }

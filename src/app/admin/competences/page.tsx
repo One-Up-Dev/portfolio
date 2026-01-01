@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/components/ui/retro-toast";
+import { RetroLoader } from "@/components/ui/retro-spinner";
 
 interface Skill {
   id: string;
@@ -394,9 +395,7 @@ export default function AdminSkillsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-muted-foreground">
-          Chargement des compétences...
-        </div>
+        <RetroLoader size="lg" text="CHARGEMENT" />
       </div>
     );
   }
