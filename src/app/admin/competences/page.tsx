@@ -77,10 +77,6 @@ export default function AdminSkillsPage() {
   const [dragOverCategory, setDragOverCategory] = useState<string | null>(null);
   const dragNodeRef = useRef<HTMLDivElement | null>(null);
 
-  // Edit proficiency state
-  const [editingSkillId, setEditingSkillId] = useState<string | null>(null);
-  const [editingProficiency, setEditingProficiency] = useState<number>(75);
-
   // Fetch skills from API
   useEffect(() => {
     const fetchSkills = async () => {
@@ -204,54 +200,6 @@ export default function AdminSkillsPage() {
       setErrorMessage("Erreur lors de la suppression de la compétence");
       setTimeout(() => setErrorMessage(""), 3000);
     }
-  };
-
-  // Handle proficiency update
-  const handleUpdateProficiency = async (
-    category: keyof SkillsData,
-    skillId: string,
-    proficiency: number,
-  ) => {
-    try {
-      const response = await fetch("/api/admin/skills", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          skills: [{ id: skillId, proficiency }],
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to update proficiency");
-      }
-
-      // Update local state
-      setSkills((prev) => ({
-        ...prev,
-        [category]: prev[category].map((s) =>
-          s.id === skillId ? { ...s, proficiency } : s,
-        ),
-      }));
-
-      setEditingSkillId(null);
-      addToast("Niveau mis à jour avec succès !", "success");
-      setSuccessMessage("Niveau mis à jour avec succès !");
-      setTimeout(() => setSuccessMessage(""), 3000);
-    } catch (error) {
-      console.error("Error updating proficiency:", error);
-      addToast("Erreur lors de la mise à jour du niveau", "error");
-      setErrorMessage("Erreur lors de la mise à jour du niveau");
-      setTimeout(() => setErrorMessage(""), 3000);
-    }
-  };
-
-  const startEditingProficiency = (skill: Skill) => {
-    setEditingSkillId(skill.id);
-    setEditingProficiency(skill.proficiency);
-  };
-
-  const cancelEditingProficiency = () => {
-    setEditingSkillId(null);
   };
 
   // Drag and drop handlers
@@ -454,17 +402,13 @@ export default function AdminSkillsPage() {
                   skills[category].map((skill, index) => (
                     <div
                       key={skill.id}
-                      draggable={editingSkillId !== skill.id}
+                      draggable
                       onDragStart={(e) => handleDragStart(e, skill, category)}
                       onDragEnd={handleDragEnd}
                       onDragOver={(e) => handleDragOver(e, index, category)}
                       onDragLeave={handleDragLeave}
                       onDrop={(e) => handleDrop(e, index, category)}
-                      className={`flex flex-col p-3 bg-accent/30 rounded-lg hover:bg-accent/50 transition-colors group ${
-                        editingSkillId !== skill.id
-                          ? "cursor-grab active:cursor-grabbing"
-                          : ""
-                      } ${
+                      className={`flex flex-col p-3 bg-accent/30 rounded-lg hover:bg-accent/50 transition-colors group cursor-grab active:cursor-grabbing ${
                         dragOverIndex === index && dragOverCategory === category
                           ? "border-2 border-primary border-dashed"
                           : "border-2 border-transparent"
@@ -480,82 +424,17 @@ export default function AdminSkillsPage() {
                           </span>
                           <span className="text-foreground">{skill.name}</span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          {editingSkillId === skill.id ? (
-                            <>
-                              <input
-                                type="number"
-                                min="0"
-                                max="100"
-                                value={editingProficiency}
-                                onChange={(e) =>
-                                  setEditingProficiency(
-                                    Math.max(
-                                      0,
-                                      Math.min(
-                                        100,
-                                        parseInt(e.target.value) || 0,
-                                      ),
-                                    ),
-                                  )
-                                }
-                                className="w-16 px-2 py-1 text-sm bg-background border border-input rounded text-foreground text-center"
-                                aria-label="Pourcentage de maîtrise"
-                              />
-                              <span className="text-sm text-muted-foreground">
-                                %
-                              </span>
-                              <button
-                                onClick={() =>
-                                  handleUpdateProficiency(
-                                    category,
-                                    skill.id,
-                                    editingProficiency,
-                                  )
-                                }
-                                className="p-1 text-green-500 hover:text-green-400 transition-colors"
-                                title="Sauvegarder"
-                              >
-                                ✓
-                              </button>
-                              <button
-                                onClick={cancelEditingProficiency}
-                                className="p-1 text-muted-foreground hover:text-foreground transition-colors"
-                                title="Annuler"
-                              >
-                                ✕
-                              </button>
-                            </>
-                          ) : (
-                            <>
-                              <button
-                                onClick={() => startEditingProficiency(skill)}
-                                className="px-2 py-1 text-sm bg-primary/20 text-primary rounded hover:bg-primary/30 transition-colors"
-                                title="Modifier le niveau"
-                              >
-                                {skill.proficiency}%
-                              </button>
-                              <button
-                                onClick={() =>
-                                  handleDeleteSkill(category, skill.id)
-                                }
-                                className="p-1 text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100"
-                                title="Supprimer"
-                              >
-                                🗑️
-                              </button>
-                            </>
-                          )}
-                        </div>
+                        <button
+                          onClick={() => handleDeleteSkill(category, skill.id)}
+                          className="p-1 text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100"
+                          title="Supprimer"
+                        >
+                          🗑️
+                        </button>
                       </div>
-                      {/* Progress bar preview */}
+                      {/* Progress bar - always full */}
                       <div className="mt-2 h-2 w-full bg-secondary rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-gradient-to-r from-primary to-retro-cyan transition-all duration-300"
-                          style={{
-                            width: `${editingSkillId === skill.id ? editingProficiency : skill.proficiency}%`,
-                          }}
-                        />
+                        <div className="h-full w-full bg-gradient-to-r from-primary to-retro-cyan" />
                       </div>
                     </div>
                   ))

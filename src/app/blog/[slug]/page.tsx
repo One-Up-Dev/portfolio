@@ -112,9 +112,9 @@ export default function BlogPostPage() {
             ))}
           </div>
 
-          {/* Title */}
+          {/* Title - use excerpt (articleTitle) if defined, otherwise use title */}
           <h1 className="mb-4 font-pixel text-2xl text-primary md:text-3xl">
-            {post.title}
+            {post.excerpt || post.title}
           </h1>
 
           {/* Meta */}
@@ -151,7 +151,12 @@ export default function BlogPostPage() {
                 "p",
                 "br",
                 "strong",
+                "b",
                 "em",
+                "i",
+                "u",
+                "s",
+                "strike",
                 "ul",
                 "ol",
                 "li",
@@ -162,8 +167,24 @@ export default function BlogPostPage() {
                 "img",
                 "span",
                 "div",
+                "font",
+                "sub",
+                "sup",
               ],
-              ALLOWED_ATTR: ["href", "src", "alt", "class", "target", "rel"],
+              ALLOWED_ATTR: [
+                "href",
+                "src",
+                "alt",
+                "class",
+                "target",
+                "rel",
+                "style",
+                "color",
+                "face",
+                "size",
+                "width",
+                "height",
+              ],
             }),
           }}
         />
@@ -179,6 +200,160 @@ export default function BlogPostPage() {
           </Link>
         </footer>
       </div>
+
+      {/* Styles for blog content */}
+      <style jsx global>{`
+        /* Images */
+        .prose img {
+          max-width: 100%;
+          height: auto;
+          border-radius: 0.5rem;
+          display: block;
+          margin-left: auto;
+          margin-right: auto;
+          transition: transform 0.3s ease;
+          cursor: zoom-in;
+        }
+
+        .prose img:hover {
+          transform: scale(1.05);
+        }
+
+        .prose img.inline-image {
+          display: inline !important;
+          margin: 0 0.5em !important;
+          vertical-align: middle;
+          cursor: default;
+        }
+
+        .prose img.inline-image:hover {
+          transform: none;
+        }
+
+        .prose img[width] {
+          height: auto;
+        }
+
+        /* Text formatting */
+        .prose b,
+        .prose strong {
+          font-weight: bold;
+          color: hsl(var(--foreground));
+        }
+
+        .prose i,
+        .prose em {
+          font-style: italic;
+        }
+
+        .prose u {
+          text-decoration: underline;
+        }
+
+        .prose s,
+        .prose strike {
+          text-decoration: line-through;
+        }
+
+        .prose sub {
+          vertical-align: sub;
+          font-size: smaller;
+        }
+
+        .prose sup {
+          vertical-align: super;
+          font-size: smaller;
+        }
+
+        /* Preserve font tag styling (color, face) */
+        .prose font {
+          font-family: inherit;
+        }
+
+        /* Allow inline styles to override prose defaults */
+        .prose [style] {
+          all: revert;
+          max-width: 100%;
+        }
+
+        .prose font[color],
+        .prose span[style*="color"] {
+          /* Browser handles color attribute natively */
+        }
+
+        .prose font[face],
+        .prose span[style*="font-family"] {
+          /* Browser handles face attribute natively */
+        }
+
+        /* Links */
+        .prose a {
+          color: hsl(var(--primary));
+          text-decoration: underline;
+        }
+
+        .prose a:hover {
+          opacity: 0.8;
+        }
+
+        /* Blockquote */
+        .prose blockquote {
+          border-left: 4px solid hsl(var(--primary));
+          padding-left: 1em;
+          margin: 1em 0;
+          font-style: italic;
+          color: hsl(var(--muted-foreground));
+        }
+
+        /* Code blocks */
+        .prose pre {
+          background: hsl(var(--secondary));
+          padding: 1em;
+          border-radius: 0.5em;
+          overflow-x: auto;
+          font-family: "IBM Plex Mono", monospace;
+        }
+
+        .prose code {
+          background: hsl(var(--secondary));
+          padding: 0.2em 0.4em;
+          border-radius: 0.25em;
+          font-family: "IBM Plex Mono", monospace;
+          font-size: 0.9em;
+        }
+
+        /* Lists */
+        .prose ul,
+        .prose ol {
+          padding-left: 2em;
+          margin: 0.5em 0;
+        }
+
+        .prose li {
+          margin: 0.25em 0;
+        }
+
+        /* Headings */
+        .prose h1 {
+          font-size: 2em;
+          font-weight: bold;
+          margin: 0.5em 0;
+          color: hsl(var(--primary));
+        }
+
+        .prose h2 {
+          font-size: 1.5em;
+          font-weight: bold;
+          margin: 0.5em 0;
+          color: hsl(var(--primary));
+        }
+
+        .prose h3 {
+          font-size: 1.25em;
+          font-weight: bold;
+          margin: 0.5em 0;
+        }
+      `}</style>
     </div>
   );
 }

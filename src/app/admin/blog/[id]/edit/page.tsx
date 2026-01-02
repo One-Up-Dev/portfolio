@@ -374,10 +374,7 @@ export default function EditBlogPostPage() {
         "Le slug ne peut contenir que des lettres minuscules, chiffres et tirets";
     }
 
-    // Excerpt is recommended but not required
-    if (formData.excerpt && formData.excerpt.length > 300) {
-      newErrors.excerpt = "L'extrait ne doit pas dépasser 300 caractères";
-    }
+    // Article title (excerpt) is optional, no length restriction
 
     // Content is required
     if (!formData.content.trim()) {
@@ -573,13 +570,16 @@ export default function EditBlogPostPage() {
       {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="bg-card border border-border rounded-lg p-6 space-y-6">
-          {/* Title */}
+          {/* Title (for cards) */}
           <div>
             <label
               htmlFor="title"
               className="block text-sm font-medium text-foreground mb-2"
             >
-              Titre <span className="text-destructive">*</span>
+              Titre de la card <span className="text-destructive">*</span>{" "}
+              <span className="text-xs text-muted-foreground font-normal">
+                (affiché dans la liste du blog)
+              </span>
             </label>
             <input
               type="text"
@@ -587,7 +587,7 @@ export default function EditBlogPostPage() {
               name="title"
               value={formData.title}
               onChange={handleChange}
-              placeholder="Titre de l'article"
+              placeholder="Titre affiché sur la card dans la liste"
               className={`w-full px-4 py-2 bg-background border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
                 errors.title ? "border-destructive" : "border-border"
               }`}
@@ -642,30 +642,33 @@ export default function EditBlogPostPage() {
             )}
           </div>
 
-          {/* Excerpt */}
+          {/* Article Title (displayed inside the article) */}
           <div>
             <label
               htmlFor="excerpt"
               className="block text-sm font-medium text-foreground mb-2"
             >
-              Extrait
+              Titre de l&apos;article{" "}
+              <span className="text-xs text-muted-foreground font-normal">
+                (affiché dans l&apos;article)
+              </span>
             </label>
-            <textarea
+            <input
+              type="text"
               id="excerpt"
               name="excerpt"
               value={formData.excerpt}
               onChange={handleChange}
-              placeholder="Résumé court de l'article (affiché dans les listes)"
-              rows={2}
-              maxLength={300}
-              className={`w-full px-4 py-2 bg-background border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-y ${
+              placeholder="Titre affiché dans l'article (laisser vide pour utiliser le titre de la card)"
+              className={`w-full px-4 py-2 bg-background border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
                 errors.excerpt ? "border-destructive" : "border-border"
               }`}
               aria-invalid={!!errors.excerpt}
               aria-describedby={errors.excerpt ? "excerpt-error" : undefined}
             />
             <p className="mt-1 text-xs text-muted-foreground">
-              {formData.excerpt.length}/300 caractères
+              Si vide, le &quot;Titre de la card&quot; ci-dessus sera utilisé
+              dans l&apos;article
             </p>
             {errors.excerpt && (
               <p

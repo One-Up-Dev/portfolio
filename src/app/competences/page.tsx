@@ -138,7 +138,7 @@ export default function SkillsPage() {
               <div className="space-y-4">
                 {category.skills.map((skill) => (
                   <div key={skill.id}>
-                    <div className="mb-1 flex items-center justify-between">
+                    <div className="mb-1 flex items-center">
                       <span className="flex items-center gap-2 text-sm font-medium">
                         {skill.iconUrl ? (
                           <span className="text-base">{skill.iconUrl}</span>
@@ -147,15 +147,9 @@ export default function SkillsPage() {
                         )}
                         {skill.name}
                       </span>
-                      <span className="text-xs text-muted-foreground">
-                        {skill.proficiency}%
-                      </span>
                     </div>
                     <div className="h-2 overflow-hidden rounded-full bg-secondary">
-                      <div
-                        className="h-full rounded-full bg-gradient-to-r from-primary to-retro-cyan transition-all duration-500"
-                        style={{ width: `${skill.proficiency}%` }}
-                      />
+                      <div className="h-full w-full rounded-full bg-gradient-to-r from-primary to-retro-cyan" />
                     </div>
                   </div>
                 ))}

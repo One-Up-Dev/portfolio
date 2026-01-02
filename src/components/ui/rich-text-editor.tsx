@@ -18,6 +18,9 @@ import {
   Redo,
   Palette,
   ChevronDown,
+  Type,
+  Maximize2,
+  GalleryHorizontal,
 } from "lucide-react";
 
 interface RichTextEditorProps {
@@ -35,6 +38,15 @@ interface ToolbarButton {
   command: string;
   value?: string;
 }
+
+// Font options
+const fontOptions = [
+  { label: "Par défaut", value: "" },
+  { label: "Libre Baskerville", value: "'Libre Baskerville', Georgia, serif" },
+  { label: "Poppins", value: "'Poppins', system-ui, sans-serif" },
+  { label: "IBM Plex Mono", value: "'IBM Plex Mono', monospace" },
+  { label: "Press Start 2P", value: "'Press Start 2P', monospace" },
+];
 
 // Couleurs disponibles pour le texte
 const TEXT_COLORS = [
@@ -76,14 +88,22 @@ export function RichTextEditor({
 }: RichTextEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null);
   const colorMenuRef = useRef<HTMLDivElement>(null);
+  const lastClickedImageRef = useRef<HTMLImageElement | null>(null);
   const [isFocused, setIsFocused] = useState(false);
   const [showColorMenu, setShowColorMenu] = useState(false);
+  const [showFontDropdown, setShowFontDropdown] = useState(false);
   const [currentColor, setCurrentColor] = useState("#ffffff");
+  const [showImageResize, setShowImageResize] = useState(false);
+  const [imageWidth, setImageWidth] = useState("300");
+  // Use ref instead of state for selected image to avoid stale references
+  const selectedImageRef = useRef<HTMLImageElement | null>(null);
   const isInternalChange = useRef(false);
   const lastSelectionRef = useRef<Range | null>(null);
   const isInitialized = useRef(false);
 
   // Initialize content only once on mount or when value changes externally
+  // IMPORTANT: Do NOT include isFocused in dependencies - it would cause
+  // content to be overwritten when focus changes after internal edits
   useEffect(() => {
     if (editorRef.current) {
       // Only set innerHTML if:
@@ -98,14 +118,15 @@ export function RichTextEditor({
         const savedRange = saveSelection();
         editorRef.current.innerHTML = value || "";
         // Try to restore selection if editor is focused
-        if (isFocused && savedRange) {
+        if (savedRange) {
           restoreSelection(savedRange);
         }
       }
       // Reset internal change flag
       isInternalChange.current = false;
     }
-  }, [value, isFocused]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
 
   // Sync content to parent without triggering re-render loop
   const syncToParent = useCallback(() => {
@@ -194,6 +215,181 @@ export function RichTextEditor({
     [execCommand],
   );
 
+  // Apply font
+  const applyFont = useCallback(
+    (fontFamily: string) => {
+      if (fontFamily) {
+        document.execCommand("fontName", false, fontFamily);
+      } else {
+        // Remove font styling by setting to inherit
+        document.execCommand("removeFormat", false, undefined);
+      }
+      syncToParent();
+      setShowFontDropdown(false);
+    },
+    [syncToParent],
+  );
+
+  // Handle image resize - find selected image or prompt user
+  const handleImageResize = useCallback(() => {
+    let img: HTMLImageElement | null = null;
+
+    // First, check if user clicked on an image (stored in ref)
+    if (lastClickedImageRef.current) {
+      img = lastClickedImageRef.current;
+    }
+
+    // If no clicked image, try to find from selection
+    if (!img) {
+      const selection = window.getSelection();
+      if (selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        const container = range.startContainer;
+
+        if (container.nodeType === Node.ELEMENT_NODE) {
+          const element = container as Element;
+          if (element.tagName === "IMG") {
+            img = element as HTMLImageElement;
+          } else {
+            img = element.querySelector("img");
+          }
+        } else if (container.parentElement) {
+          const parent = container.parentElement;
+          if (parent.tagName === "IMG") {
+            img = parent as HTMLImageElement;
+          }
+        }
+      }
+    }
+
+    // Last resort: check for single image in editor
+    if (!img && editorRef.current) {
+      const images = editorRef.current.querySelectorAll("img");
+      if (images.length === 1) {
+        img = images[0] as HTMLImageElement;
+      } else if (images.length > 1) {
+        alert("Cliquez d'abord sur l'image que vous souhaitez redimensionner");
+        return;
+      } else {
+        alert("Aucune image trouvée dans l'éditeur");
+        return;
+      }
+    }
+
+    if (img) {
+      selectedImageRef.current = img;
+      // Get current width or natural width or default
+      const currentWidth =
+        img.getAttribute("width") ||
+        img.style.width?.replace("px", "") ||
+        img.naturalWidth ||
+        300;
+      setImageWidth(String(parseInt(String(currentWidth), 10)));
+      setShowImageResize(true);
+    }
+  }, []);
+
+  // Apply the resize
+  const applyImageResize = useCallback(() => {
+    const img = selectedImageRef.current;
+    if (img && imageWidth) {
+      const width = parseInt(imageWidth, 10);
+      if (width > 0 && width <= 1200) {
+        img.setAttribute("width", String(width));
+        img.removeAttribute("height"); // Let height auto-adjust
+        img.style.width = `${width}px`;
+        img.style.height = "auto";
+        img.style.outline = ""; // Clear selection outline
+        syncToParent();
+      }
+    }
+    // Clear refs and state
+    lastClickedImageRef.current = null;
+    selectedImageRef.current = null;
+    setShowImageResize(false);
+  }, [imageWidth, syncToParent]);
+
+  // Toggle image inline/block display
+  const toggleImageInline = useCallback(() => {
+    let img: HTMLImageElement | null = null;
+
+    // First, check if user clicked on an image (stored in ref)
+    if (lastClickedImageRef.current) {
+      img = lastClickedImageRef.current;
+    }
+
+    // If no clicked image, try to find from selection
+    if (!img) {
+      const selection = window.getSelection();
+      if (selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        const container = range.startContainer;
+
+        if (container.nodeType === Node.ELEMENT_NODE) {
+          const element = container as Element;
+          if (element.tagName === "IMG") {
+            img = element as HTMLImageElement;
+          } else {
+            img = element.querySelector("img");
+          }
+        } else if (container.parentElement) {
+          const parent = container.parentElement;
+          if (parent.tagName === "IMG") {
+            img = parent as HTMLImageElement;
+          }
+        }
+      }
+    }
+
+    // Last resort: check for single image in editor
+    if (!img && editorRef.current) {
+      const images = editorRef.current.querySelectorAll("img");
+      if (images.length === 1) {
+        img = images[0] as HTMLImageElement;
+      } else if (images.length > 1) {
+        alert("Cliquez d'abord sur l'image que vous souhaitez basculer");
+        return;
+      } else {
+        alert("Aucune image trouvée dans l'éditeur");
+        return;
+      }
+    }
+
+    if (img) {
+      // Toggle inline-image class
+      img.classList.toggle("inline-image");
+      syncToParent();
+    }
+  }, [syncToParent]);
+
+  // Track clicked image in editor for resize feature
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    const handleEditorClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (target.tagName === "IMG") {
+        lastClickedImageRef.current = target as HTMLImageElement;
+        // Add visual selection indicator
+        editor.querySelectorAll("img").forEach((img) => {
+          img.style.outline = "";
+        });
+        (target as HTMLImageElement).style.outline =
+          "2px solid hsl(var(--primary))";
+      } else {
+        // Clear selection when clicking elsewhere
+        lastClickedImageRef.current = null;
+        editor.querySelectorAll("img").forEach((img) => {
+          img.style.outline = "";
+        });
+      }
+    };
+
+    editor.addEventListener("click", handleEditorClick);
+    return () => editor.removeEventListener("click", handleEditorClick);
+  }, []);
+
   // Close color menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -208,6 +404,23 @@ export function RichTextEditor({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Close font dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      if (showFontDropdown) {
+        setShowFontDropdown(false);
+      }
+    };
+
+    if (showFontDropdown) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showFontDropdown]);
 
   // Toolbar buttons configuration
   const toolbarButtons: ToolbarButton[][] = [
@@ -283,6 +496,16 @@ export function RichTextEditor({
         label: "Image",
         command: "image",
       },
+      {
+        icon: <Maximize2 className="w-4 h-4" />,
+        label: "Redimensionner image",
+        command: "imageResize",
+      },
+      {
+        icon: <GalleryHorizontal className="w-4 h-4" />,
+        label: "Image en ligne",
+        command: "imageInline",
+      },
     ],
     // History
     [
@@ -316,6 +539,12 @@ export function RichTextEditor({
         case "image":
           insertImage();
           break;
+        case "imageResize":
+          handleImageResize();
+          break;
+        case "imageInline":
+          toggleImageInline();
+          break;
         case "formatBlock":
           execCommand(command, commandValue);
           break;
@@ -323,7 +552,14 @@ export function RichTextEditor({
           execCommand(command, commandValue);
       }
     },
-    [execCommand, insertHeading, insertLink, insertImage],
+    [
+      execCommand,
+      insertHeading,
+      insertLink,
+      insertImage,
+      handleImageResize,
+      toggleImageInline,
+    ],
   );
 
   // Handle paste with sanitization
@@ -363,6 +599,61 @@ export function RichTextEditor({
         role="toolbar"
         aria-label="Barre d'outils de l'éditeur"
       >
+        {/* Font selector dropdown */}
+        <div className="relative flex gap-1 items-center" role="group">
+          <button
+            type="button"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              setShowFontDropdown(!showFontDropdown);
+            }}
+            className="p-2 rounded hover:bg-primary/20 hover:text-primary transition-colors focus:outline-none focus:ring-2 focus:ring-primary flex items-center gap-1"
+            title="Police"
+            aria-label="Sélectionner une police"
+            aria-expanded={showFontDropdown}
+            aria-haspopup="listbox"
+          >
+            <Type className="w-4 h-4" />
+            <svg
+              className="w-3 h-3"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          </button>
+          {showFontDropdown && (
+            <div
+              className="absolute top-full left-0 mt-1 bg-background border border-border rounded-lg shadow-lg z-50 min-w-[180px]"
+              role="listbox"
+            >
+              {fontOptions.map((font) => (
+                <button
+                  key={font.label}
+                  type="button"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    applyFont(font.value);
+                  }}
+                  className="w-full px-3 py-2 text-left text-sm hover:bg-primary/20 hover:text-primary transition-colors first:rounded-t-lg last:rounded-b-lg"
+                  style={{ fontFamily: font.value || "inherit" }}
+                  role="option"
+                  aria-selected="false"
+                >
+                  {font.label}
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="w-px h-6 bg-border mx-1" aria-hidden="true" />
+        </div>
+
         {toolbarButtons.map((group, groupIndex) => (
           <div
             key={groupIndex}
@@ -439,6 +730,103 @@ export function RichTextEditor({
           )}
         </div>
       </div>
+
+      {/* Image resize modal */}
+      {showImageResize && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-background border border-border rounded-lg p-6 shadow-xl max-w-sm w-full mx-4">
+            <h3 className="text-lg font-semibold text-foreground mb-4">
+              Redimensionner l&apos;image
+            </h3>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm text-muted-foreground mb-1">
+                  Largeur (pixels)
+                </label>
+                <input
+                  type="number"
+                  value={imageWidth}
+                  onChange={(e) => setImageWidth(e.target.value)}
+                  min="20"
+                  max="1200"
+                  className="w-full px-3 py-2 bg-background border border-input rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder="300"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  La hauteur s&apos;ajustera automatiquement
+                </p>
+              </div>
+
+              {/* Quick size buttons */}
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setImageWidth("40")}
+                  className="px-3 py-1 text-sm bg-accent rounded hover:bg-primary/20"
+                >
+                  40px
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setImageWidth("60")}
+                  className="px-3 py-1 text-sm bg-accent rounded hover:bg-primary/20"
+                >
+                  60px
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setImageWidth("80")}
+                  className="px-3 py-1 text-sm bg-accent rounded hover:bg-primary/20"
+                >
+                  80px
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setImageWidth("150")}
+                  className="px-3 py-1 text-sm bg-accent rounded hover:bg-primary/20"
+                >
+                  150px
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setImageWidth("300")}
+                  className="px-3 py-1 text-sm bg-accent rounded hover:bg-primary/20"
+                >
+                  300px
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setImageWidth("500")}
+                  className="px-3 py-1 text-sm bg-accent rounded hover:bg-primary/20"
+                >
+                  500px
+                </button>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowImageResize(false);
+                  selectedImageRef.current = null;
+                }}
+                className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={applyImageResize}
+                className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+              >
+                Appliquer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Editor area */}
       <div
@@ -545,8 +933,26 @@ export function RichTextEditor({
           margin: 1em 0;
         }
 
+        .rich-text-editor [contenteditable] img[width] {
+          height: auto;
+        }
+
+        .rich-text-editor [contenteditable] img.inline-image {
+          display: inline;
+          margin: 0 0.5em;
+          vertical-align: middle;
+        }
+
         .rich-text-editor [contenteditable] p {
           margin: 0.5em 0;
+        }
+
+        .rich-text-editor [contenteditable] [style*="font-family"] {
+          /* Allow inline font styles */
+        }
+
+        .rich-text-editor [contenteditable] font {
+          /* Support legacy font tags from execCommand */
         }
       `}</style>
     </div>
