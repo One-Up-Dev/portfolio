@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter, useParams } from "next/navigation";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useToast } from "@/components/ui/retro-toast";
@@ -45,6 +46,7 @@ interface BlogFormData {
   slug: string;
   excerpt: string;
   content: string;
+  coverImageUrl: string;
   tags: string[];
   status: string;
   publishedAt: string | null;
@@ -95,6 +97,7 @@ export default function EditBlogPostPage() {
       formData.slug !== initial.slug ||
       formData.excerpt !== initial.excerpt ||
       formData.content !== initial.content ||
+      formData.coverImageUrl !== initial.coverImageUrl ||
       JSON.stringify(formData.tags) !== JSON.stringify(initial.tags) ||
       formData.status !== initial.status ||
       formData.metaDescription !== initial.metaDescription ||
@@ -130,6 +133,7 @@ export default function EditBlogPostPage() {
           slug: post.slug || "",
           excerpt: post.excerpt || "",
           content: post.content || "",
+          coverImageUrl: post.coverImageUrl || "",
           tags: post.tags || [],
           status: post.status || "draft",
           publishedAt: post.publishedAt,
@@ -170,6 +174,7 @@ export default function EditBlogPostPage() {
       formData.slug !== lastSaved.slug ||
       formData.excerpt !== lastSaved.excerpt ||
       formData.content !== lastSaved.content ||
+      formData.coverImageUrl !== lastSaved.coverImageUrl ||
       JSON.stringify(formData.tags) !== JSON.stringify(lastSaved.tags) ||
       formData.status !== lastSaved.status ||
       formData.metaDescription !== lastSaved.metaDescription ||
@@ -196,6 +201,7 @@ export default function EditBlogPostPage() {
           slug: formData.slug,
           excerpt: formData.excerpt,
           content: formData.content,
+          coverImageUrl: formData.coverImageUrl,
           tags: formData.tags,
           status: formData.status,
           metaDescription: formData.metaDescription,
@@ -387,7 +393,65 @@ export default function EditBlogPostPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Handle form submission
+  // Save without redirect (for "Save" button)
+  const handleSave = async () => {
+    if (!formData || !validateForm()) {
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch(`/api/admin/blog/${postId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          title: formData.title,
+          slug: formData.slug,
+          excerpt: formData.excerpt,
+          content: formData.content,
+          coverImageUrl: formData.coverImageUrl,
+          tags: formData.tags,
+          status: formData.status,
+          metaDescription: formData.metaDescription,
+          readTimeMinutes: formData.readTimeMinutes,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        const errorMessage =
+          errorData.message || "Erreur lors de la sauvegarde";
+        addToast(errorMessage, "error");
+        if (errorData.message?.includes("slug already exists")) {
+          setErrors({ slug: "Ce slug existe déjà" });
+        }
+        return;
+      }
+
+      // Update initial data reference so "unsaved changes" detection resets
+      initialFormDataRef.current = {
+        ...formData,
+        tags: [...formData.tags],
+      };
+      lastSavedDataRef.current = {
+        ...formData,
+        tags: [...formData.tags],
+      };
+
+      // Show success toast
+      addToast("Article sauvegardé!", "success");
+      setLastAutoSave(new Date());
+    } catch (error) {
+      console.error("Error saving post:", error);
+      addToast("Erreur lors de la sauvegarde", "error");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Handle form submission (save and redirect)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -407,6 +471,7 @@ export default function EditBlogPostPage() {
           slug: formData.slug,
           excerpt: formData.excerpt,
           content: formData.content,
+          coverImageUrl: formData.coverImageUrl,
           tags: formData.tags,
           status: formData.status,
           metaDescription: formData.metaDescription,
@@ -681,6 +746,46 @@ export default function EditBlogPostPage() {
             )}
           </div>
 
+          {/* Cover Image */}
+          <div>
+            <label
+              htmlFor="coverImageUrl"
+              className="block text-sm font-medium text-foreground mb-2"
+            >
+              Image de couverture{" "}
+              <span className="text-xs text-muted-foreground font-normal">
+                (affichée dans la liste du blog)
+              </span>
+            </label>
+            <input
+              type="url"
+              id="coverImageUrl"
+              name="coverImageUrl"
+              value={formData.coverImageUrl}
+              onChange={handleChange}
+              placeholder="https://exemple.com/image.jpg"
+              className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+            <p className="mt-1 text-xs text-muted-foreground">
+              Collez l&apos;URL d&apos;une image depuis la bibliothèque de
+              médias ou une URL externe
+            </p>
+            {formData.coverImageUrl && (
+              <div className="mt-2 p-2 border border-border rounded-lg bg-accent/20">
+                <p className="text-xs text-muted-foreground mb-2">Aperçu:</p>
+                <div className="h-32 w-48 relative rounded overflow-hidden">
+                  <Image
+                    src={formData.coverImageUrl}
+                    alt="Aperçu de l'image de couverture"
+                    fill
+                    className="object-cover"
+                    unoptimized
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Content */}
           <div>
             <label
@@ -907,6 +1012,24 @@ export default function EditBlogPostPage() {
             Annuler
           </button>
           <button
+            type="button"
+            onClick={handleSave}
+            disabled={isSubmitting}
+            className="px-6 py-2 bg-accent text-foreground rounded-lg hover:bg-accent/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            {isSubmitting ? (
+              <>
+                <span className="animate-spin">⏳</span>
+                <span>Sauvegarde...</span>
+              </>
+            ) : (
+              <>
+                <span>💾</span>
+                <span>Sauvegarder</span>
+              </>
+            )}
+          </button>
+          <button
             type="submit"
             disabled={isSubmitting}
             className="px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
@@ -919,7 +1042,7 @@ export default function EditBlogPostPage() {
             ) : (
               <>
                 <span>✓</span>
-                <span>Enregistrer les modifications</span>
+                <span>Enregistrer et quitter</span>
               </>
             )}
           </button>

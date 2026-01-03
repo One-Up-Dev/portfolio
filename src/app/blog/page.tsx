@@ -278,45 +278,66 @@ function BlogPageContent() {
               className="group rounded-lg border border-border bg-card p-6 transition-all hover:border-primary/50"
             >
               <Link href={`/blog/${post.slug}`} className="block">
-                {/* Tags */}
-                <div className="mb-3 flex flex-wrap gap-2">
-                  {(post.tags || []).map((tag) => (
-                    <span
-                      key={tag}
-                      className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-1 text-xs text-secondary-foreground"
-                    >
-                      <Tag className="h-3 w-3" />
-                      {tag}
-                    </span>
-                  ))}
-                </div>
+                <div className="flex gap-6">
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    {/* Tags */}
+                    <div className="mb-3 flex flex-wrap gap-2">
+                      {(post.tags || []).map((tag) => (
+                        <span
+                          key={tag}
+                          className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-1 text-xs text-secondary-foreground"
+                        >
+                          <Tag className="h-3 w-3" />
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
 
-                {/* Title */}
-                <h2 className="mb-2 text-xl font-semibold text-foreground group-hover:text-primary line-clamp-2">
-                  {highlightMatch(post.title, debouncedSearch)}
-                </h2>
+                    {/* Title */}
+                    <h2 className="mb-2 text-xl font-semibold text-foreground group-hover:text-primary line-clamp-2">
+                      {highlightMatch(post.title, debouncedSearch)}
+                    </h2>
 
-                {/* Excerpt */}
-                <p className="mb-4 text-muted-foreground line-clamp-3">
-                  {highlightMatch(post.excerpt, debouncedSearch)}
-                </p>
+                    {/* Excerpt */}
+                    <p className="mb-4 text-muted-foreground line-clamp-3">
+                      {highlightMatch(post.excerpt, debouncedSearch)}
+                    </p>
 
-                {/* Meta */}
-                <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                  <span className="inline-flex items-center gap-1">
-                    <Calendar className="h-4 w-4" />
-                    {post.publishedAt
-                      ? new Date(post.publishedAt).toLocaleDateString("fr-FR", {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                        })
-                      : "Date inconnue"}
-                  </span>
-                  <span className="inline-flex items-center gap-1">
-                    <Clock className="h-4 w-4" />
-                    {post.readTimeMinutes || 5} min de lecture
-                  </span>
+                    {/* Meta */}
+                    <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                      <span className="inline-flex items-center gap-1">
+                        <Calendar className="h-4 w-4" />
+                        {post.publishedAt
+                          ? new Date(post.publishedAt).toLocaleDateString(
+                              "fr-FR",
+                              {
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                              },
+                            )
+                          : "Date inconnue"}
+                      </span>
+                      <span className="inline-flex items-center gap-1">
+                        <Clock className="h-4 w-4" />
+                        {post.readTimeMinutes || 5} min de lecture
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Cover Image */}
+                  {post.coverImageUrl && (
+                    <div className="hidden sm:block flex-shrink-0">
+                      <div className="max-w-48 max-h-32 relative rounded-lg overflow-hidden bg-accent/20">
+                        <img
+                          src={post.coverImageUrl}
+                          alt={`Image de couverture: ${post.title}`}
+                          className="max-w-full max-h-32 w-auto h-auto rounded-lg transition-transform group-hover:scale-105"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </Link>
             </article>

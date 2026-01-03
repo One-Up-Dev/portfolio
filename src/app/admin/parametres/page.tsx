@@ -1236,6 +1236,35 @@ export default function AdminSettingsPage() {
                     </span>
                   )}
                 </p>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      const response = await fetch("/api/admin/ai/check", {
+                        credentials: "include",
+                      });
+                      const data = await response.json();
+                      if (data.success) {
+                        const d = data.data;
+                        alert(
+                          `${data.message}\n\n` +
+                            `Clé existe: ${d.keyExists ? "Oui" : "Non"}\n` +
+                            `Longueur: ${d.keyLength} caractères\n` +
+                            `Format valide (sk-ant-): ${d.startsWithSkAnt ? "Oui" : "Non"}\n` +
+                            `Aperçu: ${d.keyPreview || "N/A"}\n` +
+                            `Status: ${d.isValid ? "VALIDE ✅" : "INVALIDE ❌"}`,
+                        );
+                      } else {
+                        alert("Erreur: " + data.message);
+                      }
+                    } catch {
+                      alert("Erreur lors du test de la clé API");
+                    }
+                  }}
+                  className="mt-2 px-3 py-1 text-xs bg-accent text-foreground rounded hover:bg-accent/80 transition-colors"
+                >
+                  🔍 Tester la clé API
+                </button>
               </div>
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">

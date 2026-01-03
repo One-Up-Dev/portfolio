@@ -21,32 +21,84 @@ async function getClaudeApiKey(): Promise<string | null> {
   }
 }
 
-// Fetch content from URL for context
+// Fetch content from URL for context - enhanced extraction
 async function fetchUrlContent(url: string): Promise<string> {
   try {
     const response = await fetch(url, {
       headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; BlogContentBot/1.0)",
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        Accept:
+          "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "fr-FR,fr;q=0.9,en;q=0.8",
       },
-      signal: AbortSignal.timeout(10000), // 10 second timeout
+      signal: AbortSignal.timeout(15000), // 15 second timeout
     });
 
     if (!response.ok) {
-      return `[Could not fetch: ${url}]`;
+      return `[Could not fetch: ${url} - Status: ${response.status}]`;
     }
 
     const html = await response.text();
-    // Extract text content from HTML (basic extraction)
-    const textContent = html
+
+    // Enhanced content extraction
+    let textContent = html
+      // Remove script tags
       .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
+      // Remove style tags
       .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+      // Remove nav, header, footer, sidebar elements
+      .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, "")
+      .replace(/<header[^>]*>[\s\S]*?<\/header>/gi, "")
+      .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, "")
+      .replace(/<aside[^>]*>[\s\S]*?<\/aside>/gi, "")
+      // Remove comments
+      .replace(/<!--[\s\S]*?-->/g, "")
+      // Remove SVG
+      .replace(/<svg[^>]*>[\s\S]*?<\/svg>/gi, "")
+      // Preserve headings with markers
+      .replace(/<h1[^>]*>([\s\S]*?)<\/h1>/gi, "\n\n## $1\n\n")
+      .replace(/<h2[^>]*>([\s\S]*?)<\/h2>/gi, "\n\n### $1\n\n")
+      .replace(/<h3[^>]*>([\s\S]*?)<\/h3>/gi, "\n\n#### $1\n\n")
+      // Preserve paragraphs
+      .replace(/<p[^>]*>([\s\S]*?)<\/p>/gi, "\n$1\n")
+      // Preserve list items
+      .replace(/<li[^>]*>([\s\S]*?)<\/li>/gi, "\n• $1")
+      // Preserve line breaks
+      .replace(/<br\s*\/?>/gi, "\n")
+      // Remove all remaining HTML tags
       .replace(/<[^>]+>/g, " ")
-      .replace(/\s+/g, " ")
-      .trim()
-      .slice(0, 5000); // Limit to 5000 chars per URL
+      // Decode HTML entities
+      .replace(/&nbsp;/g, " ")
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&rsquo;/g, "'")
+      .replace(/&lsquo;/g, "'")
+      .replace(/&rdquo;/g, '"')
+      .replace(/&ldquo;/g, '"')
+      .replace(/&mdash;/g, "—")
+      .replace(/&ndash;/g, "–")
+      .replace(/&hellip;/g, "...")
+      // Clean up whitespace
+      .replace(/\n\s*\n\s*\n/g, "\n\n")
+      .replace(/[ \t]+/g, " ")
+      .trim();
+
+    // Limit content length but try to end at a sentence
+    if (textContent.length > 8000) {
+      textContent = textContent.slice(0, 8000);
+      const lastPeriod = textContent.lastIndexOf(".");
+      if (lastPeriod > 6000) {
+        textContent = textContent.slice(0, lastPeriod + 1);
+      }
+    }
 
     return textContent || `[No content extracted from: ${url}]`;
-  } catch {
+  } catch (error) {
+    console.error(`Error fetching URL ${url}:`, error);
     return `[Error fetching: ${url}]`;
   }
 }
@@ -65,46 +117,77 @@ async function generateCompleteArticleWithClaude(
 ): Promise<{ article: CompleteArticle; tokensUsed: number }> {
   // Fetch content from context URLs if provided
   let contextContent = "";
+  const fetchedUrls: string[] = [];
+
   if (contextUrls.length > 0) {
+    console.log(`Fetching content from ${contextUrls.length} URLs...`);
     const urlContents = await Promise.all(
       contextUrls.slice(0, 5).map(async (url) => {
         const content = await fetchUrlContent(url);
-        return `\n\n--- Content from ${url} ---\n${content}`;
+        if (!content.startsWith("[")) {
+          fetchedUrls.push(url);
+          return `\n\n=== SOURCE: ${url} ===\n${content}\n=== FIN SOURCE ===`;
+        }
+        return "";
       }),
     );
-    contextContent = urlContents.join("\n");
+    contextContent = urlContents.filter((c) => c).join("\n");
+    console.log(`Successfully fetched content from ${fetchedUrls.length} URLs`);
   }
 
-  const systemPrompt = `You are an expert SEO content writer and blog specialist. Your task is to generate a complete, premium-quality blog article in French.
+  const hasContextUrls = contextContent.length > 100;
 
-You MUST respond with a valid JSON object containing exactly these 4 fields:
+  const systemPrompt = `Tu es un expert en rédaction SEO et création de contenu blog. Ta tâche est de générer un article de blog complet, de qualité premium, en français.
+
+Tu DOIS répondre avec un objet JSON valide contenant exactement ces 4 champs:
 {
-  "title": "SEO-optimized engaging title (50-60 characters)",
-  "excerpt": "Compelling excerpt for previews (150-200 characters)",
-  "content": "Full article content in Markdown format (2000+ words, well-structured with H2/H3 headers)",
-  "metaDescription": "SEO meta description (150-160 characters, includes target keywords)"
+  "title": "Titre SEO optimisé et accrocheur (50-60 caractères)",
+  "excerpt": "Extrait captivant pour les aperçus (150-200 caractères)",
+  "content": "Contenu complet de l'article en HTML (2000+ mots, bien structuré avec des balises H2/H3)",
+  "metaDescription": "Meta description SEO (150-160 caractères, inclut les mots-clés cibles)"
 }
 
-Requirements for each field:
-- TITLE: Engaging, keyword-rich, clickable (50-60 chars optimal for SEO). IMPORTANT: Do NOT repeat or include the user's prompt description in the title.
-- EXCERPT: Works as a preview/teaser, enticing readers to click (150-200 chars). Do NOT mention or repeat the prompt.
-- CONTENT: Premium quality, minimum 2000 words, uses ## (H2) and ### (H3) headers ONLY (never use #). CRITICAL: Content MUST START DIRECTLY with ## - no introductory text or title. Includes bullet points, code examples if relevant, engaging paragraphs.
-- META_DESCRIPTION: Optimized for search engines, includes primary keyword, drives click-through (150-160 chars). Do NOT include the prompt description.
+EXIGENCES CRITIQUES:
+- TITRE: Accrocheur, riche en mots-clés, incite au clic (50-60 caractères optimal). NE PAS répéter le prompt de l'utilisateur.
+- EXTRAIT: Fonctionne comme aperçu/teaser, incite à cliquer (150-200 caractères).
+- CONTENU:
+  * Format HTML avec balises <h2>, <h3>, <p>, <ul>, <li>, <strong>, <em>
+  * Minimum 2000 mots de contenu substantiel
+  * COMMENCE DIRECTEMENT avec <h2> - pas de titre H1 ni texte d'intro avant
+  * Inclut des listes à puces, exemples de code si pertinent, paragraphes engageants
+  * ${hasContextUrls ? "BASE-TOI PRINCIPALEMENT sur le contenu des URLs sources fourni ci-dessous pour créer un article original qui synthétise et enrichit ces informations." : "Crée du contenu original, informatif et actionable."}
+- META_DESCRIPTION: Optimisée pour les moteurs de recherche (150-160 caractères).
 
-Write in French. Do NOT include any placeholder text or Lorem ipsum. Provide real, valuable, actionable content.
-Respond ONLY with the JSON object, no additional text.`;
+Écris en français. NE PAS inclure de texte placeholder ou Lorem ipsum.
+Réponds UNIQUEMENT avec l'objet JSON, sans texte supplémentaire.`;
 
-  const userMessage = `Generate a complete blog article about: "${prompt}"
+  const userMessage = hasContextUrls
+    ? `Génère un article de blog complet basé sur le sujet: "${prompt}"
 
-${contextContent ? `Use the following reference content to enrich your article and ensure accuracy:\n${contextContent}` : ""}
+SOURCES DE RÉFÉRENCE À UTILISER:
+${contextContent}
 
-Remember to:
-1. Create an engaging, SEO-optimized title (50-60 characters)
-2. Write a compelling excerpt for article previews (150-200 characters)
-3. Generate premium, long-form content (2000+ words) with proper structure
-4. Create an SEO meta description (150-160 characters)
+INSTRUCTIONS:
+1. Analyse attentivement le contenu des sources ci-dessus
+2. Crée un article ORIGINAL qui synthétise, réorganise et enrichit ces informations
+3. Ajoute ta propre expertise et des insights supplémentaires
+4. Structure l'article de manière logique avec des sections H2 et H3
+5. Le contenu doit être en HTML (h2, h3, p, ul, li, strong, em)
+6. Minimum 2000 mots
 
-Respond with a JSON object containing: title, excerpt, content, metaDescription`;
+Génère le JSON avec: title, excerpt, content, metaDescription`
+    : `Génère un article de blog complet sur le sujet: "${prompt}"
+
+INSTRUCTIONS:
+1. Crée un titre SEO accrocheur (50-60 caractères)
+2. Écris un extrait captivant (150-200 caractères)
+3. Génère un contenu premium de 2000+ mots en HTML
+4. Crée une meta description SEO (150-160 caractères)
+
+Le contenu doit utiliser les balises HTML: h2, h3, p, ul, li, strong, em
+Commence directement avec <h2>, pas de titre H1.
+
+Réponds avec le JSON: title, excerpt, content, metaDescription`;
 
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -114,7 +197,7 @@ Respond with a JSON object containing: title, excerpt, content, metaDescription`
       "anthropic-version": "2023-06-01",
     },
     body: JSON.stringify({
-      model: "claude-3-5-sonnet-20241022",
+      model: "claude-sonnet-4-20250514",
       max_tokens: 8192,
       system: systemPrompt,
       messages: [
@@ -193,7 +276,7 @@ async function generateWithClaude(
       "anthropic-version": "2023-06-01",
     },
     body: JSON.stringify({
-      model: "claude-3-haiku-20240307",
+      model: "claude-sonnet-4-20250514",
       max_tokens: 2048,
       system: systemPrompt,
       messages: [
@@ -281,25 +364,27 @@ export async function POST(request: NextRequest) {
               content: article.content,
               metaDescription: article.metaDescription,
               tokensUsed,
-              model: "claude-3-5-sonnet",
+              model: "claude-sonnet-4",
             },
             message: "Complete article generated successfully with Claude AI",
           });
         } catch (claudeError) {
-          console.error("Claude API error for complete article:", claudeError);
-          // Fall back to demo mode
-          const demoArticle = generateDemoCompleteArticle(body.prompt);
-          return NextResponse.json({
-            success: true,
-            data: {
-              type: "complete",
-              ...demoArticle,
-              tokensUsed: 0,
-              model: "demo-mode-fallback",
+          const errorMessage =
+            claudeError instanceof Error
+              ? claudeError.message
+              : String(claudeError);
+          console.error("Claude API error for complete article:", errorMessage);
+
+          // Return the actual error instead of silently falling back to demo
+          return NextResponse.json(
+            {
+              success: false,
+              error: "Claude API Error",
+              message: `Erreur API Claude: ${errorMessage}`,
+              details: errorMessage,
             },
-            message:
-              "Complete article generated in demo mode (Claude API error - check your API key)",
-          });
+            { status: 500 },
+          );
         }
       }
 
@@ -334,7 +419,7 @@ export async function POST(request: NextRequest) {
             content,
             type: body.type || "article",
             tokensUsed,
-            model: "claude-3-haiku",
+            model: "claude-sonnet-4",
           },
           message: "Content generated successfully with Claude AI",
         });

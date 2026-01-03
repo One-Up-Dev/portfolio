@@ -239,11 +239,28 @@ export async function PATCH(
 
     // Handle status toggle
     if (body.status !== undefined) {
-      let publishedAt = existing.publishedAt;
-      if (body.status === "published" && !existing.publishedAt) {
-        publishedAt = new Date();
+      let publishedAt: Date | null = existing.publishedAt;
+      let message = "";
+
+      if (body.status === "published") {
+        // Allow custom publishedAt date for scheduling
+        if (body.publishedAt) {
+          publishedAt = new Date(body.publishedAt);
+          const now = new Date();
+          if (publishedAt > now) {
+            message = `Article programmé pour le ${publishedAt.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}`;
+          } else {
+            message = "Article publié avec succès!";
+          }
+        } else if (!existing.publishedAt) {
+          publishedAt = new Date();
+          message = "Article publié avec succès!";
+        } else {
+          message = "Article publié avec succès!";
+        }
       } else if (body.status === "draft") {
         publishedAt = null;
+        message = "Article mis en brouillon";
       }
 
       const [updated] = await db
@@ -259,10 +276,7 @@ export async function PATCH(
       return NextResponse.json({
         success: true,
         data: serializeDates(updated),
-        message:
-          body.status === "published"
-            ? "Article publié avec succès!"
-            : "Article mis en brouillon",
+        message,
       });
     }
 
